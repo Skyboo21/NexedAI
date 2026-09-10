@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar - NEXED AI</title>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Outfit', sans-serif; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex items-center justify-center antialiased relative overflow-hidden py-8">
+
+  <!-- Ambient Background -->
+  <div class="absolute top-20 right-20 w-96 h-96 bg-purple-600 rounded-full mix-blend-screen filter blur-[150px] opacity-40 pointer-events-none"></div>
+  <div class="absolute bottom-20 left-20 w-96 h-96 bg-blue-600 rounded-full mix-blend-screen filter blur-[150px] opacity-40 pointer-events-none"></div>
+
+  <main class="w-full max-w-md p-8 sm:p-10 glass-panel rounded-3xl shadow-2xl relative z-10 m-4 border-t border-white/20">
+    
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">Buat Akun</h1>
+      <p class="text-slate-400 mt-2 font-light">Bergabung dengan ekosistem NEXED AI</p>
+    </div>
+
+    <form id="register-form" class="space-y-4" novalidate>
+      <div>
+        <label for="nama" class="block text-sm font-medium text-slate-300 mb-1.5">Nama Lengkap</label>
+        <input type="text" id="nama" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none text-white text-sm transition-all shadow-inner" placeholder="John Doe">
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-slate-300 mb-1.5">Email Institusi</label>
+        <input type="email" id="email" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none text-white text-sm transition-all shadow-inner" placeholder="john@institusi.ac.id">
+      </div>
+
+      <div>
+        <label for="role" class="block text-sm font-medium text-slate-300 mb-1.5">Peran (Role)</label>
+        <select id="role" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none text-white text-sm transition-all shadow-inner appearance-none cursor-pointer">
+          <option value="mahasiswa" class="bg-slate-900 text-white">Mahasiswa</option>
+          <option value="dosen" class="bg-slate-900 text-white">Dosen</option>
+        </select>
+      </div>
+      
+      <div>
+        <label for="password" class="block text-sm font-medium text-slate-300 mb-1.5">Kata Sandi</label>
+        <input type="password" id="password" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none text-white text-sm transition-all shadow-inner" placeholder="••••••••">
+      </div>
+
+      <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-purple-500/25 transition-all transform hover:-translate-y-0.5 mt-6">
+        Daftar Sekarang
+      </button>
+    </form>
+
+    <div class="mt-8 text-center text-sm text-slate-400">
+      Sudah punya akun? <a href="login.html" class="text-purple-400 font-bold hover:text-purple-300 hover:underline transition-colors">Masuk di sini</a>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Simulasi alert menggunakan animasi (opsional, tapi di sini simple alert dulu)
+      alert('Pendaftaran berhasil! Silakan login.');
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
