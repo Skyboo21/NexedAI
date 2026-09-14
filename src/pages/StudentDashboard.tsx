@@ -1,6 +1,6 @@
 // src/pages/StudentDashboard.tsx
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../store/authStore';
 import NexedDashboardModule from '../components/NexedDashboardModule';
 import NexedFormEntryModule from '../components/NexedFormEntryModule';
@@ -8,18 +8,18 @@ import TaskTodoList from '../components/TaskTodoList';
 
 export default function StudentDashboard() {
   const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     // Basic route protection
     if (!user || user.role !== 'mahasiswa') {
-      navigate('/login');
+      router.push('/login');
     }
-  }, [user, navigate]);
+  }, [user, router]);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   if (!user || user.role !== 'mahasiswa') return null;
@@ -42,7 +42,7 @@ export default function StudentDashboard() {
             </div>
           </div>
           <nav aria-label="Navigasi Mahasiswa" className="flex space-x-3">
-            <button onClick={() => navigate('/profil')} className="flex items-center space-x-2 text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 px-4 py-2 rounded-xl transition-all shadow-sm">
+            <button onClick={() => router.push('/profil')} className="flex items-center space-x-2 text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 px-4 py-2 rounded-xl transition-all shadow-sm">
               <span>Profil Saya</span>
             </button>
             <button onClick={handleLogout} className="flex items-center space-x-2 text-sm font-semibold bg-red-500/10 border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/20 px-4 py-2 rounded-xl transition-all shadow-sm">

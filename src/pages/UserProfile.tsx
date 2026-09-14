@@ -1,27 +1,27 @@
 // src/pages/UserProfile.tsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../store/authStore';
 
 export default function UserProfile() {
   const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   if (!user) {
-    navigate('/login');
+    router.push('/login');
     return null;
   }
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   const handleBack = () => {
     if (user.role === 'dosen') {
-      navigate('/dosen');
+      router.push('/dosen');
     } else {
-      navigate('/mahasiswa');
+      router.push('/mahasiswa');
     }
   };
 

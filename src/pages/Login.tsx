@@ -1,13 +1,13 @@
 // src/pages/Login.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useAuthStore(state => state.login);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,9 +18,9 @@ export default function Login() {
     
     // Redirect based on role
     if (email.toLowerCase().includes('dosen')) {
-      navigate('/dosen');
+      router.push('/dosen');
     } else {
-      navigate('/mahasiswa');
+      router.push('/mahasiswa');
     }
   };
 

@@ -1,23 +1,13 @@
 // src/components/NexedMasteryTableModule.tsx
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchStudentMasteryApi } from '../services/apiService';
-import { StudentMastery } from '../schemas/taskSchema';
+import { useStudentMastery } from '../services/queries';
 
 export default function NexedMasteryTableModule() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'Semua' | 'Aman' | 'Perlu Perhatian' | 'Berisiko'>('Semua');
 
   // React Query for Server State Management (Modul 7 Requirement)
-  const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery<StudentMastery[], Error>({
-    queryKey: ['studentMastery'],
-    queryFn: async () => {
-      // Small artificial delay to simulate network latency for UI loading effect
-      await new Promise(res => setTimeout(res, 800));
-      return fetchStudentMasteryApi();
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes caching strategy
-  });
+  const { data = [], isLoading, isError, error, refetch, isFetching } = useStudentMastery();
 
   const filteredData = data.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
