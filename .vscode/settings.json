@@ -1,0 +1,5 @@
+{
+  "svelte.plugin.svelte.diagnostics.enable": false,
+  "svelte.plugin.typescript.diagnostics.enable": false,
+  "typescript.validate.enable": true
+}

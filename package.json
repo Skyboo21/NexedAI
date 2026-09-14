@@ -9,11 +9,21 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
     "class-variance-authority": "^0.7.0",
-    "zod": "^3.22.4"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.18.3",
+    "svelte": "^5.0.0",
+    "vue": "^3.4.0",
+    "zod": "^3.22.4",
+    "zustand": "^5.0.15"
   }
 }
