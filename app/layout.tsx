@@ -14,6 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
+      <head>
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+      </head>
       <body>
         <Providers>
           {children}
