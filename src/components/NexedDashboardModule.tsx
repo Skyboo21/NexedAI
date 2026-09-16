@@ -1,6 +1,7 @@
 // @ts-nocheck
 // src/components/NexedDashboardModule.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { LearningNode } from '../schemas/taskSchema';
 
 interface NexedDashboardProps {
@@ -19,6 +20,24 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
   const [nodes, setNodes] = useState<LearningNode[]>(initialNodes);
   const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'recommended' | 'locked'>('all');
   const [selectedNode, setSelectedNode] = useState<LearningNode | null>(nodes[2] || null);
+  const router = useRouter();
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('completed_topics');
+      if (saved) {
+        const completedIds: number[] = JSON.parse(saved);
+        setNodes(prev => prev.map(n => {
+          if (completedIds.includes(n.id)) {
+            return { ...n, status: 'completed', xp: n.xp || (n.id === 4 ? 120 : n.id === 5 ? 150 : 100) };
+          }
+          return n;
+        }));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const totalXp = nodes.reduce((sum, n) => n.status === 'completed' ? sum + n.xp : sum, 0);
 
@@ -116,7 +135,7 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
             </div>
 
             <button
-              onClick={() => alert(`Membuka ruang belajar interaktif untuk: ${selectedNode.title}`)}
+              onClick={() => router.push(`/belajar?topicId=${selectedNode.id}`)}
               className={`mt-6 w-full p-4 rounded-xl font-bold text-sm transition-all relative overflow-hidden group ${
                 selectedNode.status === 'locked' 
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
