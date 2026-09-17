@@ -1,3 +1,5 @@
-'use client';
-import StudentDashboard from '../../src/pages/StudentDashboard';
-export default StudentDashboard;
+import { redirect } from 'next/navigation';
+
+export default function MahasiswaPage() {
+  redirect('/dashboard');
+}
