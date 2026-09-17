@@ -20,8 +20,18 @@ export default async function TaskListFetcher() {
 
       <div className="space-y-3">
         {nodes.map((node) => {
-          const statusBg = node.status === 'recommended' ? 'bg-amber-100 text-amber-800' : node.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600';
-          const statusLabel = node.status === 'recommended' ? 'AI Recommended' : node.status === 'completed' ? 'Selesai' : 'Terkunci';
+          const statusBg =
+            node.status === "recommended"
+              ? "bg-amber-100 text-amber-800"
+              : node.status === "completed"
+                ? "bg-emerald-100 text-emerald-800"
+                : "bg-slate-100 text-slate-600";
+          const statusLabel =
+            node.status === "recommended"
+              ? "AI Recommended"
+              : node.status === "completed"
+                ? "Selesai"
+                : "Terkunci";
 
           return (
             <div

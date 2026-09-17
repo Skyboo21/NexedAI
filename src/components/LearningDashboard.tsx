@@ -1,19 +1,18 @@
 // src/components/LearningDashboard.tsx
-import React from 'react';
-import NexedDashboardModule from './NexedDashboardModule';
-import NexedFormEntryModule from './NexedFormEntryModule';
-import NexedMasteryTableModule from './NexedMasteryTableModule';
-import TaskTodoList from './TaskTodoList';
+import React from "react";
+import NexedDashboardModule from "./NexedDashboardModule";
+import NexedFormEntryModule from "./NexedFormEntryModule";
+import NexedMasteryTableModule from "./NexedMasteryTableModule";
+import TaskTodoList from "./TaskTodoList";
 
 export default function LearningDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
-      
       {/* Main Banner */}
       <div className="relative glass-card rounded-3xl p-8 mb-10 border-t border-white/20 overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-50"></div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] -mr-20 -mt-20 transition-transform duration-700 group-hover:scale-150"></div>
-        
+
         <div className="relative z-10">
           <div className="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
@@ -23,7 +22,8 @@ export default function LearningDashboard() {
             Pusat Pembelajaran Cerdas
           </h2>
           <p className="text-slate-400 max-w-3xl text-lg font-light leading-relaxed">
-            Akses peta belajar adaptif, tetapkan target belajar pribadi, dan pantau kemajuan kelas dengan sistem monitoring terintegrasi berbasis AI.
+            Akses peta belajar adaptif, tetapkan target belajar pribadi, dan pantau kemajuan kelas
+            dengan sistem monitoring terintegrasi berbasis AI.
           </p>
         </div>
       </div>
@@ -41,7 +41,6 @@ export default function LearningDashboard() {
           <TaskTodoList />
         </div>
       </div>
-
     </div>
   );
 }

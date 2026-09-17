@@ -13,7 +13,7 @@ export const CreateTaskSchema = z.object({
   title: z.string().min(3, "Judul tugas minimal 3 karakter").max(80, "Judul maksimal 80 karakter"),
   courseName: z.string().min(2, "Nama mata kuliah wajib diisi"),
   priority: TaskPriorityEnum,
-  dueDate: z.string().refine((val: string) => !isNaN(Date.parse(val)), {
+  dueDate: z.string().refine((val: string) => !Number.isNaN(Date.parse(val)), {
     message: "Format tanggal tidak valid (YYYY-MM-DD)",
   }),
 });
@@ -27,7 +27,7 @@ export const TaskSchema = CreateTaskSchema.extend({
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
 export type StudentTask = z.infer<typeof TaskSchema>;
 
-export type FetchTasksState = 
+export type FetchTasksState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "success"; data: StudentTask[] }
@@ -39,7 +39,7 @@ export const StudentMasterySchema = z.object({
   name: z.string(),
   topic: z.string(),
   mastery: z.number().min(0).max(100),
-  status: z.enum(["Aman", "Perlu Perhatian", "Berisiko"])
+  status: z.enum(["Aman", "Perlu Perhatian", "Berisiko"]),
 });
 export type StudentMastery = z.infer<typeof StudentMasterySchema>;
 
@@ -50,7 +50,7 @@ export const LearningNodeSchema = z.object({
   title: z.string(),
   description: z.string(),
   status: NodeStatusEnum,
-  xp: z.number().min(0)
+  xp: z.number().min(0),
 });
 export type LearningNode = z.infer<typeof LearningNodeSchema>;
 
@@ -58,6 +58,6 @@ export type LearningNode = z.infer<typeof LearningNodeSchema>;
 export const AiResponseSchema = z.object({
   status: z.literal("success").or(z.literal("error")),
   message: z.string(),
-  timestamp: z.string().optional()
+  timestamp: z.string().optional(),
 });
 export type AiResponse = z.infer<typeof AiResponseSchema>;
