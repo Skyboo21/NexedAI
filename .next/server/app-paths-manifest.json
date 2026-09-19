@@ -1,4 +1,12 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(dosen)/dosen-dashboard/page": "app/(dosen)/dosen-dashboard/page.js"
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/page": "app/page.js",
+  "/(admin)/admin-dashboard/page": "app/(admin)/admin-dashboard/page.js",
+  "/(dosen)/dosen-dashboard/page": "app/(dosen)/dosen-dashboard/page.js",
+  "/(mahasiswa)/profil/page": "app/(mahasiswa)/profil/page.js",
+  "/(mahasiswa)/modul/page": "app/(mahasiswa)/modul/page.js",
+  "/(mahasiswa)/modul/[id]/page": "app/(mahasiswa)/modul/[id]/page.js",
+  "/(mahasiswa)/dashboard/page": "app/(mahasiswa)/dashboard/page.js"
 }
