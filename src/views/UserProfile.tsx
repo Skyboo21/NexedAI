@@ -2,17 +2,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 
 export default function UserProfile() {
   const { user, logout } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const activeUser = user || {
     email: "mahasiswa@nexed.ai",
@@ -40,19 +34,6 @@ export default function UserProfile() {
     roleLabel = "Super Administrator";
   } else if (activeUser.role === "dosen") {
     roleLabel = "Tenaga Pendidik / Dosen";
-  }
-
-  if (!mounted) {
-    return (
-      <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 font-['Outfit'] antialiased">
-        <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-12 shadow-sm flex items-center justify-center">
-          <div className="flex items-center gap-2.5 text-xs text-slate-500 font-semibold">
-            <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-            <span>Memuat profil akun...</span>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -84,18 +65,29 @@ export default function UserProfile() {
 
         {/* User Identity Header */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 border-b border-slate-100 pb-8 mb-8">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white text-4xl shadow-xs shrink-0">
+          <div
+            suppressHydrationWarning
+            className="w-24 h-24 sm:w-28 sm:h-28 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white text-4xl shadow-xs shrink-0"
+          >
             {activeUser.email.charAt(0).toUpperCase()}
           </div>
 
           <div className="flex-1 text-center sm:text-left">
-            <span className="inline-block text-[11px] font-bold px-3 py-1 rounded-full mb-2 uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span
+              suppressHydrationWarning
+              className="inline-block text-[11px] font-bold px-3 py-1 rounded-full mb-2 uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100"
+            >
               {roleLabel}
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight truncate">
+            <h1
+              suppressHydrationWarning
+              className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight truncate"
+            >
               {activeUser.name || activeUser.email.split("@")[0]}
             </h1>
-            <p className="text-slate-500 text-sm mt-1">{activeUser.email}</p>
+            <p suppressHydrationWarning className="text-slate-500 text-sm mt-1">
+              {activeUser.email}
+            </p>
           </div>
         </div>
 

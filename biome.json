@@ -18,7 +18,8 @@
       },
       "suspicious": {
         "noDocumentCookie": "off",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noUnknownAtRules": "off"
       },
       "a11y": "off",
       "security": "off"

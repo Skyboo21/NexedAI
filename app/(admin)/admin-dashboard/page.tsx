@@ -1,7 +1,7 @@
 // app/(admin)/admin-dashboard/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { type Role, useAuthStore } from "../../../src/store/authStore";
 
 interface UserRecord {
@@ -22,7 +22,6 @@ interface BuildMetric {
 
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
   const [renderCount, setRenderCount] = useState<number>(0);
 
   const [users, setUsers] = useState<UserRecord[]>([
@@ -67,21 +66,6 @@ export default function AdminDashboardPage() {
       lastActive: "2 jam lalu",
     },
   ]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-['Outfit']">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-          <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-          <span>Memuat panel admin...</span>
-        </div>
-      </div>
-    );
-  }
 
   const metrics: BuildMetric[] = [
     { tool: "Next.js App Router (Turbopack)", buildTimeMs: 240, hmrTimeMs: 4, satisfaction: "98%" },

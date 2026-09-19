@@ -30,3 +30,28 @@ export const LoginInputSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof LoginInputSchema>;
+
+export const RegisterInputSchema = z
+  .object({
+    name: z.string().min(2, "Nama lengkap minimal 2 karakter"),
+    email: z
+      .string()
+      .min(1, "Alamat email kampus wajib diisi")
+      .email("Format email tidak valid (contoh: nama@nexed.ai)"),
+    role: z.enum(["mahasiswa", "dosen"]),
+    nimOrNip: z.string().min(5, "NIM / NIP wajib diisi"),
+    password: z
+      .string()
+      .min(6, "Kata sandi minimal 6 karakter")
+      .max(100, "Kata sandi terlalu panjang"),
+    confirmPassword: z.string().min(6, "Konfirmasi kata sandi wajib diisi"),
+    terms: z.boolean().refine((val) => val === true, {
+      message: "Anda harus menyetujui syarat & ketentuan",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Konfirmasi kata sandi tidak cocok",
+    path: ["confirmPassword"],
+  });
+
+export type RegisterInput = z.infer<typeof RegisterInputSchema>;

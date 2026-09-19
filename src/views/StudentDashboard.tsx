@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import NexedDashboardModule from "../components/NexedDashboardModule";
 import NexedFormEntryModule from "../components/NexedFormEntryModule";
 import TaskTodoList from "../components/TaskTodoList";
@@ -11,12 +11,7 @@ import { useAuthStore } from "../store/authStore";
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Role guard redirect
   useEffect(() => {
@@ -34,17 +29,6 @@ export default function StudentDashboard() {
     role: "mahasiswa" as const,
     name: "Muhammad Hariz",
   };
-
-  if (!mounted) {
-    return (
-      <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center font-['Outfit']">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <span>Memuat dashboard mahasiswa...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-['Outfit'] antialiased">

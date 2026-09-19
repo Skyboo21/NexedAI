@@ -39,8 +39,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3. Redirect user yang sudah login jika mengakses halaman login
-  if (pathname === '/login' && role) {
+  // 3. Redirect user yang sudah login jika mengakses halaman auth (/login atau /register)
+  if ((pathname === '/login' || pathname === '/register') && role) {
     if (role === 'dosen') {
       url.pathname = '/dosen-dashboard';
     } else if (role === 'admin') {
@@ -93,6 +93,7 @@ export const config = {
   matcher: [
     '/',
     '/login',
+    '/register',
     '/dashboard/:path*',
     '/modul/:path*',
     '/belajar/:path*',

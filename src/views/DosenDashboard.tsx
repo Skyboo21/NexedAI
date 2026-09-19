@@ -2,18 +2,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import NexedMasteryTableModule from "../components/NexedMasteryTableModule";
 import { useAuthStore } from "../store/authStore";
 
 export default function DosenDashboard() {
   const { user } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (user?.role && user.role !== "dosen") {
@@ -30,17 +25,6 @@ export default function DosenDashboard() {
     role: "dosen" as const,
     name: "Dr. Ir. Hendra Wijaya, M.T.",
   };
-
-  if (!mounted) {
-    return (
-      <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center font-['Outfit']">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <span>Memuat dashboard dosen...</span>
-        </div>
-      </div>
-    );
-  }
 
   const gradeDistribution = [
     { grade: "A (85-100)", count: 18, percentage: 43, color: "bg-emerald-500" },
