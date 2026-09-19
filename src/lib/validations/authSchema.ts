@@ -18,10 +18,7 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 
 export const LoginInputSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Email wajib diisi")
-    .email("Format email tidak valid (contoh: mahasiswa@nexed.ai)"),
+  email: z.string().min(1, "Email atau username akun wajib diisi"),
   password: z
     .string()
     .min(6, "Kata sandi minimal 6 karakter")

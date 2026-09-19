@@ -13,7 +13,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const login = useAuthStore((state) => state.login);
+  const registerAccount = useAuthStore((state) => state.registerAccount);
   const router = useRouter();
 
   const {
@@ -38,22 +38,16 @@ export default function RegisterPage() {
     setRegisterError(null);
 
     try {
-      // Simulate account registration & initialize user session
-      login(data.email, data.role);
-
-      // Save newly registered user details
-      if (typeof window !== "undefined") {
-        const newUser = {
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          nimOrNip: data.nimOrNip,
-          semester: data.role === "mahasiswa" ? 1 : undefined,
-          prodi: "D3 Teknik Informatika SV UNS",
-        };
-        localStorage.setItem("nexed_auth_user", JSON.stringify(newUser));
-        localStorage.setItem("uns_auth_user", JSON.stringify(newUser));
-      }
+      // Simpan akun ke database lokal dan inisialisasi sesi login
+      registerAccount({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        role: data.role,
+        nimOrNip: data.nimOrNip.trim(),
+        password: data.password,
+        semester: data.role === "mahasiswa" ? 1 : undefined,
+        prodi: "D3 Teknik Informatika SV UNS",
+      });
 
       setSuccessMessage("Pendaftaran akun berhasil! Mengalihkan ke portal Anda...");
 

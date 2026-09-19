@@ -41,215 +41,7 @@ export interface AnalyzedModuleResult {
   }>;
 }
 
-const DEFAULT_BINARY_SEARCH: AnalyzedModuleResult = {
-  title: "Algoritma Pencarian Biner (Binary Search) & Analisis Kompleksitas",
-  sourceType: "text",
-  estimatedTime: "40 Menit",
-  difficulty: "Menengah",
-  xpReward: 120,
-  summary: {
-    overview:
-      "Pencarian Biner adalah algoritma pencarian berefisiensi tinggi dengan prinsip Divide and Conquer. Algoritma ini membagi ruang pencarian menjadi dua bagian secara berulang pada kumpulan data yang sudah terurut (sorted array).",
-    keyPoints: [
-      {
-        term: "Divide and Conquer",
-        definition:
-          "Memecah masalah menjadi sub-masalah identik berukuran setengah hingga target ditemukan.",
-      },
-      {
-        term: "Kompleksitas Waktu O(log N)",
-        definition:
-          "Jumlah iterasi maksimal hanya sebanding dengan logaritma basis 2 dari jumlah data N.",
-      },
-      {
-        term: "Midpoint Overflow Guard",
-        definition:
-          "Menggunakan mid = low + (high - low) / 2 untuk mencegah integer overflow pada memori.",
-      },
-      {
-        term: "Prasyarat Terurut (Pre-sorted)",
-        definition:
-          "Data wajib telah diurutkan terlebih dahulu sebelum Binary Search dapat dieksekusi.",
-      },
-    ],
-    proTips:
-      "Jika data sering bertambah secara dinamis, pertimbangkan biaya pengurutan awal (O(N log N)). Binary Search sangat optimal untuk data yang sering dibaca namun jarang diubah.",
-    breakdownTime: {
-      concept: "12 Menit",
-      practice: "18 Menit",
-      quiz: "10 Menit",
-    },
-  },
-  roadmap: [
-    {
-      step: 1,
-      stage: "Tahap 1: Fondasi",
-      title: "Pahami Konsep Penunjuk (Low, Mid, High)",
-      description:
-        "Kuasai pergeseran penunjuk pointer low dan high saat membandingkan nilai elemen tengah (array[mid]) terhadap target nilai yang dicari.",
-      actionItem: "Gambarkan alur pembagian array 7 elemen di atas kertas.",
-      understood: false,
-    },
-    {
-      step: 2,
-      stage: "Tahap 2: Implementasi",
-      title: "Konstruksi Loop While (low <= high)",
-      description:
-        "Tulis kode algoritma iteratif dengan kondisi terminasi yang tepat guna menghindari infinite loop saat elemen tidak ditemukan.",
-      actionItem: "Implementasikan kode dalam Python atau C++ dan uji kasus elemen tidak ada.",
-      understood: false,
-    },
-    {
-      step: 3,
-      stage: "Tahap 3: Optimasi & Pengujian",
-      title: "Analisis Worst Case & Implementasi Rekursif",
-      description:
-        "Bandingkan konsumsi memori Call Stack antara pendekatan iteratif vs rekursif, serta evaluasi kasus batas array kosong.",
-      actionItem:
-        "Ukur perbedaan efisiensi Binary Search dibanding Linear Search pada 100.000 data.",
-      understood: false,
-    },
-  ],
-  quiz: [
-    {
-      id: 1,
-      question: "Apakah syarat mutlak agar algoritma Binary Search dapat bekerja dengan benar?",
-      options: [
-        "Data harus bertipe string",
-        "Kumpulan data harus sudah dalam keadaan terurut (sorted)",
-        "Ukuran array harus merupakan bilangan genap",
-        "Data tidak boleh memiliki duplikat",
-      ],
-      correctIndex: 1,
-      explanation:
-        "Binary Search bergantung pada sifat keterurutan data untuk mengeliminasi separuh ruang pencarian pada setiap langkah perbandingan.",
-    },
-    {
-      id: 2,
-      question:
-        "Berapakah jumlah perbandingan maksimal (worst-case) untuk mencari elemen dalam array terurut berukuran 1.024 elemen menggunakan Binary Search?",
-      options: ["10 kali", "1.024 kali", "512 kali", "100 kali"],
-      correctIndex: 0,
-      explanation: "Karena kompleksitas waktu O(log₂ N), maka log₂(1024) = 10 kali perbandingan.",
-    },
-    {
-      id: 3,
-      question: "Mengapa perhitungan titik tengah dianjurkan 'mid = low + (high - low) / 2'?",
-      options: [
-        "Membuat pencarian dua kali lebih cepat",
-        "Mencegah potensi integer overflow pada tipe data primitif",
-        "Memungkinkan pencarian pada array tak terurut",
-        "Otomatis membulatkan bilangan ke atas",
-      ],
-      correctIndex: 1,
-      explanation:
-        "Rumus (low + high) / 2 dapat menyebabkan integer overflow jika nilai low + high melebihi kapasitas memori nilai integer maksimum.",
-    },
-  ],
-};
-
-const DEFAULT_TREE_TRAVERSAL: AnalyzedModuleResult = {
-  title: "Struktur Data Tree & Algoritma Traversal Rekursif",
-  sourceType: "text",
-  estimatedTime: "45 Menit",
-  difficulty: "Lanjut",
-  xpReward: 140,
-  summary: {
-    overview:
-      "Pohon Biner (Binary Tree) adalah struktur data hierarkis di mana setiap simpul (node) memiliki paling banyak dua anak (left & right child). Traversal adalah mekanisme mengunjungi seluruh simpul tepat satu kali.",
-    keyPoints: [
-      {
-        term: "Inorder Traversal (L-N-R)",
-        definition:
-          "Mengunjungi anak kiri, simpul saat ini, kemudian anak kanan. Menghasilkan urutan terurut pada BST.",
-      },
-      {
-        term: "Preorder Traversal (N-L-R)",
-        definition:
-          "Mengunjungi simpul saat ini terlebih dahulu, cocok untuk kloning/serialisasi struktur pohon.",
-      },
-      {
-        term: "Postorder Traversal (L-R-N)",
-        definition:
-          "Mengunjungi kedua anak terlebih dahulu sebelum simpul induk, ideal untuk penghapusan pohon memori.",
-      },
-      {
-        term: "Kompleksitas O(N)",
-        definition:
-          "Setiap simpul dikunjungi tepat satu kali dengan ruang Call Stack sedalam tinggi pohon O(H).",
-      },
-    ],
-    proTips:
-      "Pada Binary Search Tree (BST), Inorder Traversal dijamin selalu menghasilkan urutan nilai yang terurut secara ascending dari terkecil ke terbesar.",
-    breakdownTime: {
-      concept: "15 Menit",
-      practice: "20 Menit",
-      quiz: "10 Menit",
-    },
-  },
-  roadmap: [
-    {
-      step: 1,
-      stage: "Tahap 1: Fondasi",
-      title: "Definisi Node & Hubungan Root-Child",
-      description:
-        "Pahami representasi memori class Node yang memuat value data, pointer left, dan pointer right.",
-      actionItem: "Buat class Node sederhana dengan constructor pointer null.",
-      understood: false,
-    },
-    {
-      step: 2,
-      stage: "Tahap 2: Implementasi",
-      title: "Pembuatan Fungsi Rekursif Tiga Jalur",
-      description:
-        "Tulis fungsi rekursif untuk Inorder, Preorder, dan Postorder dengan base-case pengecekan node null.",
-      actionItem: "Implementasikan ketiga fungsi dan cetak urutan output simpul.",
-      understood: false,
-    },
-    {
-      step: 3,
-      stage: "Tahap 3: Pengujian",
-      title: "Breadth-First Search (Level-Order) Menggunakan Queue",
-      description:
-        "Bandingkan traversal mendalam (DFS) dengan penelusuran melebar (BFS) per tingkat menggunakan antrean.",
-      actionItem: "Selesaikan tantangan pencarian ketinggian maksimal (max depth) dari tree.",
-      understood: false,
-    },
-  ],
-  quiz: [
-    {
-      id: 1,
-      question: "Urutan kunjungan simpul pada Inorder Traversal adalah...",
-      options: [
-        "Root -> Left -> Right",
-        "Left -> Root -> Right",
-        "Left -> Right -> Root",
-        "Right -> Root -> Left",
-      ],
-      correctIndex: 1,
-      explanation:
-        "Inorder mengunjungi sub-pohon kiri terlebih dahulu, kemudian simpul induk (root), dan diakhiri dengan sub-pohon kanan.",
-    },
-    {
-      id: 2,
-      question:
-        "Pada Binary Search Tree (BST), traversal manakah yang menghasilkan urutan data terurut naik?",
-      options: ["Preorder", "Postorder", "Inorder", "Level-order"],
-      correctIndex: 2,
-      explanation:
-        "Karena pada BST anak kiri < induk < anak kanan, maka urutan Left-Root-Right (Inorder) selalu menghasilkan data terurut menaik.",
-    },
-    {
-      id: 3,
-      question:
-        "Struktur data bantu apa yang lazim digunakan untuk Breadth-First / Level-Order Traversal?",
-      options: ["Stack (LIFO)", "Queue (FIFO)", "Hash Map", "Linked List sirkular"],
-      correctIndex: 1,
-      explanation:
-        "Queue (First-In, First-Out) digunakan untuk menampung simpul anak per tingkat secara berurutan dari kiri ke kanan.",
-    },
-  ],
-};
+import { analyzeModuleContent, generateChatResponse } from "../lib/aiModuleAnalyzer";
 
 const ANALYSIS_STEPS = [
   { percent: 25, label: "Membaca dan mengekstraksi konten materi...", icon: "📄" },
@@ -318,72 +110,76 @@ export default function NexedAiModuleHub() {
     setIsQuizChecked(false);
     setUserAnswers({});
 
-    let step = 0;
-    const interval = setInterval(() => {
-      step += 1;
-      if (step < ANALYSIS_STEPS.length) {
-        setCurrentStepIndex(step);
-      } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          // Resolve result based on input
-          let chosenData: AnalyzedModuleResult = DEFAULT_BINARY_SEARCH;
-          if (
-            presetKey === "tree_traversal" ||
-            textInput.toLowerCase().includes("tree") ||
-            textInput.toLowerCase().includes("pohon")
-          ) {
-            chosenData = DEFAULT_TREE_TRAVERSAL;
-          } else if (presetKey === "binary_search") {
-            chosenData = DEFAULT_BINARY_SEARCH;
-          } else if (selectedFile) {
-            const fileName = selectedFile.name.toLowerCase();
-            if (
-              fileName.includes("tree") ||
-              fileName.includes("pohon") ||
-              fileName.includes("struktur")
-            ) {
-              chosenData = {
-                ...DEFAULT_TREE_TRAVERSAL,
-                fileName: selectedFile.name,
-                sourceType: "file",
-              };
-            } else {
-              chosenData = {
-                ...DEFAULT_BINARY_SEARCH,
-                title: selectedFile.name.replace(/\.[^/.]+$/, ""),
-                fileName: selectedFile.name,
-                sourceType: "file",
-              };
+    const executeAnalysis = (content: string) => {
+      let step = 0;
+      const interval = setInterval(() => {
+        step += 1;
+        if (step < ANALYSIS_STEPS.length) {
+          setCurrentStepIndex(step);
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            let derivedTitle = "";
+            if (presetKey === "binary_search") {
+              derivedTitle = "Algoritma Pencarian Biner (Binary Search) & Analisis Kompleksitas";
+            } else if (presetKey === "tree_traversal") {
+              derivedTitle = "Struktur Data Pohon Biner (Tree) & Traversal Rekursif";
+            } else if (presetKey === "database_sql") {
+              derivedTitle = "Perancangan Basis Data Relasional & Optimasi Kueri SQL";
+            } else if (presetKey === "oop_clean") {
+              derivedTitle = "Pemrograman Berorientasi Objek (OOP) & Arsitektur Bersih";
+            } else if (selectedFile) {
+              derivedTitle = selectedFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            } else if (textInput.trim()) {
+              derivedTitle =
+                textInput.split("\n")[0]?.substring(0, 60) || "Modul Pembelajaran Mandiri";
             }
-          } else if (textInput.trim()) {
-            chosenData = {
-              ...DEFAULT_BINARY_SEARCH,
-              title: textInput.length > 50 ? `${textInput.substring(0, 48)}...` : textInput,
-              sourceType: "text",
-            };
-          }
 
-          // Initialize states
-          setAnalyzedResult(chosenData);
-          const initialRoadmap: Record<number, boolean> = {};
-          for (const stepItem of chosenData.roadmap) {
-            initialRoadmap[stepItem.step] = false;
-          }
-          setRoadmapStatus(initialRoadmap);
+            const chosenData = analyzeModuleContent({
+              title: derivedTitle,
+              content,
+              fileName: selectedFile?.name,
+              sourceType: selectedFile ? "file" : "text",
+            });
 
-          setChatMessages([
-            {
-              id: "init",
-              sender: "ai",
-              text: `Halo! Saya Nexed AI Tutor. Materi **"${chosenData.title}"** telah selesai diproses ke dalam silabus adaptif. Tanyakan konsep teknis apa pun atau pilih pertanyaan cepat di bawah!`,
-            },
-          ]);
+            setAnalyzedResult(chosenData);
+            const initialRoadmap: Record<number, boolean> = {};
+            for (const stepItem of chosenData.roadmap) {
+              initialRoadmap[stepItem.step] = false;
+            }
+            setRoadmapStatus(initialRoadmap);
 
-          setIsAnalyzing(false);
-        }, 500);
-      }
-    }, 600);
+            setChatMessages([
+              {
+                id: "init",
+                sender: "ai",
+                text: `Halo! Saya Nexed AI Tutor. Materi **"${chosenData.title}"** telah selesai diproses secara komprehensif ke dalam silabus adaptif lengkap (Ringkasan Inti, Peta Belajar 4 Tahap, Kuis Active Recall, dan Bimbingan Dialogis). Silakan tanyakan hal apa pun seputar modul ini!`,
+              },
+            ]);
+
+            setIsAnalyzing(false);
+          }, 500);
+        }
+      }, 600);
+    };
+
+    // Read content from file if uploaded
+    if (
+      selectedFile &&
+      (selectedFile.type.includes("text") ||
+        selectedFile.name.endsWith(".txt") ||
+        selectedFile.name.endsWith(".md"))
+    ) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = (e.target?.result as string) || selectedFile.name;
+        executeAnalysis(text);
+      };
+      reader.onerror = () => executeAnalysis(selectedFile.name);
+      reader.readAsText(selectedFile);
+    } else {
+      executeAnalysis(textInput || selectedFile?.name || presetKey || "");
+    }
   };
 
   // Toggle roadmap item understood
@@ -405,23 +201,17 @@ export default function NexedAiModuleHub() {
     setIsAiReplying(true);
 
     setTimeout(() => {
-      let botAnswer = `Untuk konsep **${analysisResult.title}**, perhatikan keterkaitan antara struktur logika dan alokasi memorinya. Pastikan prasyarat logika awal telah terpenuhi sebelum memanggil proses perulangan.`;
-
-      const lower = textToSend.toLowerCase();
-      if (lower.includes("analogi") || lower.includes("sehari-hari")) {
-        botAnswer = `💡 **Analogi Nyata:**\nBayangkan kamu mencari nama "Budi" di buku telepon setebal 1.000 halaman. Kamu tidak membacanya dari halaman 1 (Linear Search), melainkan langsung membuka halaman tengah (500). Jika nama di halaman 500 adalah "Kurnia", kamu langsung membuang paruh kedua dan hanya mencari di paruh pertama. Itulah prinsip efisiensi Divide & Conquer!`;
-      } else if (lower.includes("perbedaan") || lower.includes("linear")) {
-        botAnswer = `📊 **Perbandingan Utama:**\n• **Linear Search**: Memeriksa satu per satu. Waktu O(N). Tidak butuh data terurut.\n• **Binary Search**: Membagi dua setiap langkah. Waktu O(log N). Wajib data terurut terlebih dahulu. Pada 1.000.000 data, Linear butuh 1.000.000 langkah, sedangkan Binary Search maksimal hanya 20 langkah!`;
-      } else if (lower.includes("rekursif") || lower.includes("iteratif")) {
-        botAnswer = `⚙️ **Rekursif vs Iteratif:**\n• **Iteratif**: Menggunakan loop 'while (low <= high)', lebih hemat memori karena tidak menambah stack frame.\n• **Rekursif**: Fungsi memanggil dirinya sendiri, kodenya lebih ringkas dan elegan, namun memakai memori O(log N) untuk Call Stack.`;
-      }
+      const botAnswer = generateChatResponse({
+        moduleTitle: analysisResult.title,
+        userQuestion: textToSend,
+      });
 
       setChatMessages((prev) => [
         ...prev,
         { id: (Date.now() + 1).toString(), sender: "ai", text: botAnswer },
       ]);
       setIsAiReplying(false);
-    }, 700);
+    }, 600);
   };
 
   useEffect(() => {
@@ -487,7 +277,7 @@ export default function NexedAiModuleHub() {
                 className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
               >
                 <span>🔍</span>
-                <span>Algoritma Pencarian Biner (O(log N))</span>
+                <span>Pencarian Biner (O(log N))</span>
               </button>
               <button
                 type="button"
@@ -496,6 +286,22 @@ export default function NexedAiModuleHub() {
               >
                 <span>🌲</span>
                 <span>Pohon Biner & Traversal Rekursif</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStartAnalysis("database_sql")}
+                className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
+              >
+                <span>🗄️</span>
+                <span>Basis Data & Kueri SQL</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStartAnalysis("oop_clean")}
+                className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
+              >
+                <span>📦</span>
+                <span>Pemrograman Berorientasi Objek (OOP)</span>
               </button>
             </div>
           </div>
@@ -1109,6 +915,15 @@ export default function NexedAiModuleHub() {
                 <button
                   type="button"
                   onClick={() =>
+                    handleSendChat("Berikan contoh kode implementasi dan sintaks dasarnya!")
+                  }
+                  className="text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-3 py-1 rounded-full whitespace-nowrap transition-colors"
+                >
+                  💻 Contoh Kode & Sintaks
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
                     handleSendChat(
                       "Apa perbedaan utama metode ini dibanding pendekatan konvensional?",
                     )
@@ -1120,11 +935,13 @@ export default function NexedAiModuleHub() {
                 <button
                   type="button"
                   onClick={() =>
-                    handleSendChat("Jelaskan implementasi rekursif vs iteratif pada materi ini!")
+                    handleSendChat(
+                      "Apa saja kesalahan umum (common pitfalls) saat mengimplementasikan materi ini?",
+                    )
                   }
                   className="text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-3 py-1 rounded-full whitespace-nowrap transition-colors"
                 >
-                  ⚙️ Rekursif vs Iteratif
+                  ⚠️ Kesalahan Umum & Debugging
                 </button>
               </div>
 

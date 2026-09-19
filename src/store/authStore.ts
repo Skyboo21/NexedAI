@@ -4,12 +4,78 @@ import type { Role, User } from "../lib/validations/authSchema";
 
 export type { Role, User };
 
+export interface RegisteredUserRecord {
+  name: string;
+  email: string;
+  role: "mahasiswa" | "dosen" | "admin";
+  nimOrNip?: string;
+  password?: string;
+  semester?: number;
+  prodi?: string;
+}
+
+export const DEFAULT_REGISTERED_USERS: RegisteredUserRecord[] = [
+  {
+    name: "Muhammad Hariz Lazuardi",
+    email: "mahasiswa@nexed.ai",
+    role: "mahasiswa",
+    nimOrNip: "M3124001",
+    semester: 4,
+    prodi: "D3 Teknik Informatika SV UNS",
+    password: "password123",
+  },
+  {
+    name: "Dr. Ir. Hendra Wijaya, M.Kom.",
+    email: "dosen@nexed.ai",
+    role: "dosen",
+    nimOrNip: "198504122010121003",
+    prodi: "D3 Teknik Informatika SV UNS",
+    password: "password123",
+  },
+  {
+    name: "Administrator Sistem",
+    email: "admin@nexed.ai",
+    role: "admin",
+    nimOrNip: "ADM-001",
+    prodi: "D3 Teknik Informatika SV UNS",
+    password: "password123",
+  },
+];
+
+export function getRegisteredUsers(): RegisteredUserRecord[] {
+  if (typeof window === "undefined") return DEFAULT_REGISTERED_USERS;
+  try {
+    const raw = localStorage.getItem("nexed_registered_users");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // fallback
+  }
+  return DEFAULT_REGISTERED_USERS;
+}
+
+export function saveRegisteredUser(newUser: RegisteredUserRecord) {
+  if (typeof window === "undefined") return;
+  try {
+    const users = getRegisteredUsers();
+    // Filter out jika email sudah ada agar diperbarui
+    const filtered = users.filter((u) => u.email.toLowerCase() !== newUser.email.toLowerCase());
+    filtered.push(newUser);
+    localStorage.setItem("nexed_registered_users", JSON.stringify(filtered));
+  } catch {
+    // fallback
+  }
+}
+
 export interface AuthState {
   user: User | null;
   role: Role;
   token: string | null;
   setRole: (role: Role) => void;
-  login: (email: string, roleOverride?: Role) => void;
+  login: (identifier: string, passwordOrRole?: string | Role, roleOverride?: Role) => User;
+  registerAccount: (newUser: RegisteredUserRecord) => User;
   logout: () => void;
 }
 
@@ -127,33 +193,70 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  login: (email: string, roleOverride?: Role) => {
-    let resolvedRole: Role = "mahasiswa";
-    const lower = email.toLowerCase();
+  login: (identifier: string, passwordOrRole?: string | Role, roleOverride?: Role): User => {
+    const cleanId = identifier.trim().toLowerCase();
+    const registeredList = getRegisteredUsers();
 
-    if (roleOverride) {
-      resolvedRole = roleOverride;
-    } else if (lower.includes("dosen")) {
-      resolvedRole = "dosen";
-    } else if (lower.includes("admin")) {
-      resolvedRole = "admin";
+    // Deteksi apakah parameter kedua adalah roleOverride atau kata sandi
+    const isRoleArg =
+      passwordOrRole === "mahasiswa" || passwordOrRole === "dosen" || passwordOrRole === "admin";
+    const explicitRole = roleOverride || (isRoleArg ? (passwordOrRole as Role) : undefined);
+
+    // 1. Cari kecocokan di database akun terdaftar (berdasarkan email lengkap, username depan, atau nama)
+    const foundUser = registeredList.find((u) => {
+      const emailMatch = u.email.toLowerCase() === cleanId;
+      const usernameMatch = u.email.split("@")[0]?.toLowerCase() === cleanId;
+      const nameMatch = u.name.toLowerCase() === cleanId;
+      return emailMatch || usernameMatch || nameMatch;
+    });
+
+    let resolvedRole: Role = explicitRole || "mahasiswa";
+    let userData: User;
+
+    if (foundUser) {
+      resolvedRole = foundUser.role;
+      userData = {
+        name: foundUser.name,
+        email: foundUser.email,
+        role: foundUser.role,
+        nimOrNip:
+          foundUser.nimOrNip || (foundUser.role === "dosen" ? "198504122010121003" : "M3124001"),
+        semester: foundUser.semester || (foundUser.role === "mahasiswa" ? 4 : undefined),
+        prodi: foundUser.prodi || "D3 Teknik Informatika SV UNS",
+      };
     } else {
-      resolvedRole = "mahasiswa";
-    }
+      // Fallback jika login dengan email baru yang belum ada di registry
+      if (explicitRole) {
+        resolvedRole = explicitRole;
+      } else if (cleanId.includes("dosen")) {
+        resolvedRole = "dosen";
+      } else if (cleanId.includes("admin")) {
+        resolvedRole = "admin";
+      } else {
+        resolvedRole = "mahasiswa";
+      }
 
-    const userData: User = {
-      name:
-        resolvedRole === "dosen"
-          ? "Dr. Ir. Hendra Wijaya, M.Kom."
-          : resolvedRole === "admin"
-            ? "Administrator Sistem"
-            : "Muhammad Hariz Lazuardi",
-      email,
-      role: resolvedRole,
-      nimOrNip: resolvedRole === "dosen" ? "198504122010121003" : "M3124001",
-      semester: resolvedRole === "mahasiswa" ? 4 : undefined,
-      prodi: "D3 Teknik Informatika SV UNS",
-    };
+      const prefix = identifier.split("@")[0] || identifier;
+      const formattedName = prefix
+        .replace(/[._-]/g, " ")
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+      userData = {
+        name:
+          resolvedRole === "dosen"
+            ? "Dr. Ir. Hendra Wijaya, M.Kom."
+            : resolvedRole === "admin"
+              ? "Administrator Sistem"
+              : formattedName || "Pengguna NexedAI",
+        email: identifier.includes("@") ? identifier : `${identifier}@nexed.ai`,
+        role: resolvedRole,
+        nimOrNip: resolvedRole === "dosen" ? "198504122010121003" : "M3124001",
+        semester: resolvedRole === "mahasiswa" ? 4 : undefined,
+        prodi: "D3 Teknik Informatika SV UNS",
+      };
+    }
 
     const mockToken = `jwt_nexed_${resolvedRole}_${Date.now()}`;
 
@@ -179,6 +282,48 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: userData,
       token: mockToken,
     });
+
+    return userData;
+  },
+
+  registerAccount: (newUser: RegisteredUserRecord): User => {
+    saveRegisteredUser(newUser);
+
+    const resolvedRole = newUser.role;
+    const userData: User = {
+      name: newUser.name,
+      email: newUser.email,
+      role: resolvedRole,
+      nimOrNip: newUser.nimOrNip,
+      semester: newUser.role === "mahasiswa" ? newUser.semester || 1 : undefined,
+      prodi: newUser.prodi || "D3 Teknik Informatika SV UNS",
+    };
+
+    const mockToken = `jwt_nexed_${resolvedRole}_${Date.now()}`;
+
+    if (typeof document !== "undefined") {
+      document.cookie = `nexed_session_role=${resolvedRole}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `uns_session_role=${resolvedRole}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `role=${resolvedRole}; path=/; max-age=86400; SameSite=Lax`;
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("nexed_auth_user", JSON.stringify(userData));
+        localStorage.setItem("uns_auth_user", JSON.stringify(userData));
+        localStorage.setItem("nexed_auth_token", mockToken);
+      } catch {
+        // safe
+      }
+    }
+
+    set({
+      role: resolvedRole,
+      user: userData,
+      token: mockToken,
+    });
+
+    return userData;
   },
 
   logout: () => {

@@ -37,12 +37,11 @@ export default function LoginPage() {
     setLoginError(null);
 
     try {
-      login(data.email);
-      const lower = data.email.toLowerCase();
+      const loggedUser = login(data.email, data.password);
       let target = "/dashboard";
-      if (lower.includes("dosen")) {
+      if (loggedUser.role === "dosen") {
         target = "/dosen-dashboard";
-      } else if (lower.includes("admin")) {
+      } else if (loggedUser.role === "admin") {
         target = "/admin-dashboard";
       }
       performRedirect(target);
@@ -85,19 +84,19 @@ export default function LoginPage() {
 
         {/* Standard Production Login Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          {/* Email Field */}
+          {/* Email / Username Field */}
           <div className="space-y-1.5">
             <label
               htmlFor="login-email"
               className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
             >
-              Alamat Email Kampus
+              Alamat Email Kampus / Username
             </label>
             <input
               id="login-email"
-              type="email"
-              autoComplete="email"
-              placeholder="nama@nexed.ai"
+              type="text"
+              autoComplete="username"
+              placeholder="nama@nexed.ai atau username"
               aria-invalid={errors.email ? "true" : "false"}
               aria-describedby={errors.email ? "login-email-error" : undefined}
               className={`w-full px-3.5 py-2.5 rounded-xl border text-xs text-slate-900 placeholder:text-slate-400 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
