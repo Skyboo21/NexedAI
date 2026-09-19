@@ -4,7 +4,13 @@
 import { useState } from "react";
 import { useStudentMastery } from "../services/queries";
 
-export default function NexedMasteryTableModule() {
+interface NexedMasteryTableModuleProps {
+  onReviewLog?: (studentName: string) => void;
+}
+
+export default function NexedMasteryTableModule({
+  onReviewLog,
+}: NexedMasteryTableModuleProps = {}) {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<
     "Semua" | "Aman" | "Perlu Perhatian" | "Berisiko"
@@ -147,6 +153,11 @@ export default function NexedMasteryTableModule() {
                     <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[11px]">
                       Status Risiko
                     </th>
+                    {onReviewLog && (
+                      <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[11px] text-right">
+                        Aksi Audit
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -187,6 +198,18 @@ export default function NexedMasteryTableModule() {
                             {row.status}
                           </span>
                         </td>
+                        {onReviewLog && (
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => onReviewLog(row.name)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                            >
+                              <span>Tinjau Log</span>
+                              <span>&rarr;</span>
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

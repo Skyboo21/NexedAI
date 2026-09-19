@@ -2,13 +2,42 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import NexedMasteryTableModule from "../components/NexedMasteryTableModule";
+import NexedStudentLogModal from "../components/NexedStudentLogModal";
 import { useAuthStore } from "../store/authStore";
 
 export default function DosenDashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
+
+  const [selectedStudentForLog, setSelectedStudentForLog] = useState<string | null>(null);
+  const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
+  const [studentStatuses, setStudentStatuses] = useState<
+    Record<string, "Belum Ditangani" | "Dalam Penanganan" | "Selesai Ditinjau">
+  >({
+    "Budi Santoso": "Belum Ditangani",
+    "Siti Aminah": "Belum Ditangani",
+  });
+
+  const handleOpenLog = (studentName: string) => {
+    setSelectedStudentForLog(studentName);
+    setIsLogModalOpen(true);
+  };
+
+  const handleCloseLog = () => {
+    setIsLogModalOpen(false);
+  };
+
+  const handleStatusChange = (
+    studentName: string,
+    newStatus: "Belum Ditangani" | "Dalam Penanganan" | "Selesai Ditinjau",
+  ) => {
+    setStudentStatuses((prev) => ({
+      ...prev,
+      [studentName]: newStatus,
+    }));
+  };
 
   useEffect(() => {
     if (user?.role && user.role !== "dosen") {
@@ -125,9 +154,19 @@ export default function DosenDashboard() {
                   <h3 className="font-extrabold text-base text-slate-900">Budi Santoso</h3>
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401048</span>
                 </div>
-                <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
-                  Risiko Tinggi
-                </span>
+                {studentStatuses["Budi Santoso"] === "Selesai Ditinjau" ? (
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    ✓ Selesai Ditinjau
+                  </span>
+                ) : studentStatuses["Budi Santoso"] === "Dalam Penanganan" ? (
+                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                    🔵 Dalam Bimbingan
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
+                    Risiko Tinggi
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                 Gagal menyelesaikan Kuis Modul Looping & Iterasi 3 kali berturut-turut. Skor kuis
@@ -137,9 +176,14 @@ export default function DosenDashboard() {
                 <span className="text-slate-500">
                   Rekomendasi AI: Berikan latihan analogi sehari-hari
                 </span>
-                <span className="font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer">
-                  Tinjau Log &rarr;
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleOpenLog("Budi Santoso")}
+                  className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
+                >
+                  <span>Tinjau Log</span>
+                  <span>&rarr;</span>
+                </button>
               </div>
             </div>
 
@@ -149,9 +193,19 @@ export default function DosenDashboard() {
                   <h3 className="font-extrabold text-base text-slate-900">Siti Aminah</h3>
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401092</span>
                 </div>
-                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                  Perlu Atensi
-                </span>
+                {studentStatuses["Siti Aminah"] === "Selesai Ditinjau" ? (
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    ✓ Selesai Ditinjau
+                  </span>
+                ) : studentStatuses["Siti Aminah"] === "Dalam Penanganan" ? (
+                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                    🔵 Dalam Bimbingan
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                    Perlu Atensi
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                 Durasi pengerjaan praktikum Struktur Data Array melebihi rata-rata kelas 200%. Belum
@@ -161,9 +215,14 @@ export default function DosenDashboard() {
                 <span className="text-slate-500">
                   Rekomendasi AI: Jadwalkan asistensi tatap muka lab
                 </span>
-                <span className="font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer">
-                  Tinjau Log &rarr;
-                </span>
+                <button
+                  type="button"
+                  onClick={() => handleOpenLog("Siti Aminah")}
+                  className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
+                >
+                  <span>Tinjau Log</span>
+                  <span>&rarr;</span>
+                </button>
               </div>
             </div>
           </div>
@@ -212,9 +271,17 @@ export default function DosenDashboard() {
 
         {/* Section 3: Tabel Penguasaan (Mastery Table TanStack Query) */}
         <section aria-labelledby="table-heading" className="space-y-4">
-          <NexedMasteryTableModule />
+          <NexedMasteryTableModule onReviewLog={handleOpenLog} />
         </section>
       </main>
+
+      {/* Modal Tinjau Log Aktivitas & Intervensi Dosen */}
+      <NexedStudentLogModal
+        isOpen={isLogModalOpen}
+        studentName={selectedStudentForLog}
+        onClose={handleCloseLog}
+        onStatusChange={handleStatusChange}
+      />
     </div>
   );
 }
