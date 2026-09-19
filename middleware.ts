@@ -14,20 +14,16 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const { pathname } = url;
 
-  // Daftar kategori route
+  // Daftar kategori route resmi
   const isMahasiswaPath =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/modul') ||
-    pathname.startsWith('/belajar') ||
-    pathname.startsWith('/mahasiswa');
+    pathname.startsWith('/modul');
 
   const isDosenPath =
-    pathname.startsWith('/dosen-dashboard') ||
-    pathname.startsWith('/dosen');
+    pathname.startsWith('/dosen-dashboard');
 
   const isAdminPath =
-    pathname.startsWith('/admin-dashboard') ||
-    pathname.startsWith('/admin');
+    pathname.startsWith('/admin-dashboard');
 
   const isSharedPrivatePath = pathname.startsWith('/profil');
 
@@ -79,8 +75,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   } else if (role === 'admin') {
-    // Admin diarahkan ke dashboard admin jika mencoba mengakses rute mahasiswa
-    if (isMahasiswaPath) {
+    // Admin diarahkan ke dashboard admin jika mencoba mengakses rute mahasiswa atau dosen
+    if (isMahasiswaPath || isDosenPath) {
       url.pathname = '/admin-dashboard';
       return NextResponse.redirect(url);
     }
@@ -96,12 +92,8 @@ export const config = {
     '/register',
     '/dashboard/:path*',
     '/modul/:path*',
-    '/belajar/:path*',
-    '/mahasiswa/:path*',
     '/dosen-dashboard/:path*',
-    '/dosen/:path*',
     '/admin-dashboard/:path*',
-    '/admin/:path*',
     '/profil/:path*',
   ],
 };

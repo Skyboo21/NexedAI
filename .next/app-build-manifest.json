@@ -16,11 +16,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dosen)/layout.js"
     ],
-    "/profil/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/profil/page.js"
-    ],
     "/(auth)/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -50,6 +45,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(mahasiswa)/layout.js"
+    ],
+    "/(mahasiswa)/profil/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(mahasiswa)/profil/page.js"
+    ],
+    "/(mahasiswa)/modul/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(mahasiswa)/modul/page.js"
+    ],
+    "/(mahasiswa)/modul/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(mahasiswa)/modul/[id]/page.js"
     ]
   }
 }
