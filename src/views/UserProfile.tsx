@@ -2,13 +2,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 
 export default function UserProfile() {
   const { user, logout } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Safe fallback to prevent blank/null render during SSR or page reloads
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const activeUser = user || {
     email: "mahasiswa@nexed.ai",
     role: "mahasiswa" as const,
@@ -30,16 +35,34 @@ export default function UserProfile() {
     }
   };
 
-  return (
-    <div className="bg-[#020617] text-slate-100 min-h-screen flex flex-col items-center justify-center relative overflow-hidden font-['Outfit']">
-      {/* Ambient Background */}
-      <div className="absolute top-0 -left-40 w-[40rem] h-[40rem] bg-purple-600 rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
-      <div className="absolute bottom-0 -right-40 w-[40rem] h-[40rem] bg-blue-600 rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+  let roleLabel = "Mahasiswa Aktif";
+  if (activeUser.role === "admin") {
+    roleLabel = "Super Administrator";
+  } else if (activeUser.role === "dosen") {
+    roleLabel = "Tenaga Pendidik / Dosen";
+  }
 
-      <div className="w-full max-w-2xl p-8 sm:p-12 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl relative z-10 m-4">
+  if (!mounted) {
+    return (
+      <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 font-['Outfit'] antialiased">
+        <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-12 shadow-sm flex items-center justify-center">
+          <div className="flex items-center gap-2.5 text-xs text-slate-500 font-semibold">
+            <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            <span>Memuat profil akun...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 font-['Outfit'] antialiased">
+      <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-sm">
+        {/* Back navigation button */}
         <button
+          type="button"
           onClick={handleBack}
-          className="text-slate-400 hover:text-white flex items-center space-x-2 text-sm font-bold mb-8 transition-colors"
+          className="text-slate-600 hover:text-indigo-600 flex items-center gap-2 text-xs font-bold mb-8 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -48,6 +71,7 @@ export default function UserProfile() {
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
+            <title>Kembali</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -55,73 +79,61 @@ export default function UserProfile() {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          <span>Kembali ke Dashboard</span>
+          <span>Kembali ke Portal Dashboard</span>
         </button>
 
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-8 border-b border-white/10 pb-8 mb-8">
-          <div className="w-32 h-32 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center font-extrabold text-white shadow-xl shadow-purple-500/40 text-5xl border-4 border-white/10 relative overflow-hidden">
+        {/* User Identity Header */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 border-b border-slate-100 pb-8 mb-8">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white text-4xl shadow-xs shrink-0">
             {activeUser.email.charAt(0).toUpperCase()}
-            <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
           </div>
 
-          <div className="flex-1 text-center md:text-left">
-            <span
-              className={`inline-block text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-widest border ${
-                activeUser.role === "admin"
-                  ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                  : activeUser.role === "dosen"
-                    ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                    : "bg-purple-500/20 text-purple-400 border-purple-500/30"
-              }`}
-            >
-              {activeUser.role === "admin"
-                ? "Super Administrator"
-                : activeUser.role === "dosen"
-                  ? "Tenaga Pendidik / Dosen"
-                  : "Mahasiswa Aktif"}
+          <div className="flex-1 text-center sm:text-left">
+            <span className="inline-block text-[11px] font-bold px-3 py-1 rounded-full mb-2 uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
+              {roleLabel}
             </span>
-            <h1
-              suppressHydrationWarning
-              className="text-3xl font-extrabold text-white tracking-tight mb-2 truncate"
-            >
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight truncate">
               {activeUser.name || activeUser.email.split("@")[0]}
             </h1>
-            <p suppressHydrationWarning className="text-slate-400 text-lg">
-              {activeUser.email}
-            </p>
+            <p className="text-slate-500 text-sm mt-1">{activeUser.email}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-          <div className="bg-black/30 p-5 rounded-2xl border border-white/5">
-            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">
-              Status Akun
+        {/* User Metadata Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
+              Status Akun & Verifikasi
             </div>
-            <div className="text-emerald-400 font-bold flex items-center">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>{" "}
-              Terverifikasi
+            <div className="text-emerald-700 font-bold text-xs flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+              <span>Terverifikasi Aktif (SSO UNS)</span>
             </div>
           </div>
-          <div className="bg-black/30 p-5 rounded-2xl border border-white/5">
-            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">
-              Bergabung Sejak
+
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
+              Terdaftar Dalam Sistem Sejak
             </div>
-            <div className="text-slate-200 font-bold">14 September 2026</div>
+            <div className="text-slate-800 font-bold text-xs">14 September 2026</div>
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-white/10 pt-8">
+        {/* Account Actions */}
+        <div className="flex justify-end border-t border-slate-100 pt-6">
           <button
+            type="button"
             onClick={handleLogout}
-            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold py-3 px-6 rounded-xl transition-all flex items-center space-x-2"
+            className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold py-2.5 px-5 rounded-xl text-xs transition-colors flex items-center gap-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
+              className="h-4 w-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
+              <title>Keluar</title>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

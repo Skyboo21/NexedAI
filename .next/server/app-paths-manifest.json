@@ -1,7 +1,14 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/belajar/page": "app/belajar/page.js",
+  "/dosen/page": "app/dosen/page.js",
+  "/page": "app/page.js",
   "/mahasiswa/page": "app/mahasiswa/page.js",
+  "/belajar/page": "app/belajar/page.js",
+  "/profil/page": "app/profil/page.js",
+  "/(dosen)/dosen-dashboard/page": "app/(dosen)/dosen-dashboard/page.js",
+  "/(mahasiswa)/modul/page": "app/(mahasiswa)/modul/page.js",
+  "/(mahasiswa)/modul/[id]/page": "app/(mahasiswa)/modul/[id]/page.js",
   "/(mahasiswa)/dashboard/page": "app/(mahasiswa)/dashboard/page.js",
   "/(admin)/admin-dashboard/page": "app/(admin)/admin-dashboard/page.js"
 }

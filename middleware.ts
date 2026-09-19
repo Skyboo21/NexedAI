@@ -3,8 +3,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // 1. Baca cookie session role (uns_session_role dengan fallback ke role)
-  const sessionRoleCookie = request.cookies.get('uns_session_role') || request.cookies.get('role');
+  // 1. Baca cookie session role (nexed_session_role dengan fallback ke uns_session_role)
+  const sessionRoleCookie =
+    request.cookies.get('nexed_session_role') ||
+    request.cookies.get('uns_session_role') ||
+    request.cookies.get('role');
+
   const role = sessionRoleCookie?.value as 'mahasiswa' | 'dosen' | 'admin' | undefined;
 
   const url = request.nextUrl.clone();
@@ -13,8 +17,9 @@ export function middleware(request: NextRequest) {
   // Daftar kategori route
   const isMahasiswaPath =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/mahasiswa') ||
-    pathname.startsWith('/belajar');
+    pathname.startsWith('/modul') ||
+    pathname.startsWith('/belajar') ||
+    pathname.startsWith('/mahasiswa');
 
   const isDosenPath =
     pathname.startsWith('/dosen-dashboard') ||
@@ -46,21 +51,35 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 4. Role-Based Access Control (RBAC) Guard
+  // 3b. Redirect root '/' ke dashboard peran aktif atau ke /login jika belum ada sesi
+  if (pathname === '/') {
+    if (role === 'dosen') {
+      url.pathname = '/dosen-dashboard';
+    } else if (role === 'admin') {
+      url.pathname = '/admin-dashboard';
+    } else if (role === 'mahasiswa') {
+      url.pathname = '/dashboard';
+    } else {
+      url.pathname = '/login';
+    }
+    return NextResponse.redirect(url);
+  }
+
+  // 4. Role-Based Access Control (RBAC) Guard - Isolasi Ketat
   if (role === 'mahasiswa') {
-    // Mahasiswa dilarang mengakses path dosen atau admin -> kembalikan ke /dashboard
+    // Mahasiswa dilarang mengakses area Dosen atau Admin -> kembalikan ke /dashboard
     if (isDosenPath || isAdminPath) {
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
   } else if (role === 'dosen') {
-    // Dosen dilarang mengakses path mahasiswa atau admin -> kembalikan ke /dosen-dashboard
+    // Dosen dilarang mengakses area Mahasiswa atau Admin -> kembalikan ke /dosen-dashboard
     if (isMahasiswaPath || isAdminPath) {
       url.pathname = '/dosen-dashboard';
       return NextResponse.redirect(url);
     }
   } else if (role === 'admin') {
-    // Admin memiliki hak akses khusus sistem admin
+    // Admin diarahkan ke dashboard admin jika mencoba mengakses rute mahasiswa
     if (isMahasiswaPath) {
       url.pathname = '/admin-dashboard';
       return NextResponse.redirect(url);
@@ -72,14 +91,16 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/login',
     '/dashboard/:path*',
+    '/modul/:path*',
+    '/belajar/:path*',
     '/mahasiswa/:path*',
     '/dosen-dashboard/:path*',
     '/dosen/:path*',
     '/admin-dashboard/:path*',
     '/admin/:path*',
-    '/belajar/:path*',
     '/profil/:path*',
   ],
 };

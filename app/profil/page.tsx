@@ -1,3 +1,3 @@
-'use client';
-import UserProfile from '../../src/views/UserProfile';
+"use client";
+import UserProfile from "../../src/views/UserProfile";
 export default UserProfile;

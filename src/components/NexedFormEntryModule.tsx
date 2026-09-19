@@ -1,27 +1,42 @@
-// @ts-nocheck
 // src/components/NexedFormEntryModule.tsx
+"use client";
+
 import type React from "react";
 import { useState } from "react";
-import { type CreateTaskInput, CreateTaskSchema, type StudentTask } from "../schemas/taskSchema";
+import { z } from "zod";
+
+const FormTaskSchema = z.object({
+  title: z.string().min(3, "Judul target minimal 3 karakter").max(80, "Judul maksimal 80 karakter"),
+  category: z.enum(["Materi", "Praktikum", "Kuis", "Proyek"]),
+  complexity: z.enum(["Beginner", "Intermediate", "Advanced"]),
+});
+
+export type FormTaskInput = z.infer<typeof FormTaskSchema>;
+
+export interface CreatedStudentTarget extends FormTaskInput {
+  id: string;
+  status: "In Progress" | "Completed";
+  createdAt: string;
+}
 
 interface NexedFormEntryProps {
-  onTaskCreated?: (newTask: StudentTask) => void;
+  onTaskCreated?: (newTask: CreatedStudentTarget) => void;
 }
 
 export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryProps) {
-  const [formData, setFormData] = useState<Partial<CreateTaskInput>>({
+  const [formData, setFormData] = useState<FormTaskInput>({
     title: "",
     category: "Materi",
     complexity: "Beginner",
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormTaskInput, string>>>({});
   const [successMessage, setSuccessMessage] = useState("");
 
-  const handleInputChange = (field: keyof CreateTaskInput, value: string) => {
+  const handleInputChange = (field: keyof FormTaskInput, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
     setSuccessMessage("");
   };
@@ -30,22 +45,22 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
     e.preventDefault();
     setErrors({});
 
-    // Zod Validation Execution
-    const validationResult = CreateTaskSchema.safeParse(formData);
+    const validationResult = FormTaskSchema.safeParse(formData);
 
     if (!validationResult.success) {
-      const formattedErrors: Record<string, string> = {};
-      validationResult.error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          formattedErrors[issue.path[0].toString()] = issue.message;
+      const formattedErrors: Partial<Record<keyof FormTaskInput, string>> = {};
+      for (const issue of validationResult.error.issues) {
+        const fieldName = issue.path[0] as keyof FormTaskInput;
+        if (fieldName) {
+          formattedErrors[fieldName] = issue.message;
         }
-      });
+      }
       setErrors(formattedErrors);
       return;
     }
 
     const validData = validationResult.data;
-    const newTask: StudentTask = {
+    const newTask: CreatedStudentTarget = {
       id: Date.now().toString(),
       ...validData,
       status: "In Progress",
@@ -60,120 +75,104 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
   };
 
   return (
-    <div className="glass-card p-6 md:p-8 rounded-3xl border-t border-white/20 relative overflow-hidden h-full flex flex-col">
-      <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-[60px] -mr-20 -mt-20 pointer-events-none"></div>
-
-      <div className="mb-6 relative z-10">
-        <span className="inline-block text-xs font-bold text-blue-300 bg-blue-500/20 border border-blue-500/30 px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-inner shadow-blue-500/20">
-          Target Manager
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col h-full">
+      <div className="mb-5">
+        <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full mb-1.5">
+          Target Planner
         </span>
-        <h2 className="text-xl font-extrabold text-white tracking-tight">
-          📝 Input Target Belajar
-        </h2>
-        <p className="text-slate-400 text-xs mt-2 font-light">
-          Tambahkan target topik baru untuk rencana studi Anda.
+        <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+          Input Target Belajar Mandiri
+        </h3>
+        <p className="text-xs text-slate-500 mt-1">
+          Rencanakan target studi Anda dengan validasi kriteria terstruktur.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5 relative z-10 flex-1 flex flex-col">
-        {/* Title Input */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
-            Judul Topik <span className="text-pink-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            placeholder="Contoh: Pemahaman Tree"
-            className={`w-full p-3 rounded-xl bg-black/30 border transition-all duration-300 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:bg-black/50 text-sm ${
-              errors.title
-                ? "border-pink-500/50 focus:border-pink-500 focus:ring-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.1)]"
-                : "border-white/10 focus:border-purple-500 focus:ring-purple-500/20"
-            }`}
-          />
-          {errors.title && (
-            <p className="text-pink-400 text-[10px] font-semibold mt-1 flex items-center">
-              <span className="mr-1">⚠️</span> {errors.title}
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* Category Input */}
+      <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col justify-between">
+        <div className="space-y-3.5">
+          {/* Title Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
-              Kategori
+            <label
+              htmlFor="task-title-input"
+              className="block text-xs font-semibold text-slate-700 mb-1"
+            >
+              Nama Topik / Capaian <span className="text-rose-500">*</span>
             </label>
-            <div className="relative">
+            <input
+              id="task-title-input"
+              type="text"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="Contoh: Pemahaman Struktur Data Tree"
+              className={`w-full px-3.5 py-2 rounded-xl bg-slate-50 border text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 transition-all ${
+                errors.title
+                  ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/20"
+                  : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+              }`}
+            />
+            {errors.title && (
+              <p className="text-rose-600 text-[11px] font-medium mt-1 flex items-center gap-1">
+                <span>⚠️</span> {errors.title}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Category Select */}
+            <div>
+              <label
+                htmlFor="task-category-select"
+                className="block text-xs font-semibold text-slate-700 mb-1"
+              >
+                Kategori
+              </label>
               <select
+                id="task-category-select"
                 value={formData.category}
                 onChange={(e) => handleInputChange("category", e.target.value)}
-                className="w-full p-3 rounded-xl bg-black/30 border border-white/10 text-white text-sm appearance-none transition-all duration-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:bg-black/50"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:border-indigo-500 focus:ring-indigo-500/20"
               >
-                <option value="Materi" className="bg-slate-900">
-                  📚 Materi
-                </option>
-                <option value="Praktikum" className="bg-slate-900">
-                  💻 Praktik
-                </option>
-                <option value="Kuis" className="bg-slate-900">
-                  📝 Kuis
-                </option>
-                <option value="Proyek" className="bg-slate-900">
-                  🚀 Proyek
-                </option>
+                <option value="Materi">📚 Teori / Materi</option>
+                <option value="Praktikum">💻 Praktikum</option>
+                <option value="Kuis">📝 Evaluasi Kuis</option>
+                <option value="Proyek">🚀 Mini Proyek</option>
               </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
             </div>
-          </div>
 
-          {/* Complexity Input */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
-              Level
-            </label>
-            <div className="relative">
+            {/* Complexity Select */}
+            <div>
+              <label
+                htmlFor="task-complexity-select"
+                className="block text-xs font-semibold text-slate-700 mb-1"
+              >
+                Tingkat Kesulitan
+              </label>
               <select
+                id="task-complexity-select"
                 value={formData.complexity}
                 onChange={(e) => handleInputChange("complexity", e.target.value)}
-                className="w-full p-3 rounded-xl bg-black/30 border border-white/10 text-white text-sm appearance-none transition-all duration-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:bg-black/50"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:border-indigo-500 focus:ring-indigo-500/20"
               >
-                <option value="Beginner" className="bg-slate-900">
-                  🌱 Bgnr
-                </option>
-                <option value="Intermediate" className="bg-slate-900">
-                  🌟 Intrm
-                </option>
-                <option value="Advanced" className="bg-slate-900">
-                  🔥 Adv
-                </option>
+                <option value="Beginner">🌱 Dasar</option>
+                <option value="Intermediate">🌟 Menengah</option>
+                <option value="Advanced">🔥 Lanjut</option>
               </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Submit Button & Messages */}
-        <div className="pt-4 mt-auto border-t border-white/5">
+        <div className="pt-4 border-t border-slate-100">
           <button
             type="submit"
-            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/25 border border-blue-500/50 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all duration-300"
+            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
           >
-            + Tambah
+            <span>+</span>
+            <span>Tambah Target Belajar</span>
           </button>
 
           {successMessage && (
-            <div className="mt-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-2 rounded-lg text-xs font-semibold flex items-center shadow-inner shadow-emerald-500/10 animate-in fade-in">
-              <span className="mr-2">✅</span> {successMessage}
+            <div className="mt-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5">
+              <span>✅</span> {successMessage}
             </div>
           )}
         </div>

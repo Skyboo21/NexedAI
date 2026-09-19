@@ -1,8 +1,8 @@
-// @ts-nocheck
 // src/components/NexedDashboardModule.tsx
+"use client";
 
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { LearningNode } from "../schemas/taskSchema";
 
 interface NexedDashboardProps {
@@ -53,7 +53,7 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
   const [filterStatus, setFilterStatus] = useState<"all" | "completed" | "recommended" | "locked">(
     "all",
   );
-  const [selectedNode, setSelectedNode] = useState<LearningNode | null>(nodes[2] || null);
+  const [selectedNode, setSelectedNode] = useState<LearningNode | null>(nodes[2] ?? null);
   const router = useRouter();
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
         );
       }
     } catch {
-      // ignore
+      // safe fallback
     }
   }, []);
 
@@ -87,138 +87,160 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
   });
 
   return (
-    <div className="glass-card p-6 md:p-8 rounded-3xl border-t border-white/20">
-      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm">
+      {/* Header section */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <span className="inline-block text-xs font-bold text-purple-300 bg-purple-500/20 border border-purple-500/30 px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-inner shadow-purple-500/20">
+          <span className="inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full mb-2">
             Learning Path
           </span>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">
-            🎓 Dashboard Peta Belajar AI
+          <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
+            Peta Belajar Adaptif AI
           </h2>
+          <p className="text-xs md:text-sm text-slate-500 mt-1">
+            Jalur pembelajaran dinamis yang disesuaikan dengan tingkat penguasaan konsep Anda.
+          </p>
         </div>
-        <div className="bg-gradient-to-br from-purple-600 to-blue-600 text-white px-6 py-3 rounded-2xl text-center shadow-lg shadow-purple-500/30 border border-white/10 relative overflow-hidden">
-          <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/20 to-transparent opacity-50 mix-blend-overlay"></div>
-          <div className="text-xs uppercase tracking-widest text-purple-200 relative z-10">
-            Total Terkumpul
+
+        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-5 py-3 rounded-xl shadow-xs flex items-center gap-3">
+          <div className="text-2xl">⚡</div>
+          <div>
+            <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-100">
+              Total Akumulasi XP
+            </div>
+            <div className="text-xl font-black">{totalXp} XP</div>
           </div>
-          <div className="text-2xl font-black relative z-10">⚡ {totalXp} XP</div>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-8 flex-wrap">
-        {(["all", "recommended", "completed", "locked"] as const).map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 border ${
-              filterStatus === status
-                ? "bg-purple-600/30 border-purple-500/50 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]"
-                : "bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10"
-            }`}
-          >
-            {status === "all" && "📑 Semua Topik"}
-            {status === "recommended" && "⭐ AI Recommended"}
-            {status === "completed" && "✅ Selesai"}
-            {status === "locked" && "🔒 Terkunci"}
-          </button>
-        ))}
+      {/* Filter Tabs */}
+      <div
+        className="flex gap-2 mb-6 flex-wrap"
+        role="tablist"
+        aria-label="Filter status peta belajar"
+      >
+        {(["all", "recommended", "completed", "locked"] as const).map((status) => {
+          const isActive = filterStatus === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setFilterStatus(status)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                isActive
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              {status === "all" && "Semua Topik"}
+              {status === "recommended" && "⭐ Rekomendasi AI"}
+              {status === "completed" && "✅ Selesai"}
+              {status === "locked" && "🔒 Terkunci"}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Main Grid: Left = Node list, Right = Selected Detail */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 flex flex-col gap-4">
+        <div className="lg:col-span-3 flex flex-col gap-3">
           {filteredNodes.map((node) => {
             const isSelected = selectedNode?.id === node.id;
 
-            let badgeStyle = "bg-slate-800 text-slate-400 border-slate-700";
-            const borderStyle = isSelected
-              ? "border-purple-500/50 bg-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.15)]"
-              : "border-white/10 bg-white/5 hover:bg-white/10";
-
-            if (node.status === "recommended")
-              badgeStyle = "bg-orange-500/20 text-orange-400 border-orange-500/30";
-            if (node.status === "completed")
-              badgeStyle = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+            let badgeClass = "bg-slate-100 text-slate-600 border-slate-200";
+            let badgeText = "Terkunci";
+            if (node.status === "recommended") {
+              badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+              badgeText = "AI Recommended";
+            } else if (node.status === "completed") {
+              badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+              badgeText = "Selesai";
+            }
 
             return (
-              <div
+              <button
                 key={node.id}
+                type="button"
                 onClick={() => setSelectedNode(node)}
-                className={`p-5 rounded-2xl cursor-pointer transition-all duration-300 border backdrop-blur-md ${borderStyle}`}
+                className={`text-left p-4 rounded-xl transition-all border ${
+                  isSelected
+                    ? "border-indigo-500 bg-indigo-50/40 ring-2 ring-indigo-500/20 shadow-xs"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="m-0 text-lg font-bold text-white tracking-tight">{node.title}</h4>
-                  <span className={`text-xs font-bold px-2 py-1 rounded-md border ${badgeStyle}`}>
-                    {node.status === "recommended"
-                      ? "AI Recommended"
-                      : node.status === "completed"
-                        ? "Selesai"
-                        : "Terkunci"}
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <h3 className="font-bold text-slate-900 text-base">{node.title}</h3>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${badgeClass}`}
+                  >
+                    {badgeText}
                   </span>
                 </div>
-                <p className="m-0 text-sm text-slate-400 leading-relaxed font-light">
+                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                   {node.description}
                 </p>
-                <div className="mt-3 text-sm font-bold text-orange-400">
-                  {node.xp > 0 ? `+${node.xp} XP` : "0 XP"}
+                <div className="mt-2 text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  <span>💎</span>
+                  <span>{node.xp > 0 ? `+${node.xp} XP` : "0 XP"}</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
 
         {selectedNode && (
-          <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-dashed border-slate-500/30 flex flex-col justify-between bg-slate-900/50 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-            <div className="relative z-10">
-              <div className="text-xs font-bold text-purple-400 tracking-wider uppercase mb-2">
-                Detail Topik Terpilih
+          <div className="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 mb-1">
+                Topik Terpilih
               </div>
-              <h3 className="text-xl font-extrabold text-white mb-3 tracking-tight">
-                {selectedNode.title}
-              </h3>
-              <p className="text-sm text-slate-300 font-light leading-relaxed">
+              <h3 className="text-lg font-extrabold text-slate-900 mb-2">{selectedNode.title}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed mb-4">
                 {selectedNode.description}
               </p>
 
-              <div className="mt-6 p-4 bg-black/40 rounded-xl border border-white/5 backdrop-blur-sm">
-                <div className="text-xs text-slate-500 mb-1 font-semibold uppercase tracking-wider">
-                  Status Pembelajaran:
+              <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-1">
+                <div className="text-[11px] font-bold text-slate-400 uppercase">
+                  Status Pembelajaran
                 </div>
-                <div
-                  className={`text-sm font-bold ${
-                    selectedNode.status === "recommended"
-                      ? "text-orange-400"
-                      : selectedNode.status === "completed"
-                        ? "text-emerald-400"
-                        : "text-slate-400"
-                  }`}
-                >
-                  {selectedNode.status === "recommended"
-                    ? "🔥 Perlu Diwaspadai (AI Recommendation)"
-                    : selectedNode.status === "completed"
-                      ? "🎉 Berhasil Dikuasai"
-                      : "🔒 Belum Terbuka"}
+                <div className="text-xs font-semibold flex items-center gap-2">
+                  {selectedNode.status === "recommended" && (
+                    <span className="text-amber-700 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                      Perlu Penguatan (Rekomendasi AI)
+                    </span>
+                  )}
+                  {selectedNode.status === "completed" && (
+                    <span className="text-emerald-700 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                      Materi Telah Dikuasai
+                    </span>
+                  )}
+                  {selectedNode.status === "locked" && (
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
+                      Terkunci (Selesaikan Prasyarat)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => router.push(`/belajar?topicId=${selectedNode.id}`)}
-              className={`mt-6 w-full p-4 rounded-xl font-bold text-sm transition-all relative overflow-hidden group ${
-                selectedNode.status === "locked"
-                  ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
-                  : "bg-gradient-to-r from-purple-600 to-blue-600 text-white cursor-pointer shadow-lg shadow-purple-500/25 border border-purple-500/50 hover:shadow-purple-500/40"
-              }`}
+              type="button"
+              onClick={() => router.push(`/modul/${selectedNode.id}`)}
               disabled={selectedNode.status === "locked"}
+              className={`mt-6 w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                selectedNode.status === "locked"
+                  ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              }`}
             >
-              {selectedNode.status !== "locked" && (
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-              )}
-              <span className="relative z-10">
-                {selectedNode.status === "locked"
-                  ? "Topik Terkunci"
-                  : "🚀 Pelajari Bersama NEXED Bot"}
+              <span>🚀</span>
+              <span>
+                {selectedNode.status === "locked" ? "Topik Terkunci" : "Buka Modul Belajar"}
               </span>
             </button>
           </div>

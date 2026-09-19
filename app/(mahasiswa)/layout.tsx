@@ -1,79 +1,38 @@
 // app/(mahasiswa)/layout.tsx
-// React Server Component (RSC) - Zero Client JS for layout structure
-import type React from 'react';
-import Link from 'next/link';
-import LogoutButton from '../../src/components/LogoutButton';
+import type React from "react";
+import AppSidebar from "../../src/components/AppSidebar";
 
 export const metadata = {
-  title: 'Portal Mahasiswa - NexedAI',
-  description: 'Ruang pembelajaran adaptif mahasiswa berbasis AI',
+  title: "Portal Mahasiswa - NexedAI",
+  description: "Ruang pembelajaran adaptif mahasiswa berbasis AI terintegrasi",
 };
 
-export default function MahasiswaLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MahasiswaLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col md:flex-row font-['Outfit'] antialiased">
-      {/* Sidebar Server Component (RSC) */}
-      <aside className="w-full md:w-64 bg-slate-900/80 backdrop-blur-2xl border-r border-white/10 flex flex-col justify-between p-5 shrink-0 z-30">
-        <div>
-          {/* Logo & Header */}
-          <div className="flex items-center space-x-3 mb-8 px-2">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-purple-500/30 text-lg">
-              NX
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-white tracking-tight leading-none">
-                NEXED AI
-              </h2>
-              <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
-                Portal Mahasiswa
-              </span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row font-['Outfit'] antialiased">
+      <AppSidebar
+        role="mahasiswa"
+        portalTitle="Portal Mahasiswa"
+        portalSubtitle="D3 Teknik Informatika SV UNS"
+        userStatusTitle="Mahasiswa Aktif"
+        userStatusSubtitle="Semester 4 • Algoritma & Pemrograman"
+        navItems={[
+          { label: "Beranda", href: "/dashboard", icon: "🏠" },
+          {
+            label: "Modul Adaptif",
+            href: "/modul",
+            icon: "📚",
+            badge: "5 Bab",
+            badgeColor: "indigo",
+          },
+          { label: "Peta Belajar", href: "/dashboard#peta", icon: "🗺️" },
+          { label: "Riwayat Aktivitas", href: "/dashboard#riwayat", icon: "📝" },
+          { label: "Profil Saya", href: "/profil", icon: "👤" },
+        ]}
+      />
 
-          {/* Navigation Menu Links */}
-          <nav aria-label="Sidebar Mahasiswa" className="space-y-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
-            >
-              <span className="text-base">🗺️</span>
-              <span>Peta Belajar</span>
-            </Link>
-
-            <Link
-              href="/belajar"
-              className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
-            >
-              <span className="text-base">📚</span>
-              <span>Modul Belajar AI</span>
-            </Link>
-
-            <Link
-              href="/profil"
-              className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
-            >
-              <span className="text-base">👤</span>
-              <span>Profil Saya</span>
-            </Link>
-          </nav>
-        </div>
-
-        {/* Footer Sidebar with Client Component Logout */}
-        <div className="pt-6 border-t border-white/10 space-y-3">
-          <div className="px-2 py-2 bg-white/5 rounded-xl border border-white/5 text-[11px] text-slate-400">
-            <span className="text-emerald-400 font-bold">● Status:</span> Mahasiswa Aktif
-          </div>
-          {/* Isolated Client Component */}
-          <LogoutButton />
-        </div>
-      </aside>
-
-      {/* Main Page Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto">
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 bg-slate-50" role="main">
         {children}
       </main>
     </div>

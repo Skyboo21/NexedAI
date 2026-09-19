@@ -2,15 +2,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import NexedMasteryTableModule from "../components/NexedMasteryTableModule";
 import { useAuthStore } from "../store/authStore";
 
 export default function DosenDashboard() {
   const { user } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Route protection redirect only if role explicitly belongs to another portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (user?.role && user.role !== "dosen") {
       if (user.role === "mahasiswa") {
@@ -21,41 +25,55 @@ export default function DosenDashboard() {
     }
   }, [user, router]);
 
-  // Safe fallback to prevent blank/null render during SSR or page reloads
-  const activeUser = user || {
+  const activeUser = user ?? {
     email: "dosen@nexed.ai",
     role: "dosen" as const,
-    name: "Dr. Hendra Wijaya",
+    name: "Dr. Ir. Hendra Wijaya, M.T.",
   };
 
-  return (
-    <div className="bg-[#020617] text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden font-['Outfit'] antialiased">
-      {/* Ambient Light Background */}
-      <div className="fixed top-0 right-0 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-[150px] opacity-40 pointer-events-none -z-10" />
-      <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/15 rounded-full blur-[120px] opacity-40 pointer-events-none -z-10" />
+  if (!mounted) {
+    return (
+      <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center font-['Outfit']">
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
+          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <span>Memuat dashboard dosen...</span>
+        </div>
+      </div>
+    );
+  }
 
-      {/* Top Header Navbar inside Dosen layout */}
+  const gradeDistribution = [
+    { grade: "A (85-100)", count: 18, percentage: 43, color: "bg-emerald-500" },
+    { grade: "B (70-84)", count: 16, percentage: 38, color: "bg-indigo-500" },
+    { grade: "C (55-69)", count: 5, percentage: 12, color: "bg-amber-500" },
+    { grade: "D (40-54)", count: 2, percentage: 5, color: "bg-orange-500" },
+    { grade: "E (<40)", count: 1, percentage: 2, color: "bg-rose-500" },
+  ];
+
+  return (
+    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-['Outfit'] antialiased">
+      {/* Top Header Navbar */}
       <header
-        className="bg-slate-900/50 backdrop-blur-xl border-b border-white/10 sticky top-0 z-20 px-6 py-4 transition-all"
+        className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4 transition-all"
         role="banner"
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
-              <span>Portal Dosen Pengampu</span>
-              <span className="text-slate-500">/</span>
-              <span className="text-slate-300">Algoritma & Struktur Data (Kelas A)</span>
+            <div className="flex items-center space-x-2 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">
+              <span>Portal Pengajar & Pembimbing</span>
+              <span className="text-slate-300">/</span>
+              <span className="text-slate-500">Algoritma & Pemrograman (Kelas TI-A)</span>
             </div>
             <h1
               suppressHydrationWarning
-              className="text-xl sm:text-2xl font-black text-white tracking-tight"
+              className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight"
             >
               Dashboard Analitik: {activeUser.name || activeUser.email.split("@")[0]}
             </h1>
           </div>
 
           <div className="flex items-center space-x-3">
-            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300">
+            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700">
               ● Semester Genap 2026
             </span>
           </div>
@@ -63,41 +81,41 @@ export default function DosenDashboard() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8 w-full relative z-10" role="main">
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8 w-full" role="main">
         {/* Quick Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 bg-slate-900/70 border border-white/10 rounded-2xl">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               Total Mahasiswa
             </div>
-            <div className="text-3xl font-black text-white">42 Mahasiswa</div>
-            <p className="text-xs text-emerald-400 mt-2 font-semibold">
+            <div className="text-2xl font-black text-slate-900">42 Mahasiswa</div>
+            <p className="text-xs text-emerald-600 mt-1.5 font-semibold">
               ● 100% Terdaftar di Sistem
             </p>
           </div>
 
-          <div className="p-5 bg-slate-900/70 border border-white/10 rounded-2xl">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               Rata-rata Skor Kelas
             </div>
-            <div className="text-3xl font-black text-blue-400">84.6%</div>
-            <p className="text-xs text-slate-400 mt-2">Target Penguasaan: &gt;75%</p>
+            <div className="text-2xl font-black text-indigo-600">84.6%</div>
+            <p className="text-xs text-slate-500 mt-1.5">Target Penguasaan: &gt;75%</p>
           </div>
 
-          <div className="p-5 bg-slate-900/70 border border-white/10 rounded-2xl">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Mahasiswa Perlu Atensi
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Perlu Intervensi Remedial
             </div>
-            <div className="text-3xl font-black text-red-400">2 Orang</div>
-            <p className="text-xs text-red-400/80 mt-2 font-semibold">⚠️ Butuh Bimbingan Remedial</p>
+            <div className="text-2xl font-black text-rose-600">2 Mahasiswa</div>
+            <p className="text-xs text-rose-600 mt-1.5 font-semibold">⚠️ Peringatan Dini AI</p>
           </div>
 
-          <div className="p-5 bg-slate-900/70 border border-white/10 rounded-2xl">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Tingkat Penguasaan (Mastery)
+          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Tingkat Ketuntasan
             </div>
-            <div className="text-3xl font-black text-emerald-400">78.5%</div>
-            <p className="text-xs text-emerald-400/80 mt-2">Kategori: Sangat Baik</p>
+            <div className="text-2xl font-black text-emerald-600">78.5%</div>
+            <p className="text-xs text-emerald-600 mt-1.5">Kategori: Sangat Baik</p>
           </div>
         </div>
 
@@ -106,68 +124,109 @@ export default function DosenDashboard() {
           <div className="flex items-center justify-between">
             <h2
               id="alert-heading"
-              className="text-xl sm:text-2xl font-extrabold text-white flex items-center space-x-3"
+              className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2"
             >
-              <span className="text-2xl">⚠️</span>
-              <span>Peringatan Dini Mahasiswa Berisiko</span>
-              <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs px-3 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse shadow-sm">
-                Real-time Alert
-              </span>
+              <span>⚠️</span>
+              <span>Peringatan Dini Mahasiswa Berisiko (AI Early Warning)</span>
             </h2>
+            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full uppercase tracking-wider">
+              2 Peringatan Aktif
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 bg-red-950/40 border border-red-500/30 rounded-2xl backdrop-blur-xl relative overflow-hidden group">
-              <div className="flex justify-between items-start mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="p-5 bg-white border border-rose-200 rounded-2xl shadow-xs relative overflow-hidden">
+              <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-extrabold text-lg text-white">Budi Santoso</h3>
-                  <span className="text-xs text-slate-400 font-mono">NIM: 202401048</span>
+                  <h3 className="font-extrabold text-base text-slate-900">Budi Santoso</h3>
+                  <span className="text-xs text-slate-500 font-mono">NIM: 202401048</span>
                 </div>
-                <span className="text-xs font-bold text-red-400 bg-red-500/20 border border-red-500/30 px-2.5 py-1 rounded-full">
-                  Berisiko Tinggi
+                <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
+                  Risiko Tinggi
                 </span>
               </div>
-              <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
                 Gagal menyelesaikan Kuis Modul Looping & Iterasi 3 kali berturut-turut. Skor kuis
                 terakhir: 35/100.
               </p>
-              <div className="flex items-center justify-between pt-2 border-t border-red-500/20">
-                <span className="text-xs text-slate-400">
-                  Rekomendasi AI: Berikan tugas penguatan dasar
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">
+                  Rekomendasi AI: Berikan latihan analogi sehari-hari
                 </span>
-                <span className="text-xs font-bold text-red-400 group-hover:underline">
-                  Tinjau Log Belajar &rarr;
+                <span className="font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                  Tinjau Log &rarr;
                 </span>
               </div>
             </div>
 
-            <div className="p-6 bg-orange-950/40 border border-orange-500/30 rounded-2xl backdrop-blur-xl relative overflow-hidden group">
-              <div className="flex justify-between items-start mb-3">
+            <div className="p-5 bg-white border border-amber-200 rounded-2xl shadow-xs relative overflow-hidden">
+              <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-extrabold text-lg text-white">Siti Aminah</h3>
-                  <span className="text-xs text-slate-400 font-mono">NIM: 202401092</span>
+                  <h3 className="font-extrabold text-base text-slate-900">Siti Aminah</h3>
+                  <span className="text-xs text-slate-500 font-mono">NIM: 202401092</span>
                 </div>
-                <span className="text-xs font-bold text-orange-400 bg-orange-500/20 border border-orange-500/30 px-2.5 py-1 rounded-full">
-                  Perlu Perhatian
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                  Perlu Atensi
                 </span>
               </div>
-              <p className="text-sm text-slate-300 mb-4 leading-relaxed">
-                Waktu pengerjaan tugas modul Struktur Data Array melebihi rata-rata kelas sebesar
-                200%. Belum mengunggah target mandiri.
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                Durasi pengerjaan praktikum Struktur Data Array melebihi rata-rata kelas 200%. Belum
+                mencatatkan target mandiri.
               </p>
-              <div className="flex items-center justify-between pt-2 border-t border-orange-500/20">
-                <span className="text-xs text-slate-400">
-                  Rekomendasi AI: Kirim pengingat asistensi lab
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">
+                  Rekomendasi AI: Jadwalkan asistensi tatap muka lab
                 </span>
-                <span className="text-xs font-bold text-orange-400 group-hover:underline">
-                  Tinjau Log Belajar &rarr;
+                <span className="font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                  Tinjau Log &rarr;
                 </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section 2: Tabel Penguasaan (Mastery Table TanStack Query) */}
+        {/* Section 2: Visual Distribution Chart */}
+        <section
+          id="distribusi"
+          aria-labelledby="chart-heading"
+          className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5"
+        >
+          <div>
+            <span className="inline-block text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+              Visualisasi Analitik Kelas
+            </span>
+            <h2
+              id="chart-heading"
+              className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight"
+            >
+              Distribusi Grade & Capaian Belajar Mahasiswa
+            </h2>
+            <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+              Sebaran nilai hasil evaluasi modul dan kuis komprehensif 42 mahasiswa aktif.
+            </p>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            {gradeDistribution.map((item) => (
+              <div key={item.grade} className="space-y-1.5">
+                <div className="flex justify-between text-xs font-semibold text-slate-700">
+                  <span>{item.grade}</span>
+                  <span className="text-slate-500">
+                    {item.count} Mahasiswa ({item.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                  <div
+                    className={`${item.color} h-full rounded-full transition-all duration-500`}
+                    style={{ width: `${item.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Section 3: Tabel Penguasaan (Mastery Table TanStack Query) */}
         <section aria-labelledby="table-heading" className="space-y-4">
           <NexedMasteryTableModule />
         </section>

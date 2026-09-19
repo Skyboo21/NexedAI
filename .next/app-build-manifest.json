@@ -1,55 +1,134 @@
 {
   "pages": {
+    "/_not-found/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/_not-found/page-537a10a3099901b3.js"
+    ],
     "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/css/467160358b6ff003.css",
+      "static/chunks/919-5156794a8cc2fd35.js",
+      "static/chunks/app/layout-4c6b59fcc2812c26.js"
     ],
     "/(auth)/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/login/page.js"
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/119-6e5629275a50ed34.js",
+      "static/chunks/875-4a077e52552e7b74.js",
+      "static/chunks/app/(auth)/login/page-8bc96fe6b2a4b2d2.js"
     ],
-    "/(mahasiswa)/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(mahasiswa)/dashboard/page.js"
+    "/dosen/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/dosen/page-5de62fa867af2655.js"
     ],
-    "/(mahasiswa)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(mahasiswa)/layout.js"
-    ],
-    "/(dosen)/dosen-dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dosen)/dosen-dashboard/page.js"
-    ],
-    "/(dosen)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dosen)/layout.js"
-    ],
-    "/(admin)/admin-dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(admin)/admin-dashboard/page.js"
-    ],
-    "/(admin)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(admin)/layout.js"
-    ],
-    "/belajar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/belajar/page.js"
+    "/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/page-d227629ec547cd63.js"
     ],
     "/mahasiswa/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/mahasiswa/page.js"
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/mahasiswa/page-64ad891e16dbe184.js"
+    ],
+    "/belajar/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/belajar/page-7051ac691d45c1b5.js"
+    ],
+    "/profil/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/profil/page-c49f62ac368024be.js"
+    ],
+    "/(dosen)/dosen-dashboard/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/119-6e5629275a50ed34.js",
+      "static/chunks/919-5156794a8cc2fd35.js",
+      "static/chunks/803-31fe423d976fac41.js",
+      "static/chunks/app/(dosen)/dosen-dashboard/page-85357f56a6f6bb67.js"
+    ],
+    "/(dosen)/layout": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/648-9fed33577a9368aa.js",
+      "static/chunks/749-da6785a85bd2551b.js",
+      "static/chunks/app/(dosen)/layout-0b15f3ff8b21fc37.js"
+    ],
+    "/(mahasiswa)/modul/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/648-9fed33577a9368aa.js",
+      "static/chunks/app/(mahasiswa)/modul/page-c99475098499e512.js"
+    ],
+    "/(mahasiswa)/layout": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/648-9fed33577a9368aa.js",
+      "static/chunks/749-da6785a85bd2551b.js",
+      "static/chunks/app/(mahasiswa)/layout-5fa7edc48f93b393.js"
+    ],
+    "/(mahasiswa)/modul/[id]/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/648-9fed33577a9368aa.js",
+      "static/chunks/119-6e5629275a50ed34.js",
+      "static/chunks/app/(mahasiswa)/modul/[id]/page-1c05d2a431cf3529.js"
+    ],
+    "/(mahasiswa)/dashboard/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/648-9fed33577a9368aa.js",
+      "static/chunks/119-6e5629275a50ed34.js",
+      "static/chunks/app/(mahasiswa)/dashboard/page-de1e912d54bb8107.js"
+    ],
+    "/(admin)/admin-dashboard/page": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/app/(admin)/admin-dashboard/page-9e8e1f0d7096d16f.js"
+    ],
+    "/(admin)/layout": [
+      "static/chunks/webpack-e5bb45ecd3152c75.js",
+      "static/chunks/fd9d1056-cdff743893fff928.js",
+      "static/chunks/117-f25303a85b19dc87.js",
+      "static/chunks/main-app-21dda96214cd5799.js",
+      "static/chunks/648-9fed33577a9368aa.js",
+      "static/chunks/749-da6785a85bd2551b.js",
+      "static/chunks/app/(admin)/layout-46a7d5b584578129.js"
     ]
   }
 }

@@ -1,6 +1,3 @@
-// @ts-nocheck
-// src/components/TaskListFetcher.tsx - React Server Component (Zero Bundle JS sent to client)
-import React from "react";
 import { fetchLearningNodesApi } from "../services/apiService";
 
 export default async function TaskListFetcher() {
