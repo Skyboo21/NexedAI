@@ -61,19 +61,9 @@ export async function POST(request: Request) {
     });
 
     // Set HttpOnly, Secure, Lax session cookie
-    const isProduction = process.env.NODE_ENV === "production";
     response.cookies.set("nexed_session_token", sessionToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax",
-      path: "/",
-      maxAge: Math.floor(tokenMaxAge / 1000),
-    });
-
-    // Set non-sensitive role indicator for fast client render synchronization
-    response.cookies.set("nexed_session_role", verifiedUser.role, {
-      httpOnly: false,
-      secure: isProduction,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: Math.floor(tokenMaxAge / 1000),

@@ -158,8 +158,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Determine password vs role parameter
     const isRoleArg =
       passwordOrRole === "mahasiswa" || passwordOrRole === "dosen" || passwordOrRole === "admin";
-    const password =
-      !isRoleArg && typeof passwordOrRole === "string" ? passwordOrRole : "password123";
+    const password = !isRoleArg && typeof passwordOrRole === "string" ? passwordOrRole : "";
 
     try {
       // Call BFF login route handler
@@ -234,8 +233,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: newUser.email,
           role: newUser.role,
           nimOrNip: newUser.nimOrNip,
-          password: newUser.password || "password123",
-          confirmPassword: newUser.password || "password123",
+          password: newUser.password ?? "",
+          confirmPassword: newUser.password ?? "",
           semester: newUser.semester || 1,
           prodi: newUser.prodi || "D3 Teknik Informatika SV UNS",
           terms: true,

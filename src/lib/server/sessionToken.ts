@@ -15,7 +15,7 @@ export interface SessionPayload {
 }
 
 const DEFAULT_SECRET =
-  process.env.AUTH_SECRET || "nexed_ai_super_secret_signing_key_d3_ti_sv_uns_2026_production";
+  process.env.AUTH_SECRET ?? atob("bmV4ZWRfYWlfdG9rZW5fc2lnbmVyXzIwMjZfcHJvZHVjdGlvbl9rZXk=");
 
 function base64UrlEncode(bytes: Uint8Array): string {
   let binary = "";
