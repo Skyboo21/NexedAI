@@ -1,15 +1,16 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifySessionToken } from './src/lib/server/sessionToken';
 
-export function middleware(request: NextRequest) {
-  // 1. Baca cookie session role (nexed_session_role dengan fallback ke uns_session_role)
-  const sessionRoleCookie =
-    request.cookies.get('nexed_session_role') ||
-    request.cookies.get('uns_session_role') ||
-    request.cookies.get('role');
+export async function middleware(request: NextRequest) {
+  // 1. Baca cookie nexed_session_token (HttpOnly) dan verifikasi tanda tangan kriptografis HMAC-SHA256
+  const sessionToken = request.cookies.get('nexed_session_token')?.value;
+  const verifiedSession = await verifySessionToken(sessionToken);
 
-  const role = sessionRoleCookie?.value as 'mahasiswa' | 'dosen' | 'admin' | undefined;
+  // Fallback untuk backward compatibility hanya jika token belum diset (misal transisi sesi)
+  const legacyRoleCookie = request.cookies.get('nexed_session_role')?.value;
+  const role = verifiedSession?.role || (verifiedSession ? (legacyRoleCookie as 'mahasiswa' | 'dosen' | 'admin' | undefined) : undefined);
 
   const url = request.nextUrl.clone();
   const { pathname } = url;

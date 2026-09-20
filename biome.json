@@ -21,8 +21,16 @@
         "noArrayIndexKey": "off",
         "noUnknownAtRules": "off"
       },
-      "a11y": "off",
-      "security": "off"
+      "a11y": {
+        "recommended": true,
+        "useButtonType": "off",
+        "noSvgWithoutTitle": "off",
+        "noStaticElementInteractions": "warn"
+      },
+      "security": {
+        "recommended": true,
+        "noDangerouslySetInnerHtml": "warn"
+      }
     }
   },
   "formatter": {

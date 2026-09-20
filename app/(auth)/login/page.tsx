@@ -32,16 +32,22 @@ export default function LoginPage() {
     }
   };
 
-  const onSubmit = (data: LoginInput) => {
+  const onSubmit = async (data: LoginInput) => {
     setIsSubmitting(true);
     setLoginError(null);
 
     try {
-      const loggedUser = login(data.email, data.password);
+      const result = await login(data.email, data.password);
+      if (!result.success || !result.user) {
+        setIsSubmitting(false);
+        setLoginError(result.message || "Email / Username atau Kata Sandi salah.");
+        return;
+      }
+
       let target = "/dashboard";
-      if (loggedUser.role === "dosen") {
+      if (result.user.role === "dosen") {
         target = "/dosen-dashboard";
-      } else if (loggedUser.role === "admin") {
+      } else if (result.user.role === "admin") {
         target = "/admin-dashboard";
       }
       performRedirect(target);
@@ -127,16 +133,15 @@ export default function LoginPage() {
               >
                 Kata Sandi
               </label>
-              <a
-                href="#forgot"
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                type="button"
+                onClick={() => {
                   alert("Fitur reset kata sandi telah dikirimkan ke email terdaftar.");
                 }}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline bg-transparent border-none p-0 cursor-pointer"
               >
                 Lupa kata sandi?
-              </a>
+              </button>
             </div>
             <input
               id="login-password"

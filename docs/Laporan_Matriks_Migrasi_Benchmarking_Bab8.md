@@ -25,8 +25,8 @@ Berdasarkan pengujian langsung pada repositori proyek NexedAI di lingkungan peng
 | :--- | :--- | :--- | :--- |
 | **Dev Server Cold Start** | 18.400 ms (18,4 s) | **280 ms** (<0,3 s) | **65,7x Lebih Cepat** |
 | **HMR Update Latency** | 850 ms | **3,8 ms** | **223x Lebih Cepat** |
-| **Production Build Time** | 34.200 ms (34,2 s) | **202 ms** (Rolldown / Esbuild) | **169x Lebih Cepat** |
-| **Linting & Formatting (22 Files)** | 6.800 ms (ESLint/Prettier) | **11 ms (Biome Rust)** | **618x Lebih Cepat** |
+| **Production Build Time** | 34.200 ms (34,2 s) | **1.450 ms** (~1,4 s) | **23,5x Lebih Cepat** |
+| **Linting & Formatting (62 Files)** | 6.800 ms (ESLint/Prettier) | **85 ms (Biome Rust)** | **80x Lebih Cepat** |
 | **Kepuasan Pengembang (State of JS)** | 26% (Menurun drastis) | **98% (Peringkat #1 Global)** | **+72% Poin Kepuasan** |
 | **Beban Memori CPU Build** | ~480 MB Node Runtime | ~45 MB Native Rust Engine | **Penghematan Memori 90%** |
 
@@ -73,4 +73,4 @@ build: {
 ---
 
 ## 5. Kesimpulan
-Migrasi *build pipeline* proyek NexedAI ke arsitektur **Vite & Rust Toolchain** memberikan akselerasi menyeluruh: siklus iterasi HMR menjadi sub-milidetik (<5ms), waktu *build* terpangkas dari puluhan detik menjadi 202 ms, serta verifikasi format dan linting selesai dalam 11 milidetik. Arsitektur ini siap digunakan untuk standar rekayasa perangkat lunak skala industri.
+Migrasi *build pipeline* proyek NexedAI ke arsitektur **Modern & Rust Toolchain (Vite & Biome)** memberikan akselerasi menyeluruh: siklus iterasi HMR menjadi sub-milidetik (<5ms), waktu *build* terpangkas dari 34,2 detik menjadi 1.450 ms (23,5x lebih cepat), serta verifikasi format dan linting selesai dalam 85 milidetik (80x lebih cepat). Arsitektur ini siap digunakan untuk standar rekayasa perangkat lunak skala industri.

@@ -249,7 +249,7 @@ export default function DynamicModulReaderPage() {
         </aside>
 
         {/* Right Main Column: Tab Contents */}
-        <main className="flex-1 flex flex-col gap-5 min-w-0" role="main">
+        <main className="flex-1 flex flex-col gap-5 min-w-0">
           {/* Navigation Tabs */}
           <div
             className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs flex gap-1.5"

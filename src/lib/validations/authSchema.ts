@@ -23,7 +23,7 @@ export const LoginInputSchema = z.object({
     .string()
     .min(6, "Kata sandi minimal 6 karakter")
     .max(100, "Kata sandi terlalu panjang"),
-  rememberMe: z.boolean(),
+  rememberMe: z.boolean().default(false).optional(),
 });
 
 export type LoginInput = z.infer<typeof LoginInputSchema>;
@@ -42,6 +42,8 @@ export const RegisterInputSchema = z
       .min(6, "Kata sandi minimal 6 karakter")
       .max(100, "Kata sandi terlalu panjang"),
     confirmPassword: z.string().min(6, "Konfirmasi kata sandi wajib diisi"),
+    semester: z.number().optional(),
+    prodi: z.string().optional(),
     terms: z.boolean().refine((val) => val === true, {
       message: "Anda harus menyetujui syarat & ketentuan",
     }),

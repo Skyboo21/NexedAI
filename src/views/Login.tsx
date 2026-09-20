@@ -142,10 +142,14 @@ export default function Login() {
         {/* Manual Login Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+            <label
+              htmlFor="login-email-input"
+              className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+            >
               Email Pengguna
             </label>
             <input
+              id="login-email-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -157,12 +161,16 @@ export default function Login() {
 
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+              <label
+                htmlFor="login-password-input"
+                className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              >
                 Kata Sandi
               </label>
               <span className="text-[11px] text-purple-400">Demo (Bebas)</span>
             </div>
             <input
+              id="login-password-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -11,7 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row font-['Outfit'] antialiased">
       <AppSidebar
-        role="admin"
+        userRole="admin"
         portalTitle="Portal Admin"
         portalSubtitle="Sistem Kontrol Akses Terpusat"
         userStatusTitle="Super Administrator"
@@ -24,9 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
 
       {/* Main Page Content */}
-      <main className="flex-1 min-w-0 bg-slate-50" role="main">
-        {children}
-      </main>
+      <main className="flex-1 min-w-0 bg-slate-50">{children}</main>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-name: CI/CD Quality Gate & Build Pipeline (Bab 8: Rust Toolchain)
+name: CI/CD Quality Gate & Production Build Pipeline
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   quality-gate:
-    name: Biome Lint, Type Safety & Vite Build Verification
+    name: Lint, Typecheck, Test Coverage & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -21,23 +21,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
-      - name: Biome Linter & Formatter Verification (Rust Toolchain)
-        run: npx @biomejs/biome check ./src
+      - name: Biome Linter & A11y Verification (Rust Toolchain)
+        run: npx @biomejs/biome check app src tests
 
       - name: Strict TypeScript Compilation Check
         run: npx tsc --noEmit
 
-      - name: Vite Optimized Production Build (Manual Chunks & Minification)
+      - name: Vitest Unit & Integration Tests (Coverage >= 80%)
+        run: npm run test:coverage
+
+      - name: Next.js Production Build Verification
         run: npm run build
 
-      - name: SonarQube Scan Static Analysis
+      - name: SonarQube / SonarCloud Static Analysis
         uses: sonarsource/sonarqube-scan-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        continue-on-error: true

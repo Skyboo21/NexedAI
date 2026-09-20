@@ -37,6 +37,7 @@
     "next-env.d.ts",
     "app/**/*",
     "src/**/*",
+    "tests/**/*",
     "middleware.ts",
     "next.config.mjs",
     ".next/types/**/*.ts"

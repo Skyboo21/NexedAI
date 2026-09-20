@@ -613,10 +613,14 @@ export default function NexedStudentLogModal({
                 {/* Jenis Tindakan & Textarea */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    <label
+                      htmlFor="intervention-type-select"
+                      className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1"
+                    >
                       Tipe Intervensi
                     </label>
                     <select
+                      id="intervention-type-select"
                       value={interventionType}
                       onChange={(e) =>
                         setInterventionType(
@@ -635,10 +639,14 @@ export default function NexedStudentLogModal({
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    <label
+                      htmlFor="intervention-message-input"
+                      className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1"
+                    >
                       Pesan atau Instruksi Intervensi
                     </label>
                     <textarea
+                      id="intervention-message-input"
                       rows={3}
                       value={interventionMessage}
                       onChange={(e) => setInterventionMessage(e.target.value)}

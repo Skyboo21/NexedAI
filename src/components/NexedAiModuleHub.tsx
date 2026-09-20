@@ -182,12 +182,35 @@ export default function NexedAiModuleHub() {
     }
   };
 
+  const triggerConfetti = () => {
+    if (typeof window !== "undefined") {
+      import("canvas-confetti").then((module) => {
+        const confetti = module.default;
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 },
+        });
+      });
+    }
+  };
+
   // Toggle roadmap item understood
   const toggleRoadmapStep = (stepNumber: number) => {
-    setRoadmapStatus((prev) => ({
-      ...prev,
-      [stepNumber]: !prev[stepNumber],
-    }));
+    setRoadmapStatus((prev) => {
+      const next = {
+        ...prev,
+        [stepNumber]: !prev[stepNumber],
+      };
+      if (analysisResult) {
+        const total = analysisResult.roadmap.length;
+        const understoodCount = Object.values(next).filter(Boolean).length;
+        if (understoodCount === total) {
+          triggerConfetti();
+        }
+      }
+      return next;
+    });
   };
 
   // Chat message send
@@ -818,9 +841,17 @@ export default function NexedAiModuleHub() {
                 {!isQuizChecked ? (
                   <button
                     type="button"
-                    disabled={Object.keys(userAnswers).length < analysisResult.quiz.length}
-                    onClick={() => setIsQuizChecked(true)}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all"
+                    onClick={() => {
+                      setIsQuizChecked(true);
+                      const correctCount = Object.entries(userAnswers).filter(
+                        ([qIdx, ansIdx]) =>
+                          analysisResult.quiz[Number(qIdx)]?.correctIndex === ansIdx,
+                      ).length;
+                      if (correctCount >= Math.ceil(analysisResult.quiz.length * 0.6)) {
+                        triggerConfetti();
+                      }
+                    }}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
                   >
                     Periksa Jawaban Kuis
                   </button>

@@ -33,13 +33,13 @@ export default function RegisterPage() {
     },
   });
 
-  const onSubmit = (data: RegisterInput) => {
+  const onSubmit = async (data: RegisterInput) => {
     setIsSubmitting(true);
     setRegisterError(null);
 
     try {
-      // Simpan akun ke database lokal dan inisialisasi sesi login
-      registerAccount({
+      // Simpan akun ke database server BFF dan inisialisasi sesi login aman
+      const result = await registerAccount({
         name: data.name.trim(),
         email: data.email.trim(),
         role: data.role,
@@ -49,6 +49,12 @@ export default function RegisterPage() {
         prodi: "D3 Teknik Informatika SV UNS",
       });
 
+      if (!result.success) {
+        setIsSubmitting(false);
+        setRegisterError(result.message || "Pendaftaran akun gagal.");
+        return;
+      }
+
       setSuccessMessage("Pendaftaran akun berhasil! Mengalihkan ke portal Anda...");
 
       setTimeout(() => {
@@ -57,7 +63,7 @@ export default function RegisterPage() {
         } else {
           router.push("/dashboard");
         }
-      }, 1000);
+      }, 800);
     } catch {
       setIsSubmitting(false);
       setRegisterError("Terjadi kesalahan saat memproses registrasi akun.");

@@ -9,8 +9,8 @@ interface LogoutButtonProps {
 export default function LogoutButton({ className }: LogoutButtonProps) {
   const { logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }

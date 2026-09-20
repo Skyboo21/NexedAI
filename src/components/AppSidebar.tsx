@@ -15,7 +15,7 @@ export interface NavItem {
 }
 
 interface AppSidebarProps {
-  role: "mahasiswa" | "dosen" | "admin";
+  userRole?: "mahasiswa" | "dosen" | "admin";
   portalTitle: string;
   portalSubtitle: string;
   userStatusTitle: string;
@@ -24,7 +24,7 @@ interface AppSidebarProps {
 }
 
 export default function AppSidebar({
-  role,
+  userRole = "mahasiswa",
   portalTitle,
   portalSubtitle,
   userStatusTitle,
@@ -35,7 +35,7 @@ export default function AppSidebar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getRoleBadgeColor = () => {
-    switch (role) {
+    switch (userRole) {
       case "dosen":
         return "text-indigo-700 bg-indigo-50 border-indigo-100";
       case "admin":
@@ -46,7 +46,7 @@ export default function AppSidebar({
   };
 
   const getLogoBadge = () => {
-    switch (role) {
+    switch (userRole) {
       case "admin":
         return "🛡️";
       default:
@@ -80,10 +80,11 @@ export default function AppSidebar({
 
       {/* Mobile Menu Dropdown Backdrop */}
       {mobileMenuOpen && (
-        <div
-          role="presentation"
+        <button
+          type="button"
+          aria-label="Tutup menu navigasi samping"
           onClick={() => setMobileMenuOpen(false)}
-          className="md:hidden fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-xs"
+          className="md:hidden fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-xs w-full h-full border-none cursor-default p-0 m-0"
         />
       )}
 
