@@ -48,20 +48,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3b. Redirect root '/' ke dashboard peran aktif atau ke /login jika belum ada sesi
-  if (pathname === '/') {
-    if (role === 'dosen') {
-      url.pathname = '/dosen-dashboard';
-    } else if (role === 'admin') {
-      url.pathname = '/admin-dashboard';
-    } else if (role === 'mahasiswa') {
-      url.pathname = '/dashboard';
-    } else {
-      url.pathname = '/login';
-    }
-    return NextResponse.redirect(url);
-  }
-
   // 4. Role-Based Access Control (RBAC) Guard - Isolasi Ketat
   if (role === 'mahasiswa') {
     // Mahasiswa dilarang mengakses area Dosen atau Admin -> kembalikan ke /dashboard
