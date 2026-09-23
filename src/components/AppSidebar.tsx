@@ -141,13 +141,14 @@ export default function AppSidebar({
           {/* Navigation Links */}
           <nav aria-label="Menu Utama" className="space-y-1.5 pt-1">
             {navItems.map((item) => {
+              const currentPath = pathname || "";
               const isActive = item.href.includes("#")
                 ? false
                 : item.href === "/dashboard" ||
                     item.href === "/dosen-dashboard" ||
                     item.href === "/admin-dashboard"
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
+                  ? currentPath === item.href
+                  : currentPath.startsWith(item.href);
 
               return (
                 <Link

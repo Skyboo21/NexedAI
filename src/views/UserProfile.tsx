@@ -105,9 +105,36 @@ export default function UserProfile() {
 
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
-              Terdaftar Dalam Sistem Sejak
+              {activeUser.role === "dosen"
+                ? "Nomor Induk Pegawai (NIP)"
+                : activeUser.role === "admin"
+                  ? "ID Administrator"
+                  : "Nomor Induk Mahasiswa (NIM)"}
             </div>
-            <div className="text-slate-800 font-bold text-xs">14 September 2026</div>
+            <div className="text-slate-800 font-bold text-xs">
+              {activeUser.nimOrNip ||
+                (activeUser.role === "admin"
+                  ? "ADM-001"
+                  : activeUser.role === "dosen"
+                    ? "198504122010121003"
+                    : "M3124001")}
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
+              Program Studi / Unit
+            </div>
+            <div className="text-slate-800 font-bold text-xs">
+              {activeUser.prodi || "D3 Teknik Informatika SV UNS"}
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
+              Hak Akses Portal
+            </div>
+            <div className="text-indigo-700 font-bold text-xs">{roleLabel}</div>
           </div>
         </div>
 
