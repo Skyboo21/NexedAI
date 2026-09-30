@@ -117,6 +117,10 @@ const BADGES_LIST: BadgeItem[] = [
   },
 ];
 
+function formatXp(xp: number): string {
+  return xp.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 export default function NexedLeaderboard() {
   const [activeTab, setActiveTab] = useState<"leaderboard" | "badges">("leaderboard");
 
@@ -247,8 +251,11 @@ export default function NexedLeaderboard() {
                   <td className="py-3.5 px-4 text-center font-bold text-indigo-700">
                     🎖️ {entry.badgesCount}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-black text-indigo-600">
-                    {entry.xp.toLocaleString()} XP
+                  <td
+                    suppressHydrationWarning
+                    className="py-3.5 px-4 text-right font-black text-indigo-600"
+                  >
+                    {`${formatXp(entry.xp)} XP`}
                   </td>
                 </tr>
               ))}

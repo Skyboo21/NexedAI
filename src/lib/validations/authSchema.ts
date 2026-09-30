@@ -23,7 +23,7 @@ export const LoginInputSchema = z.object({
     .string()
     .min(6, "Kata sandi minimal 6 karakter")
     .max(100, "Kata sandi terlalu panjang"),
-  rememberMe: z.boolean().default(false).optional(),
+  rememberMe: z.any().optional(),
 });
 
 export type LoginInput = z.infer<typeof LoginInputSchema>;

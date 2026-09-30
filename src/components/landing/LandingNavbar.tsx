@@ -8,9 +8,11 @@ import { useAuthStore } from "../../store/authStore";
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, role } = useAuthStore();
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -90,7 +92,7 @@ export function LandingNavbar() {
 
           {/* Right Action CTA Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            {user ? (
+            {mounted && user ? (
               <Link
                 href={getDashboardHref()}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5"
@@ -189,7 +191,7 @@ export function LandingNavbar() {
             </Link>
           </nav>
           <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-            {user ? (
+            {mounted && user ? (
               <Link
                 href={getDashboardHref()}
                 className="w-full text-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700"

@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import ModuleRagChat from "../../../../src/components/ModuleRagChat";
 import { LEARNING_TOPICS, type LearningTopic } from "../../../../src/data/learningTopics";
 import { fetchAIExplanationApi } from "../../../../src/services/apiService";
 
@@ -24,7 +25,7 @@ export default function DynamicModulReaderPage() {
   const currentTopic: LearningTopic =
     LEARNING_TOPICS.find((t) => t.id === topicId) ?? (LEARNING_TOPICS[0] as LearningTopic);
 
-  const [activeTab, setActiveTab] = useState<"materi" | "ai" | "kuis">("materi");
+  const [activeTab, setActiveTab] = useState<"materi" | "rag" | "ai" | "kuis">("materi");
   const [completedTopicIds, setCompletedTopicIds] = useState<number[]>([]);
 
   // Code runner & copy state
@@ -271,6 +272,19 @@ export default function DynamicModulReaderPage() {
             <button
               type="button"
               role="tab"
+              aria-selected={activeTab === "rag"}
+              onClick={() => setActiveTab("rag")}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "rag"
+                  ? "bg-sky-600 text-white shadow-xs"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              🔬 Asisten RAG Modul
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeTab === "ai"}
               onClick={() => setActiveTab("ai")}
               className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -382,7 +396,15 @@ export default function DynamicModulReaderPage() {
             </div>
           )}
 
-          {/* TAB 2: AI TUTOR */}
+          {/* TAB 2: RAG ASSISTANT */}
+          {activeTab === "rag" && (
+            <ModuleRagChat
+              defaultModuleId={`modul-${currentTopic.id}`}
+              defaultModuleName={currentTopic.title}
+            />
+          )}
+
+          {/* TAB 3: AI TUTOR */}
           {activeTab === "ai" && (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col h-[600px] overflow-hidden">
               <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">

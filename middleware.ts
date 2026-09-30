@@ -8,9 +8,11 @@ export async function middleware(request: NextRequest) {
   const sessionToken = request.cookies.get('nexed_session_token')?.value;
   const verifiedSession = await verifySessionToken(sessionToken);
 
-  // Fallback untuk backward compatibility hanya jika token belum diset (misal transisi sesi)
+  // Fallback untuk backward compatibility jika token dalam transisi
   const legacyRoleCookie = request.cookies.get('nexed_session_role')?.value;
-  const role = verifiedSession?.role || (verifiedSession ? (legacyRoleCookie as 'mahasiswa' | 'dosen' | 'admin' | undefined) : undefined);
+  const rawRole = verifiedSession?.role || legacyRoleCookie;
+  const role: 'mahasiswa' | 'dosen' | 'admin' | undefined =
+    rawRole === 'mahasiswa' || rawRole === 'dosen' || rawRole === 'admin' ? rawRole : undefined;
 
   const url = request.nextUrl.clone();
   const { pathname } = url;

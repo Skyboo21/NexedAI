@@ -3,13 +3,45 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import NexedAiModuleHub from "../components/NexedAiModuleHub";
+import NexedAiModuleHub, { type AnalyzedModuleResult } from "../components/NexedAiModuleHub";
 import { LEARNING_TOPICS, type LearningTopic } from "../data/learningTopics";
 
 export default function ModulCatalogueView() {
   const [completedIds, setCompletedIds] = useState<number[]>([1, 2]);
   const [filter, setFilter] = useState<"all" | "completed" | "recommended" | "locked">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadedModules, setUploadedModules] = useState<
+    Array<{
+      id: string;
+      title: string;
+      filename: string;
+      chunkCount: number;
+      totalWords: number;
+      uploadedAt: string;
+      rawText: string;
+      analyzedResult?: AnalyzedModuleResult | null;
+    }>
+  >([]);
+
+  const loadUploadedModules = () => {
+    try {
+      const saved = localStorage.getItem("nexed_uploaded_modules");
+      if (saved) {
+        setUploadedModules(JSON.parse(saved));
+      } else {
+        setUploadedModules([]);
+      }
+    } catch {
+      // safe fallback
+    }
+  };
+
+  useEffect(() => {
+    loadUploadedModules();
+    const handleUpdate = () => loadUploadedModules();
+    window.addEventListener("nexed_modules_updated", handleUpdate);
+    return () => window.removeEventListener("nexed_modules_updated", handleUpdate);
+  }, []);
 
   useEffect(() => {
     try {
@@ -76,6 +108,91 @@ export default function ModulCatalogueView() {
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* FITUR UTAMA 1: LIVE AI MODULE STUDY HUB (UPLOAD & ADAPTIVE ASSISTANT) */}
         <NexedAiModuleHub />
+
+        {/* FITUR 1.5: DOKUMEN MODUL PRIBADI MAHASISWA */}
+        {uploadedModules.length > 0 && (
+          <div className="space-y-4 pt-4 border-t border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full mb-1 inline-block">
+                  Arsip Dokumen Kuliah Anda
+                </span>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  Modul Pribadi yang Pernah Diunggah ({uploadedModules.length})
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadedModules([]);
+                  localStorage.removeItem("nexed_uploaded_modules");
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new Event("nexed_modules_updated"));
+                  }
+                }}
+                className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 text-xs font-semibold transition-all border border-slate-200 hover:border-rose-200 flex items-center gap-1.5 cursor-pointer"
+                title="Hapus seluruh riwayat modul yang diunggah"
+              >
+                <span>🗑️</span>
+                <span>Bersihkan Riwayat Modul</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {uploadedModules.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-indigo-300 hover:shadow-sm transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md uppercase">
+                        📄 {item.filename.split(".").pop() || "DOC"}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {item.uploadedAt}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-extrabold text-slate-900 line-clamp-1 mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mb-3 truncate">
+                      {item.filename} &bull; {item.chunkCount} chunk ({item.totalWords} kata)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                        const evt = new CustomEvent("nexed_load_module", { detail: item });
+                        window.dispatchEvent(evt);
+                      }}
+                      className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🚀</span>
+                      <span>Pelajari Sekarang</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = uploadedModules.filter((m) => m.id !== item.id);
+                        setUploadedModules(next);
+                        localStorage.setItem("nexed_uploaded_modules", JSON.stringify(next));
+                      }}
+                      className="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Hapus modul dari daftar"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* FITUR 2: MODUL KURIKULUM RESMI */}
         <div className="space-y-6 pt-4 border-t border-slate-200/80">

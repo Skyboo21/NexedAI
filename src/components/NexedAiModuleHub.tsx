@@ -3,6 +3,7 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import ModuleRagChat from "./ModuleRagChat";
 
 export interface AnalyzedModuleResult {
   title: string;
@@ -13,9 +14,11 @@ export interface AnalyzedModuleResult {
   xpReward: number;
   summary: {
     overview: string;
+    keyTakeaways?: string[];
     keyPoints: Array<{
       term: string;
       definition: string;
+      category?: string;
     }>;
     proTips: string;
     breakdownTime: {
@@ -31,6 +34,10 @@ export interface AnalyzedModuleResult {
     description: string;
     actionItem: string;
     understood: boolean;
+    keyConcepts?: string[];
+    detailedGuide?: string;
+    practiceScenario?: string;
+    checkQuestion?: string;
   }>;
   quiz: Array<{
     id: number;
@@ -50,8 +57,199 @@ const ANALYSIS_STEPS = [
   { percent: 100, label: "Menghasilkan ringkasan dan kuis latihan aktif...", icon: "✨" },
 ];
 
+function CodeBlockSnippet({ code, language }: { code: string; language: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  };
+
+  return (
+    <div className="my-2.5 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 text-slate-100 shadow-sm">
+      <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-900 border-b border-slate-800/80 text-[10px]">
+        <span className="font-mono font-bold tracking-wider text-slate-400 uppercase">
+          {language || "CODE"}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800/70 hover:bg-slate-700 transition-colors"
+        >
+          {copied ? (
+            <>
+              <span className="text-emerald-400">✓</span>
+              <span className="text-emerald-400 font-bold">Tersalin!</span>
+            </>
+          ) : (
+            <>
+              <span>📋</span>
+              <span>Salin Kode</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-3.5 text-[11px] font-mono leading-relaxed overflow-x-auto text-indigo-200">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function renderInlineFormatted(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*|`[^`]+`)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
+      return (
+        <strong key={`b-${idx}`} className="font-bold text-slate-900">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length >= 2) {
+      return (
+        <code
+          key={`c-${idx}`}
+          className="px-1.5 py-0.5 rounded bg-slate-100 text-indigo-700 font-mono text-[11px] font-semibold border border-slate-200/80"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function ChatMessageContent({ text, isUser }: { text: string; isUser: boolean }) {
+  if (isUser) {
+    return <span className="whitespace-pre-wrap">{text}</span>;
+  }
+
+  const codeBlockRegex = /(```[\s\S]*?```|'''[\s\S]*?''')/g;
+  const sections = text.split(codeBlockRegex);
+
+  return (
+    <div className="space-y-2 text-xs leading-relaxed">
+      {sections.map((section, sIdx) => {
+        if (!section) return null;
+
+        if (
+          (section.startsWith("```") && section.endsWith("```")) ||
+          (section.startsWith("'''") && section.endsWith("'''"))
+        ) {
+          const lines = section.slice(3, -3).trim().split("\n");
+          let lang = "code";
+          let codeLines = lines;
+          const firstLine = lines[0]?.trim();
+          if (firstLine && /^[a-zA-Z0-9_-]+$/.test(firstLine)) {
+            lang = firstLine;
+            codeLines = lines.slice(1);
+          }
+          return (
+            <CodeBlockSnippet
+              key={`cb-${sIdx}`}
+              language={lang}
+              code={codeLines.join("\n")}
+            />
+          );
+        }
+
+        const rawLines = section.split("\n");
+        const renderedElements: React.ReactNode[] = [];
+        let listItems: { type: "bullet" | "number"; num?: string; text: string }[] = [];
+
+        const flushList = (keyPrefix: string) => {
+          if (listItems.length === 0) return;
+          const currentList = [...listItems];
+          listItems = [];
+          renderedElements.push(
+            <ul key={`${keyPrefix}-list`} className="space-y-1 my-1 pl-1">
+              {currentList.map((item, lIdx) => (
+                <li key={`li-${lIdx}`} className="flex items-start gap-2 text-slate-700">
+                  {item.type === "bullet" ? (
+                    <span className="text-indigo-600 font-bold select-none text-xs leading-5">
+                      •
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 rounded px-1.5 py-0.2 select-none min-w-[18px] text-center mt-0.5">
+                      {item.num}
+                    </span>
+                  )}
+                  <span className="flex-1 leading-relaxed">
+                    {renderInlineFormatted(item.text)}
+                  </span>
+                </li>
+              ))}
+            </ul>,
+          );
+        };
+
+        for (let i = 0; i < rawLines.length; i++) {
+          const rawLine = rawLines[i];
+          if (!rawLine) {
+            flushList(`gap-${i}`);
+            continue;
+          }
+          const line = rawLine.trim();
+          if (!line) {
+            flushList(`gap-${i}`);
+            continue;
+          }
+
+          if (/^#{1,4}\s+/.test(line)) {
+            flushList(`h-${i}`);
+            const headingText = line.replace(/^#{1,4}\s+/, "");
+            renderedElements.push(
+              <div
+                key={`h-${i}`}
+                className="font-bold text-slate-900 text-xs sm:text-sm mt-3 mb-1 flex items-center gap-1.5"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block" />
+                <span>{renderInlineFormatted(headingText)}</span>
+              </div>,
+            );
+            continue;
+          }
+
+          if (/^[-*•]\s+/.test(line)) {
+            listItems.push({
+              type: "bullet",
+              text: line.replace(/^[-*•]\s+/, ""),
+            });
+            continue;
+          }
+
+          const numMatch = line.match(/^(\d+)\.\s+(.*)/);
+          if (numMatch?.[1] && numMatch[2] !== undefined) {
+            listItems.push({
+              type: "number",
+              num: numMatch[1],
+              text: numMatch[2],
+            });
+            continue;
+          }
+
+          flushList(`p-${i}`);
+          renderedElements.push(
+            <p key={`p-${i}`} className="text-slate-700 leading-relaxed">
+              {renderInlineFormatted(line)}
+            </p>,
+          );
+        }
+
+        flushList(`final-${sIdx}`);
+        return <div key={`sec-${sIdx}`}>{renderedElements}</div>;
+      })}
+    </div>
+  );
+}
+
 export default function NexedAiModuleHub() {
-  const [inputMode, setInputMode] = useState<"file" | "text">("file");
+  const [inputMode, setInputMode] = useState<"file" | "text" | "rag">("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [textInput, setTextInput] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -72,6 +270,7 @@ export default function NexedAiModuleHub() {
 
   // Roadmap understanding state
   const [roadmapStatus, setRoadmapStatus] = useState<Record<number, boolean>>({});
+  const [expandedRoadmapStep, setExpandedRoadmapStep] = useState<number | null>(1);
 
   // Chat tutor state
   const [chatMessages, setChatMessages] = useState<
@@ -79,38 +278,269 @@ export default function NexedAiModuleHub() {
   >([]);
   const [chatPrompt, setChatPrompt] = useState("");
   const [isAiReplying, setIsAiReplying] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // File drop handlers
+  // File drop and upload handlers
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [uploadDocError, setUploadDocError] = useState<string | null>(null);
+  const [uploadedDocMeta, setUploadedDocMeta] = useState<{
+    chunkCount: number;
+    totalWords: number;
+    rawText: string;
+  } | null>(null);
+
+  const processAndUploadFile = async (file: File) => {
+    setSelectedFile(file);
+    setUploadDocError(null);
+    setUploadedDocMeta(null);
+
+    const validExtensions = [
+      ".pdf",
+      ".txt",
+      ".md",
+      ".docx",
+      ".doc",
+      ".pptx",
+      ".ppt",
+      ".odt",
+      ".rtf",
+      ".sql",
+      ".py",
+      ".java",
+      ".cpp",
+      ".c",
+      ".js",
+      ".ts",
+      ".html",
+      ".css",
+      ".json",
+      ".csv",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".webp",
+      ".xlsx",
+      ".xls",
+      ".zip",
+    ];
+    const ext = `.${file.name.split(".").pop()?.toLowerCase()}`;
+    if (file.name.includes(".") && !validExtensions.includes(ext)) {
+      setUploadDocError(
+        "Format file tidak didukung. Harap unggah file dokumen atau materi pemrograman (.pdf, .docx, .txt, .md, .sql, .py, dll).",
+      );
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadDocError("Ukuran file terlalu besar. Maksimal ukuran file adalah 25MB.");
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    let extractedContent = "";
+    let chunkCount = 1;
+    let totalWords = 0;
+
+    let serverAnalyzedResult: AnalyzedModuleResult | null = null;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append(
+        "moduleId",
+        file.name
+          .replace(/\.[^/.]+$/, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9-_]/g, "-"),
+      );
+
+      const res = await fetch("/api/modul/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        extractedContent = data.rawText || data.message || file.name;
+        chunkCount = data.chunkCount || 1;
+        totalWords = data.totalWords || 0;
+        if (data.analyzedResult) {
+          serverAnalyzedResult = data.analyzedResult;
+        }
+      } else {
+        throw new Error(data.error || "Gagal memproses dokumen di server.");
+      }
+    } catch (err: unknown) {
+      console.warn("Server upload warning, attempting client-side extraction fallback:", err);
+      // Fallback sisi client agar alur belajar mahasiswa tidak pernah terhenti
+      try {
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+          const clientText = await file.text();
+          if (clientText && clientText.trim().length > 15) {
+            extractedContent = clientText;
+          }
+        }
+      } catch {
+        // Abaikan kegagalan file.text()
+      }
+
+      if (!extractedContent || extractedContent.trim().length < 20) {
+        const prettyTitle = file.name
+          .replace(/\.[^/.]+$/, "")
+          .replace(/[-_]/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        extractedContent = `Modul Pembelajaran Mandiri: ${prettyTitle}
+
+Topik Kajian: Materi studi komprehensif, ringkasan konsep inti, dan panduan latihan terstruktur untuk ${prettyTitle}.
+
+Silabus & Fokus Pembahasan:
+1. Konseptual & Landasan Teori: Pemahaman dasar arsitektur dan prinsip kerja utama ${prettyTitle}.
+2. Praktik Implementasi: Penulisan kode, pemecahan masalah (problem solving), dan metodologi efektif.
+3. Analisis Studi Kasus: Penanganan kasus nyata (real-world scenarios) dan optimasi efisiensi.
+4. Active Recall & Uji Kompetensi: Evaluasi pemahaman mandiri melalui kuis interaktif dan pendampingan tutor AI.`;
+      }
+
+      totalWords = extractedContent.split(/\s+/).length;
+      chunkCount = Math.max(1, Math.ceil(totalWords / 450));
+    } finally {
+      setIsUploadingDoc(false);
+    }
+
+    setUploadedDocMeta({
+      chunkCount,
+      totalWords,
+      rawText: extractedContent,
+    });
+
+    // Simpan ke riwayat modul lokal agar muncul di katalog bersama hasil analisis AI
+    try {
+      const stored = JSON.parse(localStorage.getItem("nexed_uploaded_modules") || "[]");
+      const newEntry = {
+        id: file.name
+          .replace(/\.[^/.]+$/, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9-_]/g, "-"),
+        title:
+          serverAnalyzedResult?.title || file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+        filename: file.name,
+        chunkCount,
+        totalWords,
+        uploadedAt: new Date().toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        rawText: extractedContent,
+        analyzedResult: serverAnalyzedResult,
+      };
+      const updated = [
+        newEntry,
+        ...stored.filter((m: { filename: string }) => m.filename !== file.name),
+      ];
+      localStorage.setItem("nexed_uploaded_modules", JSON.stringify(updated));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("nexed_modules_updated"));
+      }
+    } catch {
+      // safe fallback
+    }
+
+    // Langsung eksekusi analisis AI agar modul segera terbuka
+    handleStartAnalysis(undefined, file, extractedContent, serverAnalyzedResult);
+  };
+
+  // Dengarkan event nexed_load_module dari katalog modul
+  useEffect(() => {
+    const handleLoadModule = (e: Event) => {
+      const customEvt = e as CustomEvent<{
+        filename: string;
+        rawText: string;
+        chunkCount: number;
+        totalWords: number;
+        analyzedResult?: AnalyzedModuleResult | null;
+      }>;
+      if (customEvt.detail) {
+        const item = customEvt.detail;
+        setInputMode("file");
+        const dummyFile = new File([item.rawText || ""], item.filename, { type: "text/plain" });
+        setSelectedFile(dummyFile);
+        setUploadedDocMeta({
+          chunkCount: item.chunkCount,
+          totalWords: item.totalWords,
+          rawText: item.rawText || "",
+        });
+        if (item.analyzedResult) {
+          setAnalyzedResult(item.analyzedResult);
+          setIsAnalyzing(false);
+          const initialRoadmap: Record<number, boolean> = {};
+          for (const stepItem of item.analyzedResult.roadmap) {
+            initialRoadmap[stepItem.step] = false;
+          }
+          setRoadmapStatus(initialRoadmap);
+          setChatMessages([
+            {
+              id: "init",
+              sender: "ai",
+              text: `Halo! Saya Nexed AI Tutor. Materi **"${item.analyzedResult.title}"** telah dimuat dari arsip Anda. Silakan tanyakan hal apa pun seputar modul ini!`,
+            },
+          ]);
+        } else {
+          handleStartAnalysis(undefined, dummyFile, item.rawText || "", null);
+        }
+      }
+    };
+    window.addEventListener("nexed_load_module", handleLoadModule);
+    return () => window.removeEventListener("nexed_load_module", handleLoadModule);
+  }, []);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = "copy";
+    }
     setIsDragging(true);
   };
-  const handleDragLeave = () => setIsDragging(false);
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files?.[0]) {
-      const file = e.dataTransfer.files[0];
-      setSelectedFile(file);
+      processAndUploadFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setSelectedFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (file) {
+      processAndUploadFile(file);
     }
   };
 
   // Start AI Analysis Process
-  const handleStartAnalysis = (presetKey?: string) => {
+  const handleStartAnalysis = (
+    presetKey?: string,
+    fileOverride?: File,
+    contentOverride?: string,
+    resultOverride?: AnalyzedModuleResult | null,
+  ) => {
+    const activeFile = fileOverride || selectedFile;
     setIsAnalyzing(true);
     setCurrentStepIndex(0);
     setAnalyzedResult(null);
     setIsQuizChecked(false);
     setUserAnswers({});
 
-    const executeAnalysis = (content: string) => {
+    const executeAnalysis = (content: string, specificResult?: AnalyzedModuleResult | null) => {
       let step = 0;
       const interval = setInterval(() => {
         step += 1;
@@ -128,19 +558,23 @@ export default function NexedAiModuleHub() {
               derivedTitle = "Perancangan Basis Data Relasional & Optimasi Kueri SQL";
             } else if (presetKey === "oop_clean") {
               derivedTitle = "Pemrograman Berorientasi Objek (OOP) & Arsitektur Bersih";
-            } else if (selectedFile) {
-              derivedTitle = selectedFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+            } else if (activeFile) {
+              derivedTitle = activeFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
             } else if (textInput.trim()) {
               derivedTitle =
                 textInput.split("\n")[0]?.substring(0, 60) || "Modul Pembelajaran Mandiri";
             }
 
-            const chosenData = analyzeModuleContent({
-              title: derivedTitle,
-              content,
-              fileName: selectedFile?.name,
-              sourceType: selectedFile ? "file" : "text",
-            });
+            const chosenData =
+              specificResult ||
+              resultOverride ||
+              analyzeModuleContent({
+                title: derivedTitle,
+                content,
+                fileName: activeFile?.name,
+                sourceType: activeFile ? "file" : "text",
+                presetKey,
+              });
 
             setAnalyzedResult(chosenData);
             const initialRoadmap: Record<number, boolean> = {};
@@ -163,22 +597,84 @@ export default function NexedAiModuleHub() {
       }, 600);
     };
 
-    // Read content from file if uploaded
-    if (
-      selectedFile &&
-      (selectedFile.type.includes("text") ||
-        selectedFile.name.endsWith(".txt") ||
-        selectedFile.name.endsWith(".md"))
-    ) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = (e.target?.result as string) || selectedFile.name;
-        executeAnalysis(text);
-      };
-      reader.onerror = () => executeAnalysis(selectedFile.name);
-      reader.readAsText(selectedFile);
+    if (contentOverride) {
+      if (resultOverride) {
+        executeAnalysis(contentOverride, resultOverride);
+      } else {
+        fetch("/api/modul/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: contentOverride,
+            fileName: activeFile?.name,
+            title: activeFile?.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            executeAnalysis(contentOverride, data.analyzedResult || null);
+          })
+          .catch(() => {
+            executeAnalysis(contentOverride, null);
+          });
+      }
+    } else if (activeFile) {
+      if (uploadedDocMeta?.rawText) {
+        if (resultOverride) {
+          executeAnalysis(uploadedDocMeta.rawText, resultOverride);
+        } else {
+          fetch("/api/modul/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: uploadedDocMeta.rawText,
+              fileName: activeFile.name,
+              title: activeFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              executeAnalysis(uploadedDocMeta.rawText, data.analyzedResult || null);
+            })
+            .catch(() => {
+              executeAnalysis(uploadedDocMeta.rawText, null);
+            });
+        }
+      } else {
+        const formData = new FormData();
+        formData.append("file", activeFile);
+        formData.append(
+          "moduleId",
+          activeFile.name
+            .replace(/\.[^/.]+$/, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9-_]/g, "-"),
+        );
+        fetch("/api/modul/upload", { method: "POST", body: formData })
+          .then((res) => res.json())
+          .then((data) => {
+            const content = data.rawText || data.message || activeFile.name;
+            executeAnalysis(content, data.analyzedResult || null);
+          })
+          .catch(() => {
+            executeAnalysis(activeFile.name);
+          });
+      }
+    } else if (textInput.trim()) {
+      fetch("/api/modul/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: textInput }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          executeAnalysis(textInput, data.analyzedResult || null);
+        })
+        .catch(() => {
+          executeAnalysis(textInput);
+        });
     } else {
-      executeAnalysis(textInput || selectedFile?.name || presetKey || "");
+      executeAnalysis(presetKey || "");
     }
   };
 
@@ -213,8 +709,21 @@ export default function NexedAiModuleHub() {
     });
   };
 
+  const toggleExpandRoadmapStep = (stepNumber: number) => {
+    setExpandedRoadmapStep((prev) => (prev === stepNumber ? null : stepNumber));
+  };
+
+  const handleAskAboutStep = (stepItem: AnalyzedModuleResult["roadmap"][0]) => {
+    setActiveResultTab("chat");
+    setTimeout(() => {
+      handleSendChat(
+        `Tolong jelaskan secara mendalam mengenai materi ${stepItem.stage}: "${stepItem.title}". Berikan konsep penting dan contoh penerapannya!`,
+      );
+    }, 150);
+  };
+
   // Chat message send
-  const handleSendChat = (presetText?: string) => {
+  const handleSendChat = async (presetText?: string) => {
     const textToSend = presetText || chatPrompt;
     if (!textToSend.trim() || isAiReplying || !analysisResult) return;
 
@@ -223,23 +732,60 @@ export default function NexedAiModuleHub() {
     if (!presetText) setChatPrompt("");
     setIsAiReplying(true);
 
-    setTimeout(() => {
-      const botAnswer = generateChatResponse({
-        moduleTitle: analysisResult.title,
-        userQuestion: textToSend,
+    try {
+      const res = await fetch("/api/modul/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: textToSend,
+          moduleTitle: analysisResult.title,
+          moduleOverview: analysisResult.summary?.overview,
+          keyPoints: analysisResult.summary?.keyPoints,
+          quizContext: analysisResult.quiz,
+          contentSample: uploadedDocMeta?.rawText
+            ? uploadedDocMeta.rawText.slice(0, 2000)
+            : textInput
+              ? textInput.slice(0, 2000)
+              : undefined,
+        }),
       });
 
-      setChatMessages((prev) => [
-        ...prev,
-        { id: (Date.now() + 1).toString(), sender: "ai", text: botAnswer },
-      ]);
-      setIsAiReplying(false);
-    }, 600);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.reply) {
+          setChatMessages((prev) => [
+            ...prev,
+            { id: (Date.now() + 1).toString(), sender: "ai", text: data.reply },
+          ]);
+          setIsAiReplying(false);
+          return;
+        }
+      }
+    } catch {
+      // Offline / network fallback
+    }
+
+    const botAnswer = generateChatResponse({
+      moduleTitle: analysisResult.title,
+      userQuestion: textToSend,
+      moduleOverview: analysisResult.summary?.overview,
+      keyPoints: analysisResult.summary?.keyPoints,
+      quizContext: analysisResult.quiz,
+    });
+
+    setChatMessages((prev) => [
+      ...prev,
+      { id: (Date.now() + 1).toString(), sender: "ai", text: botAnswer },
+    ]);
+    setIsAiReplying(false);
   };
 
   useEffect(() => {
-    if (activeResultTab === "chat") {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (activeResultTab === "chat" && chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [chatMessages, isAiReplying, activeResultTab]);
 
@@ -275,12 +821,19 @@ export default function NexedAiModuleHub() {
             onClick={() => {
               setAnalyzedResult(null);
               setSelectedFile(null);
+              setUploadedDocMeta(null);
+              setUploadDocError(null);
               setTextInput("");
+              setIsAnalyzing(false);
+              setIsUploadingDoc(false);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+              }
             }}
-            className="self-start md:self-auto px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all border border-slate-200 flex items-center gap-1.5"
+            className="self-start md:self-auto px-4 py-2 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold transition-all border border-slate-200 hover:border-indigo-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <span>🔄</span>
-            <span>Unggah Materi Baru</span>
+            <span>Ganti / Unggah Modul Baru</span>
           </button>
         )}
       </div>
@@ -330,11 +883,11 @@ export default function NexedAiModuleHub() {
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex gap-2 border-b border-slate-200">
+          <div className="flex gap-2 border-b border-slate-200 overflow-x-auto">
             <button
               type="button"
               onClick={() => setInputMode("file")}
-              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 ${
+              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                 inputMode === "file"
                   ? "border-indigo-600 text-indigo-600"
                   : "border-transparent text-slate-500 hover:text-slate-900"
@@ -345,7 +898,7 @@ export default function NexedAiModuleHub() {
             <button
               type="button"
               onClick={() => setInputMode("text")}
-              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 ${
+              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                 inputMode === "text"
                   ? "border-indigo-600 text-indigo-600"
                   : "border-transparent text-slate-500 hover:text-slate-900"
@@ -353,71 +906,176 @@ export default function NexedAiModuleHub() {
             >
               📝 Tempel Teks Modul / Topik Cepat
             </button>
+            <button
+              type="button"
+              onClick={() => setInputMode("rag")}
+              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
+                inputMode === "rag"
+                  ? "border-sky-600 text-sky-600 font-extrabold"
+                  : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              🔬 Strict RAG Engine (Groq Llama 3.3)
+            </button>
           </div>
 
           {/* Mode 1: Dropzone File */}
           {inputMode === "file" && (
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
-                isDragging
-                  ? "border-indigo-500 bg-indigo-50/60 scale-[1.01]"
-                  : selectedFile
-                    ? "border-emerald-400 bg-emerald-50/30"
-                    : "border-slate-300 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-400"
-              }`}
-            >
+            <div className="space-y-3">
+              {/* Input file tunggal permanen - tidak pernah di-unmount agar stream file blob di memori browser tidak terputus */}
               <input
+                ref={fileInputRef}
                 id="nexed-file-upload-input"
                 type="file"
-                accept=".pdf,.txt,.docx,.doc,.md"
+                accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md,.rtf,.odt,.sql,.py,.java,.cpp,.c,.js,.ts,.html,.css,.json,.csv,.xlsx,.xls,.zip"
+                onClick={(e) => {
+                  (e.currentTarget as HTMLInputElement).value = "";
+                }}
                 onChange={handleFileInputChange}
-                className="hidden"
+                className="sr-only"
+                tabIndex={-1}
+                aria-label="Pilih dokumen modul dari komputer"
               />
-              <label
-                htmlFor="nexed-file-upload-input"
-                className="cursor-pointer flex flex-col items-center justify-center space-y-3"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl shadow-xs">
-                  {selectedFile ? "📄" : "☁️"}
-                </div>
 
-                {selectedFile ? (
-                  <div className="space-y-1">
-                    <span className="text-sm font-extrabold text-slate-900 block">
-                      {selectedFile.name}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      Ukuran: {(selectedFile.size / 1024).toFixed(1)} KB • Siap diproses AI
-                    </span>
+              {!selectedFile ? (
+                <label
+                  htmlFor="nexed-file-upload-input"
+                  aria-label="Area unggah dokumen modul"
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`relative block w-full border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer select-none ${
+                    isDragging
+                      ? "border-indigo-500 bg-indigo-50/60 scale-[1.01]"
+                      : "border-slate-300 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-400"
+                  }`}
+                >
+                  <div className="w-full flex flex-col items-center justify-center space-y-3 py-4 pointer-events-none">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-indigo-100 text-indigo-600">
+                      ☁️
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-sm font-bold text-slate-800 block">
+                        Tarik & jatuhkan file modul di sini, atau
+                      </span>
+                      <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all">
+                        <span>📂</span>
+                        <span>Pilih Dokumen dari Komputer</span>
+                      </span>
+                      <span className="text-xs text-slate-400 block pt-1">
+                        Mendukung PDF, Word (DOCX), PPT, TXT, Markdown, atau Berkas Kode (Maks. 25
+                        MB)
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-1">
-                    <span className="text-sm font-bold text-slate-800 block">
-                      Tarik & jatuhkan file modul di sini, atau{" "}
-                      <span className="text-indigo-600 underline">pilih dari perangkat</span>
-                    </span>
-                    <span className="text-xs text-slate-400 block">
-                      Mendukung format PDF, TXT, DOCX, atau Markdown (Maks. 25 MB)
-                    </span>
-                  </div>
-                )}
-              </label>
+                </label>
+              ) : (
+                <section
+                  aria-label="Area unggah dokumen modul"
+                  className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-8 text-center transition-all outline-none ${
+                    uploadDocError
+                      ? "border-rose-400 bg-rose-50/40"
+                      : "border-emerald-500/70 bg-emerald-50/40 hover:border-emerald-600"
+                  }`}
+                >
+                  {isUploadingDoc ? (
+                    <div className="flex flex-col items-center justify-center space-y-3 py-4 pointer-events-none">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-indigo-100 text-indigo-600">
+                        <span className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-sm font-extrabold text-indigo-700 block">
+                          Sedang Mengunggah & Mengekstrak Dokumen...
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center space-y-3 py-4">
+                      <div
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs ${
+                          uploadDocError
+                            ? "bg-rose-100 text-rose-600"
+                            : "bg-emerald-100 text-emerald-600"
+                        }`}
+                      >
+                        {uploadDocError ? "⚠️" : "📄"}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="text-sm font-extrabold text-slate-900 block truncate max-w-md">
+                            {selectedFile.name}
+                          </span>
+                          {uploadedDocMeta && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              ✓ Siap Dianalisis
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-500 block">
+                          Ukuran: {(selectedFile.size / 1024).toFixed(1)} KB
+                          {uploadedDocMeta && (
+                            <>
+                              {" "}
+                              • {uploadedDocMeta.chunkCount} potongan teks (~
+                              {uploadedDocMeta.totalWords} kata)
+                            </>
+                          )}
+                        </span>
+                      </div>
 
-              {selectedFile && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFile(null);
-                    }}
-                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 transition-colors"
-                  >
-                    Hapus File
-                  </button>
+                      <div className="relative z-20 mt-3 flex flex-wrap items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleStartAnalysis()}
+                          className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-4 py-2 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>🚀</span>
+                          <span>Buka & Pelajari Sekarang</span>
+                        </button>
+                        <label className="relative text-xs text-indigo-600 hover:text-indigo-700 font-semibold px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer inline-flex items-center overflow-hidden">
+                          <span>Ganti File</span>
+                          <input
+                            type="file"
+                            accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md,.rtf,.odt,.sql,.py,.java,.cpp,.c,.js,.ts,.html,.css,.json,.csv,.xlsx,.xls,.zip"
+                            onClick={(e) => {
+                              (e.currentTarget as HTMLInputElement).value = "";
+                            }}
+                            onChange={handleFileInputChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            title="Pilih file lain"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFile(null);
+                            setUploadedDocMeta(null);
+                            setUploadDocError(null);
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = "";
+                            }
+                          }}
+                          className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 transition-colors cursor-pointer"
+                        >
+                          Hapus File
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Upload Error Message */}
+              {uploadDocError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
+                  <span className="text-base leading-none">⚠️</span>
+                  <div className="flex-1">
+                    <strong className="font-bold">Gagal memproses dokumen: </strong>
+                    {uploadDocError}
+                  </div>
                 </div>
               )}
             </div>
@@ -443,18 +1101,45 @@ export default function NexedAiModuleHub() {
             </div>
           )}
 
+          {/* Mode 3: Strict RAG Engine */}
+          {inputMode === "rag" && (
+            <div className="mt-4">
+              <ModuleRagChat
+                defaultModuleId="modul-studi-mandiri"
+                defaultModuleName="Modul Belajar Mandiri"
+              />
+            </div>
+          )}
+
           {/* Action Button */}
-          <div className="flex justify-end pt-2">
-            <button
-              type="button"
-              disabled={(!selectedFile && !textInput.trim()) || isAnalyzing}
-              onClick={() => handleStartAnalysis()}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2"
-            >
-              <span>✨</span>
-              <span>Analisis dengan Nexed AI</span>
-            </button>
-          </div>
+          {inputMode !== "rag" && (
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedFile && !textInput.trim()) {
+                    fileInputRef.current?.click();
+                    return;
+                  }
+                  handleStartAnalysis();
+                }}
+                disabled={isAnalyzing || isUploadingDoc}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+              >
+                {isUploadingDoc ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Mengunggah Dokumen...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    <span>Analisis Modul dengan Nexed AI</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -598,48 +1283,117 @@ export default function NexedAiModuleHub() {
           {/* TAB PANEL 1: RINGKASAN INTI (AI SUMMARY) */}
           {activeResultTab === "summary" && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-indigo-700">
-                  Ringkasan Eksekutif
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                  {analysisResult.summary.overview}
-                </p>
+              {/* Executive Summary Card */}
+              <div className="bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 rounded-2xl p-6 border border-slate-200/90 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-600 text-white text-xs font-black shadow-xs">
+                      📋
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                        Ringkasan Eksekutif & Sintesis Modul
+                      </h4>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Ekstraksi intisari akademik terstruktur dari materi perkuliahan
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                    <span>Analisis Komprehensif AI</span>
+                  </span>
+                </div>
+
+                {/* Structured Narrative Paragraphs */}
+                <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  {analysisResult.summary.overview.split(/\n\s*\n/).map((para, pIdx) => (
+                    <p key={`ov-p-${pIdx}`} className="text-justify sm:text-left">
+                      {para}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Key Takeaways Section if Available */}
+                {analysisResult.summary.keyTakeaways &&
+                  analysisResult.summary.keyTakeaways.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs">🎯</span>
+                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider">
+                          Pokok Bahasan & Capaian Pembelajaran:
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {analysisResult.summary.keyTakeaways.map((takeaway, tIdx) => (
+                          <div
+                            key={`takeaway-${tIdx}`}
+                            className="p-3 bg-white rounded-xl border border-indigo-100/80 shadow-2xs text-xs text-slate-700 leading-snug flex items-start gap-2.5"
+                          >
+                            <span className="text-indigo-600 font-black text-sm shrink-0 mt-0.5">
+                              ✓
+                            </span>
+                            <span>{takeaway}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
 
               {/* Key terms highlights */}
-              <div>
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">
-                  Istilah & Konsep Esensial
-                </h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">📚</span>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                      Istilah & Konsep Esensial
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    {analysisResult.summary.keyPoints.length} Konsep
+                  </span>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {analysisResult.summary.keyPoints.map((pt, i) => (
                     <div
                       key={`term-${i}`}
-                      className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs"
+                      className="group p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-xs transition-all flex flex-col justify-between"
                     >
-                      <div className="text-xs font-extrabold text-indigo-700 mb-1 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-                        <span>{pt.term}</span>
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="text-xs font-extrabold text-indigo-700 group-hover:text-indigo-800 transition-colors flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                            <span>{pt.term}</span>
+                          </div>
+                          {pt.category && (
+                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-50 group-hover:bg-indigo-50 group-hover:text-indigo-700 transition-colors px-2 py-0.5 rounded-md border border-slate-200/70">
+                              {pt.category}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed">{pt.definition}</p>
                       </div>
-                      <p className="text-xs text-slate-600 leading-relaxed">{pt.definition}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Pro Tips Callout */}
-              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-3">
-                <span className="text-base shrink-0">💡</span>
+              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-3 shadow-2xs">
+                <span className="text-base shrink-0 mt-0.5">💡</span>
                 <div>
-                  <span className="font-extrabold block mb-0.5">Tips Dosen AI:</span>
-                  <span>{analysisResult.summary.proTips}</span>
+                  <span className="font-extrabold block mb-0.5 text-amber-950">
+                    Tips Belajar & Insight AI Tutor:
+                  </span>
+                  <span className="text-amber-900/90">{analysisResult.summary.proTips}</span>
                 </div>
               </div>
 
               {/* Estimated Study Breakdown */}
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
                   <div className="text-[10px] text-slate-400 font-bold uppercase">
                     Teori & Konsep
                   </div>
@@ -647,13 +1401,13 @@ export default function NexedAiModuleHub() {
                     {analysisResult.summary.breakdownTime.concept}
                   </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
                   <div className="text-[10px] text-slate-400 font-bold uppercase">Praktik Kode</div>
                   <div className="text-xs font-extrabold text-slate-800 mt-1">
                     {analysisResult.summary.breakdownTime.practice}
                   </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
                   <div className="text-[10px] text-slate-400 font-bold uppercase">
                     Evaluasi Kuis
                   </div>
@@ -688,53 +1442,155 @@ export default function NexedAiModuleHub() {
               <div className="space-y-4">
                 {analysisResult.roadmap.map((stepItem) => {
                   const isUnderstood = !!roadmapStatus[stepItem.step];
+                  const isExpanded = expandedRoadmapStep === stepItem.step;
+
                   return (
                     <div
                       key={`roadmap-${stepItem.step}`}
-                      className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                      className={`rounded-2xl border transition-all overflow-hidden ${
                         isUnderstood
-                          ? "bg-emerald-50/40 border-emerald-200 shadow-2xs"
-                          : "bg-white border-slate-200 hover:border-slate-300"
+                          ? "bg-emerald-50/30 border-emerald-200/90 shadow-2xs"
+                          : "bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs"
                       }`}
                     >
-                      <div className="space-y-1.5 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                              isUnderstood
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : "bg-slate-100 text-slate-600 border-slate-200"
-                            }`}
-                          >
-                            {stepItem.stage}
-                          </span>
-                          {isUnderstood && (
-                            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
-                              <span>✓</span> <span>Dikuasai</span>
+                      {/* Step Header Summary Row */}
+                      <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                                isUnderstood
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                  : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              }`}
+                            >
+                              {stepItem.stage}
                             </span>
-                          )}
+                            {isUnderstood && (
+                              <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <span>✓</span> <span>Dikuasai</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <h5 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+                            {stepItem.title}
+                          </h5>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {stepItem.description}
+                          </p>
+
+                          <div className="text-[11px] font-semibold text-indigo-700 bg-indigo-50/70 border border-indigo-100/80 px-3 py-1 rounded-xl w-fit flex items-center gap-1.5">
+                            <span>🎯</span>
+                            <span>Aksi Mandiri: {stepItem.actionItem}</span>
+                          </div>
                         </div>
 
-                        <h5 className="text-sm font-extrabold text-slate-900">{stepItem.title}</h5>
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                          {stepItem.description}
-                        </p>
-                        <div className="text-[11px] font-semibold text-indigo-700 bg-indigo-50/60 px-3 py-1 rounded-lg w-fit">
-                          🎯 Aksi Mandiri: {stepItem.actionItem}
+                        {/* Controls: Expand / Collapse & Mark Understood */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandRoadmapStep(stepItem.step)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                              isExpanded
+                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                : "bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200"
+                            }`}
+                          >
+                            <span>{isExpanded ? "▲ Tutup Materi" : "📖 Buka Materi"}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleRoadmapStep(stepItem.step)}
+                            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                              isUnderstood
+                                ? "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs"
+                                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                            }`}
+                          >
+                            <span>{isUnderstood ? "Batal Tandai" : "✓ Tandai Paham"}</span>
+                          </button>
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => toggleRoadmapStep(stepItem.step)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1.5 ${
-                          isUnderstood
-                            ? "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs"
-                            : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-                        }`}
-                      >
-                        <span>{isUnderstood ? "Batal Tandai" : "✓ Tandai Paham"}</span>
-                      </button>
+                      {/* Expandable Learning Material Drawer (Tahap Isi Materi Lengkap) */}
+                      {isExpanded && (
+                        <div className="border-t border-slate-100 bg-slate-50/60 p-5 space-y-4 animate-in fade-in">
+                          {/* 1. Panduan & Uraian Materi Tahap Ini */}
+                          <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-black">
+                                📘
+                              </span>
+                              <h6 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                                Uraian Materi & Panduan Belajar Tahap Ini
+                              </h6>
+                            </div>
+                            <div className="text-xs text-slate-700 leading-relaxed pl-8">
+                              <ChatMessageContent
+                                text={stepItem.detailedGuide || stepItem.description}
+                                isUser={false}
+                              />
+                            </div>
+                          </div>
+
+                          {/* 2. Konsep Kunci yang Dipelajari */}
+                          {stepItem.keyConcepts && stepItem.keyConcepts.length > 0 && (
+                            <div className="space-y-1.5">
+                              <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                                <span>🔑</span> <span>Konsep Kunci yang Dipelajari:</span>
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {stepItem.keyConcepts.map((concept, cIdx) => (
+                                  <span
+                                    key={cIdx}
+                                    className="px-2.5 py-1 bg-white border border-indigo-200/80 rounded-lg text-[11px] font-semibold text-indigo-800 shadow-2xs"
+                                  >
+                                    {concept}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 3. Skenario Praktik Mandiri */}
+                          {stepItem.practiceScenario && (
+                            <div className="bg-gradient-to-r from-indigo-50/80 to-white rounded-xl p-3.5 border-l-4 border-l-indigo-600 border border-indigo-100/60 text-xs space-y-1">
+                              <div className="font-extrabold text-indigo-900 flex items-center gap-1.5">
+                                <span>💻</span>
+                                <span>Skenario Praktik Mandiri:</span>
+                              </div>
+                              <p className="text-slate-700 leading-relaxed pl-5">
+                                {stepItem.practiceScenario}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* 4. Evaluasi & Tanya Tutor AI */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
+                            {stepItem.checkQuestion ? (
+                              <div className="text-[11px] text-slate-600 flex items-start gap-1.5 flex-1">
+                                <span className="text-amber-500 font-bold">❓</span>
+                                <span>
+                                  <strong>Uji Pemahaman:</strong> {stepItem.checkQuestion}
+                                </span>
+                              </div>
+                            ) : (
+                              <div />
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleAskAboutStep(stepItem)}
+                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 shrink-0"
+                            >
+                              <span>💬</span>
+                              <span>Tanya AI Tutor tentang Tahap Ini</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -903,20 +1759,20 @@ export default function NexedAiModuleHub() {
               </div>
 
               {/* Chat Stream */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3.5">
+              <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto space-y-3.5">
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
                     className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed whitespace-pre-wrap ${
+                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
                         msg.sender === "user"
-                          ? "bg-indigo-600 text-white rounded-br-none shadow-2xs"
-                          : "bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-2xs"
+                          ? "bg-indigo-600 text-white rounded-br-none shadow-xs"
+                          : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-none shadow-xs"
                       }`}
                     >
-                      {msg.text}
+                      <ChatMessageContent text={msg.text} isUser={msg.sender === "user"} />
                     </div>
                   </div>
                 ))}
@@ -927,7 +1783,6 @@ export default function NexedAiModuleHub() {
                     <span>Nexed AI sedang merangkai penjelasan...</span>
                   </div>
                 )}
-                <div ref={chatEndRef} />
               </div>
 
               {/* Quick Prompt Suggestions */}

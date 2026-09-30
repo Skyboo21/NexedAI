@@ -6,10 +6,29 @@ import { LoginInputSchema } from "../../../../src/lib/validations/authSchema";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const parseResult = LoginInputSchema.safeParse(body);
+    const contentType = request.headers.get("content-type") || "";
+    const isHtmlForm =
+      contentType.includes("application/x-www-form-urlencoded") ||
+      contentType.includes("multipart/form-data");
+
+    let rawBody: Record<string, unknown>;
+    if (isHtmlForm) {
+      const formData = await request.formData();
+      rawBody = {
+        email: formData.get("email"),
+        password: formData.get("password"),
+        rememberMe: formData.get("rememberMe") === "true" || formData.get("rememberMe") === "on",
+      };
+    } else {
+      rawBody = await request.json().catch(() => ({}));
+    }
+
+    const parseResult = LoginInputSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
+      if (isHtmlForm) {
+        return NextResponse.redirect(new URL("/login?error=invalid_format", request.url), 303);
+      }
       return NextResponse.json(
         {
           success: false,
@@ -26,6 +45,9 @@ export async function POST(request: Request) {
     const verifiedUser = await verifyUserCredentials(identifier, password);
 
     if (!verifiedUser) {
+      if (isHtmlForm) {
+        return NextResponse.redirect(new URL("/login?error=invalid_credentials", request.url), 303);
+      }
       return NextResponse.json(
         {
           success: false,
@@ -46,23 +68,40 @@ export async function POST(request: Request) {
       exp: Date.now() + tokenMaxAge,
     });
 
-    const response = NextResponse.json({
-      success: true,
-      message: "Otentikasi berhasil. Selamat datang kembali!",
-      user: {
-        id: verifiedUser.id,
-        email: verifiedUser.email,
-        name: verifiedUser.name,
-        role: verifiedUser.role,
-        nimOrNip: verifiedUser.nimOrNip,
-        semester: verifiedUser.semester,
-        prodi: verifiedUser.prodi,
-      },
-    });
+    let target = "/dashboard";
+    if (verifiedUser.role === "dosen") {
+      target = "/dosen-dashboard";
+    } else if (verifiedUser.role === "admin") {
+      target = "/admin-dashboard";
+    }
+
+    const response = isHtmlForm
+      ? NextResponse.redirect(new URL(target, request.url), 303)
+      : NextResponse.json({
+          success: true,
+          message: "Otentikasi berhasil. Selamat datang kembali!",
+          user: {
+            id: verifiedUser.id,
+            email: verifiedUser.email,
+            name: verifiedUser.name,
+            role: verifiedUser.role,
+            nimOrNip: verifiedUser.nimOrNip,
+            semester: verifiedUser.semester,
+            prodi: verifiedUser.prodi,
+          },
+        });
 
     // Set HttpOnly, Secure, Lax session cookie
     response.cookies.set("nexed_session_token", sessionToken, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: Math.floor(tokenMaxAge / 1000),
+    });
+
+    response.cookies.set("nexed_session_role", verifiedUser.role, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",

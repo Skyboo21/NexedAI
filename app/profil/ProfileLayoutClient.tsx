@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import { useEffect, useState } from "react";
 import AppSidebar, { type NavItem } from "../../src/components/AppSidebar";
 import type { Role } from "../../src/lib/validations/authSchema";
 import { useAuthStore } from "../../src/store/authStore";
@@ -11,8 +11,14 @@ interface ProfileLayoutClientProps {
 }
 
 export default function ProfileLayoutClient({ initialRole, children }: ProfileLayoutClientProps) {
+  const [mounted, setMounted] = useState(false);
   const { role: storeRole } = useAuthStore();
-  const currentRole = storeRole || initialRole || "mahasiswa";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentRole = mounted && storeRole ? storeRole : initialRole || "mahasiswa";
 
   const getSidebarConfig = () => {
     switch (currentRole) {

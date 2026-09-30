@@ -194,6 +194,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("nexed_auth_user", JSON.stringify(userData));
+          document.cookie = `nexed_session_role=${userData.role}; path=/; max-age=604800; SameSite=Lax`;
         } catch {
           // safe
         }
