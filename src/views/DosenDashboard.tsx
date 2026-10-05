@@ -57,33 +57,33 @@ export default function DosenDashboard() {
 
   const gradeDistribution = [
     { grade: "A (85-100)", count: 18, percentage: 43, color: "bg-emerald-500" },
-    { grade: "B (70-84)", count: 16, percentage: 38, color: "bg-indigo-500" },
+    { grade: "B (70-84)", count: 16, percentage: 38, color: "bg-indigo-600" },
     { grade: "C (55-69)", count: 5, percentage: 12, color: "bg-amber-500" },
     { grade: "D (40-54)", count: 2, percentage: 5, color: "bg-orange-500" },
     { grade: "E (<40)", count: 1, percentage: 2, color: "bg-rose-500" },
   ];
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-['Outfit'] antialiased">
+    <div className="bg-[#FAFAFA] text-black min-h-screen flex flex-col font-['Inter',sans-serif] antialiased">
       {/* Top Header Navbar */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4 transition-all">
+      <header className="bg-white/90 backdrop-blur-md border-b border-black/8 sticky top-0 z-20 px-6 py-4 transition-all">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">
+            <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">
               <span>Portal Pengajar & Pembimbing</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-500">Algoritma & Pemrograman (Kelas TI-A)</span>
+              <span className="text-black/20">/</span>
+              <span className="text-black">Algoritma & Pemrograman (Kelas TI-A)</span>
             </div>
             <h1
               suppressHydrationWarning
-              className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight"
+              className="text-xl sm:text-2xl font-light text-black tracking-tight"
             >
               Dashboard Analitik: {activeUser.name || activeUser.email.split("@")[0]}
             </h1>
           </div>
 
           <div className="flex items-center space-x-3">
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700">
+            <span className="text-xs font-medium px-3.5 py-1.5 rounded-full bg-[#F4F4F6] border border-black/8 text-black">
               Semester Genap 2026
             </span>
           </div>
@@ -92,40 +92,40 @@ export default function DosenDashboard() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8 w-full">
-        {/* Quick Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+        {/* Quick Metric Cards - Bento Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="p-6 bg-white border border-black/8 rounded-3xl shadow-xs hover:border-black/20 transition-all duration-300">
+            <div className="text-neutral-500 font-medium text-xs uppercase tracking-wider mb-1">
               Total Mahasiswa
             </div>
-            <div className="text-2xl font-bold text-slate-900">42 Mahasiswa</div>
-            <p className="text-xs text-emerald-700 mt-1.5 font-medium">
+            <div className="text-3xl font-light text-black tracking-tight">42 Siswa</div>
+            <p className="text-xs text-neutral-500 mt-1.5 font-medium">
               100% Terdaftar di Sistem
             </p>
           </div>
 
-          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-6 bg-white border border-black/8 rounded-3xl shadow-xs hover:border-black/20 transition-all duration-300">
+            <div className="text-neutral-500 font-medium text-xs uppercase tracking-wider mb-1">
               Rata-rata Skor Kelas
             </div>
-            <div className="text-2xl font-bold text-blue-600">84.6%</div>
-            <p className="text-xs text-slate-500 mt-1.5">Target Penguasaan: &gt;75%</p>
+            <div className="text-3xl font-light text-black tracking-tight">84.6%</div>
+            <p className="text-xs text-neutral-500 mt-1.5 font-medium">Target Penguasaan: &gt;75%</p>
           </div>
 
-          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-6 bg-white border border-black/8 rounded-3xl shadow-xs hover:border-black/20 transition-all duration-300">
+            <div className="text-neutral-500 font-medium text-xs uppercase tracking-wider mb-1">
               Perlu Intervensi Remedial
             </div>
-            <div className="text-2xl font-bold text-rose-600">2 Mahasiswa</div>
-            <p className="text-xs text-rose-700 mt-1.5 font-medium">Peringatan Dini Sistem</p>
+            <div className="text-3xl font-light text-black tracking-tight">2 Mahasiswa</div>
+            <p className="text-xs text-neutral-500 mt-1.5 font-medium">Peringatan Dini Sistem</p>
           </div>
 
-          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-6 bg-white border border-black/8 rounded-3xl shadow-xs hover:border-black/20 transition-all duration-300">
+            <div className="text-neutral-500 font-medium text-xs uppercase tracking-wider mb-1">
               Tingkat Ketuntasan
             </div>
-            <div className="text-2xl font-bold text-emerald-600">78.5%</div>
-            <p className="text-xs text-emerald-700 mt-1.5 font-medium">Kategori: Sangat Baik</p>
+            <div className="text-3xl font-light text-black tracking-tight">78.5%</div>
+            <p className="text-xs text-neutral-500 mt-1.5 font-medium">Kategori: Sangat Baik</p>
           </div>
         </div>
 
@@ -134,32 +134,32 @@ export default function DosenDashboard() {
           <div className="flex items-center justify-between">
             <h2
               id="alert-heading"
-              className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2"
+              className="text-lg sm:text-xl font-light text-black flex items-center gap-2 tracking-tight"
             >
               <span>Peringatan Dini Mahasiswa Berisiko (Early Warning)</span>
             </h2>
-            <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded uppercase tracking-wider">
+            <span className="text-[11px] font-mono text-black bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full uppercase tracking-wider">
               2 Peringatan Aktif
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="p-5 bg-white border border-rose-200 rounded-xl shadow-xs relative overflow-hidden">
+            <div className="p-6 bg-white border border-rose-200/80 rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Budi Santoso</h3>
+                  <h3 className="font-extrabold text-base text-slate-900">Budi Santoso</h3>
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401048</span>
                 </div>
                 {studentStatuses["Budi Santoso"] === "Selesai Ditinjau" ? (
-                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
                     ✓ Selesai Ditinjau
                   </span>
                 ) : studentStatuses["Budi Santoso"] === "Dalam Penanganan" ? (
-                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full">
                     Dalam Bimbingan
                   </span>
                 ) : (
-                  <span className="text-[11px] font-semibold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-semibold text-rose-800 bg-rose-50 border border-rose-200/80 px-2.5 py-0.5 rounded-full">
                     Risiko Tinggi
                   </span>
                 )}
@@ -169,13 +169,13 @@ export default function DosenDashboard() {
                 terakhir: 35/100.
               </p>
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">
+                <span className="text-slate-500 font-medium">
                   Rekomendasi: Berikan latihan analogi modular
                 </span>
                 <button
                   type="button"
                   onClick={() => handleOpenLog("Budi Santoso")}
-                  className="font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded hover:bg-blue-50"
+                  className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
                 >
                   <span>Tinjau Log</span>
                   <span>&rarr;</span>
@@ -183,22 +183,22 @@ export default function DosenDashboard() {
               </div>
             </div>
 
-            <div className="p-5 bg-white border border-amber-200 rounded-xl shadow-xs relative overflow-hidden">
+            <div className="p-6 bg-white border border-amber-200/80 rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Siti Aminah</h3>
+                  <h3 className="font-extrabold text-base text-slate-900">Siti Aminah</h3>
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401092</span>
                 </div>
                 {studentStatuses["Siti Aminah"] === "Selesai Ditinjau" ? (
-                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
                     ✓ Selesai Ditinjau
                   </span>
                 ) : studentStatuses["Siti Aminah"] === "Dalam Penanganan" ? (
-                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full">
                     Dalam Bimbingan
                   </span>
                 ) : (
-                  <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
                     Perlu Atensi
                   </span>
                 )}
@@ -208,13 +208,13 @@ export default function DosenDashboard() {
                 mencatatkan target mandiri.
               </p>
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">
+                <span className="text-slate-500 font-medium">
                   Rekomendasi: Jadwalkan asistensi tatap muka lab
                 </span>
                 <button
                   type="button"
                   onClick={() => handleOpenLog("Siti Aminah")}
-                  className="font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded hover:bg-blue-50"
+                  className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
                 >
                   <span>Tinjau Log</span>
                   <span>&rarr;</span>
@@ -228,19 +228,19 @@ export default function DosenDashboard() {
         <section
           id="distribusi"
           aria-labelledby="chart-heading"
-          className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs space-y-5"
+          className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 space-y-5"
         >
           <div>
-            <span className="inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded uppercase tracking-wider mb-2">
+            <span className="inline-block text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-2">
               Visualisasi Analitik Kelas
             </span>
             <h2
               id="chart-heading"
-              className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight"
+              className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight"
             >
               Distribusi Grade & Capaian Belajar Mahasiswa
             </h2>
-            <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+            <p className="text-xs md:text-sm text-slate-500 mt-0.5 font-medium">
               Sebaran nilai hasil evaluasi modul dan kuis komprehensif 42 mahasiswa aktif.
             </p>
           </div>
@@ -254,7 +254,7 @@ export default function DosenDashboard() {
                     {item.count} Mahasiswa ({item.percentage}%)
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200/80">
                   <div
                     className={`${item.color} h-full rounded-full transition-all duration-500`}
                     style={{ width: `${item.percentage}%` }}

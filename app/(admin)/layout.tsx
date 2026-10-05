@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row font-['Outfit'] antialiased">
+    <div className="min-h-screen bg-[#FAFAFA] text-black flex flex-col md:flex-row font-['Inter',sans-serif] antialiased">
       <AppSidebar
         userRole="admin"
         portalTitle="Portal Admin"
@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
 
       {/* Main Page Content */}
-      <main className="flex-1 min-w-0 bg-slate-50">{children}</main>
+      <main className="flex-1 min-w-0 bg-transparent">{children}</main>
     </div>
   );
 }

@@ -37,11 +37,11 @@ export default function AppSidebar({
   const getRoleBadgeColor = () => {
     switch (userRole) {
       case "dosen":
-        return "text-blue-700 bg-blue-50 border-blue-200";
+        return "text-black bg-[#F4F4F6] border-black/15";
       case "admin":
-        return "text-amber-800 bg-amber-50 border-amber-200";
+        return "text-black bg-[#F4F4F6] border-black/20 font-bold";
       default:
-        return "text-blue-700 bg-blue-50 border-blue-200";
+        return "text-black bg-[#F4F4F6] border-black/15";
     }
   };
 
@@ -50,21 +50,26 @@ export default function AppSidebar({
       case "admin":
         return "🛡️";
       default:
-        return "NX";
+        return (
+          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="5" width="7" height="14" rx="3.5" fill="currentColor" transform="rotate(-35 7.5 12)" />
+            <rect x="13" y="5" width="7" height="14" rx="3.5" fill="currentColor" transform="rotate(-35 16.5 12)" />
+          </svg>
+        );
     }
   };
 
   return (
     <>
       {/* Mobile Top Header Bar (Only visible on small screens < md) */}
-      <header className="md:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-xs">
+      <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-black/8 px-4 py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center font-bold text-white text-xs shadow-sm">
             {getLogoBadge()}
           </div>
           <div>
-            <h1 className="text-sm font-bold text-slate-900 leading-none">NEXED AI</h1>
-            <span className="text-[10px] text-blue-700 font-semibold">{portalTitle}</span>
+            <h1 className="text-sm font-semibold text-black leading-none">NEXED AI</h1>
+            <span className="text-[10px] text-neutral-500 font-medium">{portalTitle}</span>
           </div>
         </div>
 
@@ -72,7 +77,7 @@ export default function AppSidebar({
           type="button"
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           aria-label={mobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
-          className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
+          className="p-2 rounded-xl bg-[#F4F4F6] hover:bg-neutral-200 text-black text-xs font-medium border border-black/10 transition-colors cursor-pointer"
         >
           {mobileMenuOpen ? "✕ Tutup" : "☰ Menu"}
         </button>
@@ -84,16 +89,16 @@ export default function AppSidebar({
           type="button"
           aria-label="Tutup menu navigasi samping"
           onClick={() => setMobileMenuOpen(false)}
-          className="md:hidden fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-xs w-full h-full border-none cursor-default p-0 m-0"
+          className="md:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-xs w-full h-full border-none cursor-default p-0 m-0"
         />
       )}
 
-      {/* Main Sidebar: Sticky on Desktop, Collapsible Drawer on Mobile */}
+      {/* Main Sidebar: Bento Docked on Desktop, Drawer on Mobile */}
       <aside
         className={`
           fixed md:sticky top-0 left-0 z-35 md:z-30
           w-72 md:w-64 lg:w-68 h-screen
-          bg-white border-r border-slate-200
+          bg-white border-r border-black/8
           flex flex-col justify-between
           p-5 shrink-0 shadow-xs md:shadow-none
           transition-transform duration-300 ease-in-out
@@ -106,15 +111,15 @@ export default function AppSidebar({
           {/* Logo & Platform Brand */}
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-xs text-sm shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-black flex items-center justify-center font-bold text-white shadow-sm text-sm shrink-0">
                 {getLogoBadge()}
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900 tracking-tight leading-none">
+                <h2 className="text-base font-semibold text-black tracking-tight leading-none">
                   NEXED AI
                 </h2>
                 <span
-                  className={`inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border ${getRoleBadgeColor()}`}
+                  className={`inline-block mt-1 text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full border ${getRoleBadgeColor()}`}
                 >
                   {portalTitle}
                 </span>
@@ -125,7 +130,7 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              className="md:hidden p-1.5 rounded-xl text-neutral-400 hover:text-black hover:bg-neutral-100"
               aria-label="Tutup sidebar"
             >
               ✕
@@ -133,13 +138,13 @@ export default function AppSidebar({
           </div>
 
           {/* Subtitle / Department note */}
-          <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            <span className="truncate">{portalSubtitle}</span>
+          <div className="px-3 py-2 bg-[#F4F4F6] border border-black/5 rounded-xl text-[11px] text-neutral-600 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+            <span className="truncate font-normal">{portalSubtitle}</span>
           </div>
 
           {/* Navigation Links */}
-          <nav aria-label="Menu Utama" className="space-y-1 pt-1">
+          <nav aria-label="Menu Utama" className="space-y-1.5 pt-1">
             {navItems.map((item) => {
               const currentPath = pathname || "";
               const isActive = item.href.includes("#")
@@ -155,10 +160,10 @@ export default function AppSidebar({
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`group relative flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
+                  className={`group relative flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all border ${
                     isActive
-                      ? "bg-blue-50 border-blue-200 text-blue-700 font-semibold"
-                      : "text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-50 hover:border-slate-200"
+                      ? "bg-black border-black text-white font-medium shadow-xs"
+                      : "text-neutral-600 border-transparent hover:text-black hover:bg-[#F4F4F6] hover:border-black/5"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5 min-w-0">
@@ -170,23 +175,14 @@ export default function AppSidebar({
 
                   {item.badge && (
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                        item.badgeColor === "emerald"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : item.badgeColor === "rose"
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
-                            : item.badgeColor === "amber"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200"
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                        isActive
+                          ? "bg-neutral-800 text-white border-white/20"
+                          : "bg-[#F4F4F6] text-black border-black/10"
                       }`}
                     >
                       {item.badge}
                     </span>
-                  )}
-
-                  {/* Subtle active indicator on left border */}
-                  {isActive && (
-                    <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-blue-600 rounded-r" />
                   )}
                 </Link>
               );
@@ -195,9 +191,9 @@ export default function AppSidebar({
         </div>
 
         {/* Footer Sidebar: User Status & Logout */}
-        <div className="pt-4 border-t border-slate-200 space-y-3 mt-6">
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-600">
-            <div className="flex items-center space-x-1.5 font-semibold text-slate-800">
+        <div className="pt-4 border-t border-slate-200/80 space-y-3 mt-6">
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 text-[11px] text-slate-600">
+            <div className="flex items-center space-x-1.5 font-bold text-slate-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span>{userStatusTitle}</span>
             </div>

@@ -50,17 +50,17 @@ export default function TaskTodoList() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col h-full">
+    <div className="bg-white rounded-3xl border border-black/8 p-6 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col h-full">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded mb-1">
-            Checklist Harian
+          <span className="bg-[#F4F4F6] text-black border border-black/10 font-mono text-xs px-3 py-0.5 rounded-full inline-block mb-1.5">
+            Checklist Mandiri
           </span>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">
+          <h3 className="text-base font-light text-black tracking-tight">
             Daftar Aktivitas Belajar
           </h3>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
+        <span className="text-xs font-mono px-3 py-1 rounded-full bg-[#F4F4F6] text-neutral-700 border border-black/10">
           {tasks.filter((t) => t.completed).length} / {tasks.length} Selesai
         </span>
       </div>
@@ -71,18 +71,18 @@ export default function TaskTodoList() {
           placeholder="Tulis rencana aktivitas baru..."
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
-          className="flex-1 px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+          className="flex-1 px-3.5 py-2.5 bg-white border border-black/10 rounded-xl text-black text-xs placeholder:text-neutral-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors"
         />
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs shrink-0"
+          className="px-5 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-medium rounded-full transition-all shadow-xs shrink-0 cursor-pointer"
         >
           Tambah
         </button>
       </form>
 
       <div
-        className="flex gap-1.5 mb-4 p-1 bg-slate-100 rounded-lg border border-slate-200 self-start"
+        className="flex gap-1.5 mb-4 p-1 bg-[#F4F4F6] rounded-full border border-black/10 self-start"
         role="tablist"
       >
         {(["all", "active", "completed"] as const).map((f) => {
@@ -94,10 +94,10 @@ export default function TaskTodoList() {
               role="tab"
               aria-selected={isActive}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
                 isActive
-                  ? "bg-white text-slate-900 shadow-xs font-semibold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-black text-white shadow-xs"
+                  : "text-neutral-600 hover:text-black"
               }`}
             >
               {f === "all" ? "Semua" : f === "active" ? "Aktif" : "Selesai"}
@@ -111,17 +111,17 @@ export default function TaskTodoList() {
         aria-label="Daftar aktivitas"
       >
         {filteredTasks.length === 0 ? (
-          <li className="text-center py-6 text-slate-400 text-xs">
+          <li className="text-center py-6 text-neutral-400 text-xs">
             Belum ada aktivitas pada kategori ini.
           </li>
         ) : (
           filteredTasks.map((task) => (
             <li
               key={task.id}
-              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+              className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
                 task.completed
-                  ? "bg-slate-50 border-slate-200 opacity-80"
-                  : "bg-white border-slate-200 hover:border-slate-300"
+                  ? "bg-[#FAFAFA] border-black/5 opacity-70"
+                  : "bg-white border-black/8 hover:border-black/20"
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -129,10 +129,10 @@ export default function TaskTodoList() {
                   type="button"
                   onClick={() => toggleTask(task.id)}
                   aria-label={task.completed ? "Tandai belum selesai" : "Tandai selesai"}
-                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
                     task.completed
-                      ? "bg-blue-600 border-blue-600 text-white"
-                      : "border-slate-300 bg-white hover:border-blue-600"
+                      ? "bg-black border-black text-white"
+                      : "border-black/20 bg-white hover:border-black"
                   }`}
                 >
                   {task.completed && (
@@ -149,7 +149,7 @@ export default function TaskTodoList() {
                 </button>
                 <span
                   className={`text-xs truncate ${
-                    task.completed ? "line-through text-slate-400" : "text-slate-800 font-medium"
+                    task.completed ? "line-through text-neutral-400" : "text-black font-normal"
                   }`}
                 >
                   {task.title}
@@ -160,7 +160,7 @@ export default function TaskTodoList() {
                 type="button"
                 onClick={() => deleteTask(task.id)}
                 aria-label={`Hapus tugas ${task.title}`}
-                className="text-slate-400 hover:text-rose-600 text-xs p-1 rounded transition-colors shrink-0"
+                className="text-neutral-400 hover:text-rose-600 text-xs p-1 rounded-lg transition-colors shrink-0 cursor-pointer"
               >
                 ✕
               </button>

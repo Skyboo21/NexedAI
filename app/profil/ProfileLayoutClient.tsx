@@ -96,7 +96,7 @@ export default function ProfileLayoutClient({ initialRole, children }: ProfileLa
   const config = getSidebarConfig();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row font-['Outfit'] antialiased">
+    <div className="min-h-screen bg-[#FAFAFA] text-black flex flex-col md:flex-row font-['Inter',sans-serif] antialiased">
       <AppSidebar
         userRole={config.userRole}
         portalTitle={config.portalTitle}
@@ -105,7 +105,7 @@ export default function ProfileLayoutClient({ initialRole, children }: ProfileLa
         userStatusSubtitle={config.userStatusSubtitle}
         navItems={config.navItems}
       />
-      <main className="flex-1 min-w-0 bg-slate-50">{children}</main>
+      <main className="flex-1 min-w-0 bg-transparent">{children}</main>
     </div>
   );
 }

@@ -47,30 +47,29 @@ export default function Login() {
 
     login(demoEmail, demoRole);
 
-    // Direct browser navigation with brief feedback so user sees the active selection
     setTimeout(() => {
       performRedirect(targetPath);
     }, 150);
   };
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center p-4 sm:p-6 relative font-['Outfit'] antialiased">
-      <main className="w-full max-w-md p-8 sm:p-10 bg-white border border-slate-200 rounded-xl shadow-xs relative z-10 space-y-6">
-        <div className="text-center">
-          <div className="w-11 h-11 bg-blue-600 text-white rounded-lg mx-auto flex items-center justify-center font-bold text-base shadow-xs mb-3">
+    <div className="bg-[#F8FAFC] bento-bg-grid text-slate-900 min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-12 relative font-['Outfit'] antialiased">
+      <main className="w-full max-w-md p-8 sm:p-10 bg-white border border-slate-200/80 rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 relative z-10 space-y-6">
+        <div className="text-center space-y-2">
+          <div className="w-11 h-11 bg-indigo-600 text-white rounded-2xl mx-auto flex items-center justify-center font-bold text-base shadow-sm shadow-indigo-200 mb-3">
             NX
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Selamat Datang</h1>
-          <p className="text-slate-500 mt-1 text-xs font-normal">
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Selamat Datang</h1>
+          <p className="text-slate-500 text-xs font-medium">
             Masuk ke platform pembelajaran adaptif <strong>NEXED AI</strong>
           </p>
         </div>
 
         {/* 1-Click Role Login Presets */}
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+          <div className="text-slate-500 font-medium text-xs uppercase tracking-wider flex items-center justify-between">
             <span>Pilih Cepat Role Pengguna:</span>
-            <span className="text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded text-[10px]">
+            <span className="bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-medium text-[10px] px-2 py-0.5 rounded-full">
               1-Klik Masuk
             </span>
           </div>
@@ -80,16 +79,16 @@ export default function Login() {
               type="button"
               disabled={isLoading}
               onClick={() => handleQuickDemo("mahasiswa@nexed.ai", "mahasiswa", "/dashboard")}
-              className={`p-3 rounded-lg border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
+              className={`p-3 rounded-xl border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
                 activeRole === "mahasiswa"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                  : "bg-white hover:bg-blue-50/60 border-slate-200 text-slate-700 hover:text-blue-700"
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200"
+                  : "bg-white hover:bg-indigo-50/70 border-slate-200/80 text-slate-700 hover:text-indigo-700"
               }`}
             >
               <span className="text-lg">🎓</span>
               <span>Mahasiswa</span>
               {activeRole === "mahasiswa" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
                   ✓ Masuk...
                 </span>
               )}
@@ -99,16 +98,16 @@ export default function Login() {
               type="button"
               disabled={isLoading}
               onClick={() => handleQuickDemo("dosen@nexed.ai", "dosen", "/dosen-dashboard")}
-              className={`p-3 rounded-lg border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
+              className={`p-3 rounded-xl border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
                 activeRole === "dosen"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                  : "bg-white hover:bg-blue-50/60 border-slate-200 text-slate-700 hover:text-blue-700"
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200"
+                  : "bg-white hover:bg-indigo-50/70 border-slate-200/80 text-slate-700 hover:text-indigo-700"
               }`}
             >
               <span className="text-lg">👨‍🏫</span>
               <span>Dosen</span>
               {activeRole === "dosen" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
                   ✓ Masuk...
                 </span>
               )}
@@ -118,16 +117,16 @@ export default function Login() {
               type="button"
               disabled={isLoading}
               onClick={() => handleQuickDemo("admin@nexed.ai", "admin", "/admin-dashboard")}
-              className={`p-3 rounded-lg border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
+              className={`p-3 rounded-xl border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
                 activeRole === "admin"
                   ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                  : "bg-white hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900"
+                  : "bg-white hover:bg-slate-100 border-slate-200/80 text-slate-700 hover:text-slate-900"
               }`}
             >
               <span className="text-lg">🛡️</span>
               <span>Admin</span>
               {activeRole === "admin" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
                   ✓ Masuk...
                 </span>
               )}
@@ -140,7 +139,7 @@ export default function Login() {
           <div>
             <label
               htmlFor="login-email-input"
-              className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
+              className="block text-slate-500 font-medium text-xs uppercase tracking-wider mb-1.5"
             >
               Email Pengguna
             </label>
@@ -150,7 +149,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none text-slate-900 text-sm transition-colors placeholder-slate-400"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-200/80 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:outline-none text-slate-900 text-xs transition-colors placeholder-slate-400"
               placeholder="contoh: mahasiswa@nexed.ai"
             />
           </div>
@@ -159,18 +158,18 @@ export default function Login() {
             <div className="flex justify-between items-center mb-1.5">
               <label
                 htmlFor="login-password-input"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
+                className="block text-slate-500 font-medium text-xs uppercase tracking-wider"
               >
                 Kata Sandi
               </label>
-              <span className="text-[11px] text-blue-600 font-medium">Demo (Bebas)</span>
+              <span className="text-[11px] text-indigo-600 font-medium">Demo (Bebas)</span>
             </div>
             <input
               id="login-password-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none text-slate-900 text-sm transition-colors placeholder-slate-400"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-200/80 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:outline-none text-slate-900 text-xs transition-colors placeholder-slate-400"
               placeholder="••••••••"
             />
           </div>
@@ -178,7 +177,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg shadow-xs hover:shadow-sm transition-colors flex justify-center items-center text-sm cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm shadow-indigo-200 transition-colors flex justify-center items-center text-xs cursor-pointer"
           >
             {isLoading ? "Sedang Mengalihkan..." : "Masuk ke Sistem"}
           </button>

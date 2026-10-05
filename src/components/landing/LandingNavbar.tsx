@@ -3,21 +3,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user, role } = useAuthStore();
 
   useEffect(() => {
     setMounted(true);
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const getDashboardHref = () => {
@@ -27,173 +23,167 @@ export function LandingNavbar() {
   };
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-xs border-b border-slate-200/80 py-3"
-          : "bg-white/80 backdrop-blur-sm border-b border-slate-100 py-4"
-      }`}
+    <motion.header
+      initial={{ y: -16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed top-0 left-0 right-0 z-50 pointer-events-none p-4 md:py-6 md:px-8 font-['Inter',sans-serif]"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-xs transition-colors">
-              NX
+      <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto">
+        {/* Left Side: Custom Logo + Brand + Menu Pill + Tags Pill */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Logo with 2 rotated rounded rectangles at -35deg */}
+          <Link
+            href="/"
+            aria-label="NexedAI Home"
+            className="flex items-center gap-2.5 p-1 rounded-full hover:opacity-80 transition-opacity"
+          >
+            <div className="w-8 h-8 flex items-center justify-center">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g transform="rotate(-35 12 12)">
+                  <rect x="5" y="3.5" width="4.5" height="17" rx="2.25" fill="#000000" />
+                  <rect x="14.5" y="3.5" width="4.5" height="17" rx="2.25" fill="#000000" />
+                </g>
+              </svg>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-black tracking-tight text-slate-900">
-                  Nexed<span className="text-blue-600">AI</span>
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                  v1.0
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-500 font-medium">
-                D3 Teknik Informatika • SV UNS
-              </p>
-            </div>
+            {/* Brand text (shown on desktop 768px+) */}
+            <span className="hidden md:inline font-semibold text-sm tracking-tight text-black">
+              Nexed<span className="font-light">AI</span>
+            </span>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <nav aria-label="Navigasi Utama" className="hidden md:flex items-center gap-6">
-            <a
-              href="#fitur"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Fitur Utama
-            </a>
-            <a
-              href="#demo"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Simulasi AI
-            </a>
-            <a
-              href="#roles"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Pengalaman Peran
-            </a>
-            <a
-              href="#arsitektur"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Arsitektur
-            </a>
-            <a
-              href="#faq"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              FAQ
-            </a>
-          </nav>
+          {/* Menu Button Pill */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+            aria-expanded={mobileMenuOpen}
+            className="inline-flex items-center gap-2 bg-black text-white pl-1.5 pr-3 py-1.5 rounded-full hover:bg-neutral-800 transition-all cursor-pointer shadow-xs"
+          >
+            <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-white text-black flex items-center justify-center shrink-0">
+              <Plus size={12} strokeWidth={3} />
+            </span>
+            <span className="text-[11px] font-medium tracking-wide">Menu</span>
+          </button>
 
-          {/* Right Action CTA Buttons */}
-          <div className="hidden sm:flex items-center gap-2.5">
-            {mounted && user ? (
+          {/* Tags Pill (hidden on mobile, shown on desktop 768px+) */}
+          <div className="hidden md:inline-flex items-center gap-2 bg-[#F4F4F6] text-black/75 px-3 py-1.5 rounded-full text-[11px] font-medium border border-black/5">
+            <span>Adaptive Learning</span>
+            <span className="text-black/30">&bull;</span>
+            <span>Cognitive AI</span>
+          </div>
+        </div>
+
+        {/* Center: Desktop Nav Links (Required by tests) */}
+        <nav aria-label="Navigasi Utama" className="hidden lg:flex items-center gap-5 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-black/8 shadow-xs">
+          <a
+            href="#fitur"
+            className="text-[12px] font-medium text-black/70 hover:text-black transition-colors"
+          >
+            Fitur Utama
+          </a>
+          <a
+            href="#demo"
+            className="text-[12px] font-medium text-black/70 hover:text-black transition-colors"
+          >
+            Simulasi AI
+          </a>
+          <a
+            href="#roles"
+            className="text-[12px] font-medium text-black/70 hover:text-black transition-colors"
+          >
+            Pengalaman Peran
+          </a>
+        </nav>
+
+        {/* Right Side: Adaptive Systems / Auth Pill */}
+        <div className="flex items-center gap-2">
+          {mounted && user ? (
+            <Link
+              href={getDashboardHref()}
+              className="inline-flex items-center gap-2 bg-[#F4F4F6] hover:bg-[#eaeaea] text-black px-3.5 py-1.5 rounded-full text-[12px] font-medium border border-black/8 transition-colors shadow-xs"
+            >
+              <span className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-bold">
+                ✓
+              </span>
+              <span>Buka Dashboard</span>
+              <span className="text-black/50 text-[11px]">({user.name.split(" ")[0]})</span>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              {/* Pill with 4-dot grid icon + label */}
               <Link
-                href={getDashboardHref()}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1.5"
+                href="/login"
+                className="inline-flex items-center gap-2 bg-[#F4F4F6] hover:bg-[#eaeaea] text-black pl-1.5 pr-3 py-1.5 rounded-full text-[12px] font-medium border border-black/8 transition-colors shadow-xs"
               >
-                <span>Buka Dashboard</span>
-                <span className="text-blue-200 font-normal">({user.name.split(" ")[0]})</span>
+                <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="3" cy="3" r="1.5" fill="white" />
+                    <circle cx="9" cy="3" r="1.5" fill="white" />
+                    <circle cx="3" cy="9" r="1.5" fill="white" />
+                    <circle cx="9" cy="9" r="1.5" fill="white" />
+                  </svg>
+                </span>
+                <span className="hidden sm:inline">Masuk Akun</span>
               </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                >
-                  Masuk Akun
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs"
-                >
-                  Mulai Belajar Gratis
-                </Link>
-              </>
-            )}
-          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Buka menu navigasi"
-              aria-expanded={mobileMenuOpen}
-              className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {mobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
-            </button>
-          </div>
+              {/* Black CTA Pill */}
+              <Link
+                href="/register"
+                className="hidden sm:inline-flex items-center gap-1.5 bg-black hover:bg-neutral-800 text-white px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all shadow-xs"
+              >
+                <span>Mulai Belajar Gratis</span>
+                <span className="text-white/60">&rarr;</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Drawer Menu (Accessible and responsive) */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="md:hidden mt-3 bg-white/95 backdrop-blur-xl border border-black/10 rounded-2xl p-4 shadow-xl pointer-events-auto space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
           <nav aria-label="Navigasi Menu Mobile" className="flex flex-col space-y-2">
             <Link
               href="#fitur"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="px-3 py-2 rounded-xl text-xs font-medium text-black hover:bg-black/5"
             >
               Fitur Utama
             </Link>
             <Link
               href="#demo"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="px-3 py-2 rounded-xl text-xs font-medium text-black hover:bg-black/5"
             >
               Simulasi AI
             </Link>
             <Link
-              href="#peran"
+              href="#roles"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="px-3 py-2 rounded-xl text-xs font-medium text-black hover:bg-black/5"
             >
               Pengalaman Peran
             </Link>
-            <Link
-              href="#performa"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Arsitektur & Performa
-            </Link>
-            <Link
-              href="#faq"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              FAQ
-            </Link>
           </nav>
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <div className="pt-2 border-t border-black/10 flex flex-col gap-2">
             {mounted && user ? (
               <Link
                 href={getDashboardHref()}
-                className="w-full text-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center px-4 py-2 rounded-full text-xs font-semibold text-white bg-black hover:bg-neutral-800"
               >
                 Buka Dashboard ({user.role})
               </Link>
@@ -201,13 +191,15 @@ export function LandingNavbar() {
               <>
                 <Link
                   href="/login"
-                  className="w-full text-center px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center px-4 py-2 rounded-full text-xs font-semibold text-black bg-[#F4F4F6] hover:bg-[#eaeaea]"
                 >
                   Masuk Akun
                 </Link>
                 <Link
                   href="/register"
-                  className="w-full text-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center px-4 py-2 rounded-full text-xs font-semibold text-white bg-black hover:bg-neutral-800"
                 >
                   Mulai Belajar Gratis
                 </Link>
@@ -216,7 +208,7 @@ export function LandingNavbar() {
           </div>
         </div>
       )}
-    </header>
+    </motion.header>
   );
 }
 

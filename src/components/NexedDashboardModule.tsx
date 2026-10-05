@@ -12,37 +12,37 @@ interface NexedDashboardProps {
 export const defaultNodes: LearningNode[] = [
   {
     id: 1,
-    title: "Pengantar Algoritma & Logika",
-    description: "Pemahaman dasar struktur logika dan algoritma sekuensial.",
+    title: "Pengantar Logika & Algoritma",
+    description: "Notasi pseudocode standar, perancangan flowchart, dan alur sekuensial program.",
     status: "completed",
     xp: 50,
   },
   {
     id: 2,
-    title: "Struktur Kondisional (IF-ELSE)",
-    description: "Mempelajari percabangan IF-ELSE dan Switch Case.",
+    title: "Struktur Kontrol & Percabangan",
+    description: "Implementasi logika IF-ELSE bertingkat dan multiway branching switch-case.",
     status: "completed",
     xp: 75,
   },
   {
     id: 3,
-    title: "Looping & Iterasi (FOR/WHILE)",
-    description: "Kamu membutuhkan penguatan di materi ini. Mari pelajari bersama NEXED Bot!",
+    title: "Struktur Perulangan (Loops)",
+    description: "Pemahaman for, while, do-while serta penanganan iterasi bersarang (nested loops).",
     status: "recommended",
     xp: 100,
   },
   {
     id: 4,
-    title: "Struktur Data Array & Matrix",
+    title: "Array & Struktur Data Linear",
     description:
-      "Menyimpan banyak data dalam satu variabel terstruktur. (Selesaikan tahap sebelumnya)",
+      "Alokasi memori larik 1-dimensi dan matriks 2-dimensi beserta operasi traversal data.",
     status: "locked",
     xp: 0,
   },
   {
     id: 5,
-    title: "Fungsi & Rekursi Kompleks",
-    description: "Modularisasi kode dengan fungsi dan panggilan rekursif. (Terkunci)",
+    title: "Fungsi, Parameter & Rekursi",
+    description: "Modularisasi kode, passing by value/reference, dan pemanggilan fungsi rekursif.",
     status: "locked",
     xp: 0,
   },
@@ -87,27 +87,27 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
   });
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 md:p-8 shadow-xs">
+    <div className="bg-white rounded-3xl border border-black/8 p-6 md:p-8 shadow-xs hover:border-black/20 transition-all duration-300">
       {/* Header section */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded mb-2">
-            Learning Path
+          <span className="bg-[#F4F4F6] text-black border border-black/10 font-mono text-xs px-3 py-1 rounded-full inline-block mb-2">
+            Silabus Terstruktur
           </span>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
-            Peta Belajar Adaptif AI
+          <h2 className="text-xl md:text-2xl font-light text-black tracking-tight">
+            Peta Capaian Pembelajaran Modul
           </h2>
-          <p className="text-xs md:text-sm text-slate-500 mt-1">
-            Jalur pembelajaran terstruktur yang disesuaikan dengan tingkat penguasaan konsep Anda.
+          <p className="text-xs md:text-sm text-neutral-500 mt-1">
+            Tahapan penguasaan materi praktikum semester berdasarkan kurikulum vokasi TI UNS.
           </p>
         </div>
 
-        <div className="bg-slate-900 text-white px-4 py-2.5 rounded-lg shadow-xs flex items-center gap-3">
+        <div className="bg-black text-white px-5 py-3 rounded-2xl shadow-xs flex items-center gap-3">
           <div>
-            <div className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
-              Total XP
+            <div className="text-[10px] uppercase font-mono tracking-wider text-neutral-400">
+              Total XP Terkumpul
             </div>
-            <div className="text-lg font-bold">{totalXp} XP</div>
+            <div className="text-xl font-light text-white">{totalXp} XP</div>
           </div>
         </div>
       </div>
@@ -127,10 +127,10 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
               role="tab"
               aria-selected={isActive}
               onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all border cursor-pointer ${
                 isActive
-                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-black text-white border-black shadow-xs"
+                  : "bg-[#F4F4F6] text-neutral-600 border-black/10 hover:bg-neutral-200 hover:text-black"
               }`}
             >
               {status === "all" && "Semua Topik"}
@@ -148,13 +148,13 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
           {filteredNodes.map((node) => {
             const isSelected = selectedNode?.id === node.id;
 
-            let badgeClass = "bg-slate-100 text-slate-600 border-slate-200";
+            let badgeClass = "bg-[#F4F4F6] text-neutral-500 border-black/10";
             let badgeText = "Terkunci";
             if (node.status === "recommended") {
-              badgeClass = "bg-amber-50 text-amber-800 border-amber-200";
-              badgeText = "Rekomendasi";
+              badgeClass = "bg-amber-50 text-amber-800 border-amber-200/80";
+              badgeText = "Perlu Penguatan";
             } else if (node.status === "completed") {
-              badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200";
+              badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200/80";
               badgeText = "Selesai";
             }
 
@@ -163,24 +163,24 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
                 key={node.id}
                 type="button"
                 onClick={() => setSelectedNode(node)}
-                className={`text-left p-4 rounded-lg transition-colors border ${
+                className={`text-left p-4 rounded-2xl transition-all border cursor-pointer ${
                   isSelected
-                    ? "border-blue-600 bg-blue-50/40 ring-1 ring-blue-600 shadow-xs"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    ? "border-black bg-neutral-50 shadow-xs ring-1 ring-black/10"
+                    : "border-black/8 bg-white hover:border-black/20 hover:bg-neutral-50/50"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <h3 className="font-bold text-slate-900 text-sm">{node.title}</h3>
+                  <h3 className="font-medium text-black text-sm">{node.title}</h3>
                   <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded border shrink-0 ${badgeClass}`}
+                    className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border shrink-0 ${badgeClass}`}
                   >
                     {badgeText}
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
                   {node.description}
                 </p>
-                <div className="mt-2 text-xs font-semibold text-blue-700 flex items-center gap-1">
+                <div className="mt-2 text-xs font-mono font-medium text-black flex items-center gap-1">
                   <span>{node.xp > 0 ? `+${node.xp} XP` : "0 XP"}</span>
                 </div>
               </button>
@@ -189,37 +189,37 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
         </div>
 
         {selectedNode && (
-          <div className="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-[#FAFAFA] border border-black/8 rounded-2xl p-5 flex flex-col justify-between">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 mb-1">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">
                 Topik Terpilih
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">{selectedNode.title}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              <h3 className="text-base font-light text-black mb-2">{selectedNode.title}</h3>
+              <p className="text-xs text-neutral-600 leading-relaxed mb-4">
                 {selectedNode.description}
               </p>
 
-              <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-1">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase">
-                  Status Pembelajaran
+              <div className="bg-white border border-black/8 rounded-xl p-3.5 space-y-1 shadow-2xs">
+                <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
+                  Status Capaian
                 </div>
                 <div className="text-xs font-medium flex items-center gap-2">
                   {selectedNode.status === "recommended" && (
                     <span className="text-amber-800 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 inline-block" />
-                      Perlu Penguatan (Rekomendasi)
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                      Perlu Penguatan Materi
                     </span>
                   )}
                   {selectedNode.status === "completed" && (
                     <span className="text-emerald-800 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
-                      Materi Telah Dikuasai
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                      Materi Telah Tuntas
                     </span>
                   )}
                   {selectedNode.status === "locked" && (
-                    <span className="text-slate-500 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />
-                      Terkunci (Prasyarat Belum Selesai)
+                    <span className="text-neutral-500 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 inline-block" />
+                      Terkunci (Selesaikan Prasyarat)
                     </span>
                   )}
                 </div>
@@ -230,14 +230,14 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
               type="button"
               onClick={() => router.push(`/modul/${selectedNode.id}`)}
               disabled={selectedNode.status === "locked"}
-              className={`mt-6 w-full py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 ${
+              className={`mt-6 w-full py-2.5 px-4 rounded-full text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
                 selectedNode.status === "locked"
-                  ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
-                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                  ? "bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200"
+                  : "bg-black hover:bg-neutral-800 text-white"
               }`}
             >
               <span>
-                {selectedNode.status === "locked" ? "Topik Terkunci" : "Buka Modul Belajar &rarr;"}
+                {selectedNode.status === "locked" ? "Modul Belum Terbuka" : "Buka Modul Belajar &rarr;"}
               </span>
             </button>
           </div>

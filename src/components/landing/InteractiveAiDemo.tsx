@@ -177,26 +177,26 @@ export function InteractiveAiDemo() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-3xl border border-black/10 shadow-xs overflow-hidden font-['Inter',sans-serif]">
       {/* Top Demo Bar */}
-      <div className="bg-slate-50 px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200">
+      <div className="bg-[#FAFAFA] px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/8">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600" />
-          <span className="text-xs font-semibold text-slate-700">
+          <span className="w-2 h-2 rounded-full bg-black" />
+          <span className="text-xs font-semibold text-black">
             Simulasi Ekstraksi & Evaluasi Kurikulum
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-black/5 text-black border border-black/10">
             Mode Demonstrasi
           </span>
         </div>
       </div>
 
-      {/* Topic Switcher Pills */}
-      <div className="p-4 sm:p-5 bg-white border-b border-slate-200">
+      {/* Topic Switcher Pills (Minimal Monochrome) */}
+      <div className="p-4 sm:p-5 bg-white border-b border-black/8">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">
+          <span className="text-xs font-semibold text-black/40 uppercase tracking-wider mr-1">
             Sampel Modul:
           </span>
           {SAMPLE_TOPICS.map((topic) => (
@@ -204,10 +204,10 @@ export function InteractiveAiDemo() {
               key={topic.id}
               type="button"
               onClick={() => handleSelectTopic(topic.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                 selectedTopicId === topic.id
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-[#F4F4F6] text-black/70 hover:bg-[#eaeaea] border border-black/5"
               }`}
             >
               {topic.title.split("(")[0]?.trim()}
@@ -219,17 +219,17 @@ export function InteractiveAiDemo() {
       {/* Main Interactive Workspace Area */}
       <div className="p-6 sm:p-8 space-y-6">
         {/* Header of Active Topic */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/8">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-black/5 text-black border border-black/10">
                 {currentTopic.level}
               </span>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-black/50 font-normal">
                 Hasil Pemrosesan AI Otomatis
               </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h3 className="text-xl sm:text-2xl font-normal text-black tracking-tight">
               {currentTopic.title}
             </h3>
           </div>
@@ -238,59 +238,46 @@ export function InteractiveAiDemo() {
           <div
             role="tablist"
             aria-label="Navigasi Hasil AI"
-            className="flex p-1 bg-slate-100 rounded-lg self-start sm:self-auto gap-1"
+            className="flex p-1 bg-[#F4F4F6] rounded-full self-start sm:self-auto gap-1 border border-black/5"
           >
             <button
               type="button"
               role="tab"
               onClick={() => setActiveTab("ringkasan")}
               aria-selected={activeTab === "ringkasan"}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                 activeTab === "ringkasan"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-black shadow-xs font-semibold"
+                  : "text-black/60 hover:text-black"
               }`}
             >
-              📝 Ringkasan
+              Ringkasan Inti
             </button>
             <button
               type="button"
               role="tab"
               onClick={() => setActiveTab("roadmap")}
               aria-selected={activeTab === "roadmap"}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                 activeTab === "roadmap"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-black shadow-xs font-semibold"
+                  : "text-black/60 hover:text-black"
               }`}
             >
-              🗺️ Peta Belajar
+              Peta Belajar (3 Tahap)
             </button>
             <button
               type="button"
               role="tab"
               onClick={() => setActiveTab("kuis")}
               aria-selected={activeTab === "kuis"}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                 activeTab === "kuis"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-black shadow-xs font-semibold"
+                  : "text-black/60 hover:text-black"
               }`}
             >
-              🎯 Kuis Adaptif
-            </button>
-            <button
-              type="button"
-              role="tab"
-              onClick={() => setActiveTab("tutor")}
-              aria-selected={activeTab === "tutor"}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                activeTab === "tutor"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              🤖 AI Tutor
+              Kuis Adaptif
             </button>
           </div>
         </div>

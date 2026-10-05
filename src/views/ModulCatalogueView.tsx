@@ -78,17 +78,17 @@ export default function ModulCatalogueView() {
   });
 
   return (
-    <div className="bg-slate-50 min-h-screen text-slate-900 font-['Outfit'] antialiased">
+    <div className="bg-[#FAFAFA] min-h-screen text-black font-['Inter',sans-serif] antialiased">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4">
+      <header className="bg-white/90 backdrop-blur-md border-b border-black/8 sticky top-0 z-20 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">
+            <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">
               <span>Portal Pembelajaran</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-500">Katalog Modul Adaptif</span>
+              <span className="text-black/20">/</span>
+              <span className="text-black">Katalog Modul Adaptif</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-light text-black tracking-tight">
               Modul Pembelajaran & AI Study Hub
             </h1>
           </div>
@@ -96,7 +96,7 @@ export default function ModulCatalogueView() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="text-xs font-semibold px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
+              className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black transition-colors border border-black/8"
             >
               &larr; Kembali ke Dashboard
             </Link>

@@ -84,51 +84,51 @@ export default function AdminDashboardView() {
   };
 
   return (
-    <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto font-['Outfit'] antialiased">
-      {/* Header Banner */}
-      <div className="bg-white rounded-xl p-6 sm:p-8 border border-slate-200 shadow-xs">
+    <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto font-['Inter',sans-serif] antialiased">
+      {/* Header Banner - Bento Card */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300">
         <div>
-          <div className="inline-flex items-center space-x-2 bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wider mb-3">
+          <div className="inline-flex items-center space-x-2 bg-[#F4F4F6] text-black border border-black/10 px-3 py-1 rounded-full text-xs font-mono font-medium uppercase tracking-wider mb-3">
             <span>Role-Based Access Control (RBAC)</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mb-2">
+          <h1 className="text-2xl md:text-3xl font-light text-black tracking-tight mb-2">
             Panel Kontrol Administrator Platform
           </h1>
-          <p className="text-slate-600 text-xs sm:text-sm max-w-3xl leading-relaxed">
+          <p className="text-neutral-600 text-xs sm:text-sm max-w-3xl leading-relaxed">
             Kelola data akun pengguna, alokasi perizinan role (
-            <span className="text-blue-700 font-semibold">mahasiswa</span>,{" "}
-            <span className="text-blue-700 font-semibold">dosen</span>,{" "}
-            <span className="text-amber-800 font-semibold">admin</span>), serta pantau integritas
+            <span className="text-black font-medium">mahasiswa</span>,{" "}
+            <span className="text-black font-medium">dosen</span>,{" "}
+            <span className="text-black font-semibold">admin</span>), serta pantau integritas
             infrastruktur sistem NexedAI secara terpusat.
           </p>
         </div>
       </div>
 
-      {/* Metric Cards */}
+      {/* Metric Cards - Bento 3-Col */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+        <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300">
+          <div className="text-slate-500 font-medium text-xs uppercase tracking-wider mb-1">
             Total Pengguna
           </div>
-          <div className="text-3xl font-bold text-slate-900">{users.length} Akun</div>
-          <p className="text-xs text-emerald-700 mt-1.5 font-medium">Terdaftar di SSO UNS</p>
+          <div className="text-3xl font-extrabold text-slate-900 tracking-tight">{users.length} Akun</div>
+          <p className="text-xs text-emerald-700 mt-1.5 font-semibold">Terdaftar di SSO UNS</p>
         </div>
 
-        <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+        <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300">
+          <div className="text-slate-500 font-medium text-xs uppercase tracking-wider mb-1">
             Sesi Berjalan
           </div>
-          <div className="text-3xl font-bold text-emerald-600">Online</div>
+          <div className="text-3xl font-extrabold text-emerald-600 tracking-tight">Online</div>
           <p suppressHydrationWarning className="text-xs text-slate-500 mt-1.5 truncate font-medium">
             Aktif: {user?.email || "admin@nexed.ai"}
           </p>
         </div>
 
-        <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+        <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300">
+          <div className="text-slate-500 font-medium text-xs uppercase tracking-wider mb-1">
             Sistem Guard
           </div>
-          <div className="text-3xl font-bold text-blue-600">Strict RBAC</div>
+          <div className="text-3xl font-extrabold text-indigo-600 tracking-tight">Strict RBAC</div>
           <p className="text-xs text-slate-500 mt-1.5 font-mono">
             Cookie: nexed_session_token (HttpOnly)
           </p>
@@ -136,17 +136,17 @@ export default function AdminDashboardView() {
       </div>
 
       {/* User Management Table */}
-      <section className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-xs space-y-6">
+      <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
               Kelola Pengguna & Perizinan Akses
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">
               Ubah role untuk memvalidasi proteksi server-side middleware guard secara langsung.
             </p>
           </div>
-          <span className="text-xs px-3 py-1 rounded bg-slate-100 border border-slate-200 text-slate-700 font-semibold">
+          <span className="text-xs px-3 py-1 rounded-full bg-slate-100 border border-slate-200/80 text-slate-700 font-semibold">
             {users.length} Pengguna Terdaftar
           </span>
         </div>
@@ -154,24 +154,24 @@ export default function AdminDashboardView() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-700 uppercase tracking-wider bg-slate-50">
-                <th className="p-3.5">Nama Pengguna</th>
+              <tr className="border-b border-slate-200/80 text-[11px] font-semibold text-slate-700 uppercase tracking-wider bg-slate-50/70">
+                <th className="p-3.5 rounded-l-xl">Nama Pengguna</th>
                 <th className="p-3.5">Email</th>
                 <th className="p-3.5">Role Akses</th>
                 <th className="p-3.5">Status</th>
-                <th className="p-3.5">Aktivitas Terakhir</th>
+                <th className="p-3.5 rounded-r-xl">Aktivitas Terakhir</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {users.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3.5 font-semibold text-slate-900">{u.name}</td>
+                  <td className="p-3.5 font-bold text-slate-900">{u.name}</td>
                   <td className="p-3.5 font-mono text-slate-500">{u.email}</td>
                   <td className="p-3.5">
                     <select
                       value={u.role || ""}
                       onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
-                      className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
+                      className="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:border-indigo-600 cursor-pointer"
                     >
                       <option value="mahasiswa">Mahasiswa</option>
                       <option value="dosen">Dosen</option>
@@ -179,7 +179,7 @@ export default function AdminDashboardView() {
                     </select>
                   </td>
                   <td className="p-3.5">
-                    <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80">
                       {u.status}
                     </span>
                   </td>
@@ -192,23 +192,23 @@ export default function AdminDashboardView() {
       </section>
 
       {/* Modern Build Tools & Rust Toolchain Analytics */}
-      <section className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-xs space-y-6">
+      <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <span className="text-[10px] font-semibold text-blue-700 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider inline-block mb-1.5">
               Infrastruktur Toolchain Modern
             </span>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
               Analitik Kinerja Toolchain & Benchmark Kompilasi
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">
               Data benchmarking kecepatan kompilasi, HMR latency, dan efisiensi eksekusi sistem.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setRenderCount((c) => c + 1)}
-            className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm shadow-indigo-200 transition-colors cursor-pointer"
           >
             Uji HMR Latency: <span className="font-mono">{renderCount}</span> (&lt;5ms)
           </button>
@@ -217,28 +217,28 @@ export default function AdminDashboardView() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-700 uppercase tracking-wider bg-slate-50">
-                <th className="p-3.5">Build Toolchain</th>
+              <tr className="border-b border-slate-200/80 text-[11px] font-semibold text-slate-700 uppercase tracking-wider bg-slate-50/70">
+                <th className="p-3.5 rounded-l-xl">Build Toolchain</th>
                 <th className="p-3.5">Waktu Kompilasi</th>
                 <th className="p-3.5">HMR Latency</th>
-                <th className="p-3.5">Indeks Kepuasan</th>
+                <th className="p-3.5 rounded-r-xl">Indeks Kepuasan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {metrics.map((m, idx) => (
                 <tr key={m.tool} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3.5 font-semibold text-slate-900 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                  <td className="p-3.5 font-bold text-slate-900 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
                     <span>{m.tool}</span>
                   </td>
                   <td className="p-3.5 font-mono font-bold text-slate-700">{m.buildTimeMs} ms</td>
                   <td className="p-3.5 font-mono font-bold text-slate-700">{m.hmrTimeMs} ms</td>
                   <td className="p-3.5">
                     <span
-                      className={`px-2.5 py-0.5 rounded text-[11px] font-semibold border ${
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                         idx === 3
-                          ? "bg-rose-50 text-rose-800 border-rose-200"
-                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          ? "bg-rose-50 text-rose-800 border-rose-200/80"
+                          : "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                       }`}
                     >
                       {m.satisfaction}
@@ -254,34 +254,34 @@ export default function AdminDashboardView() {
       {/* System Configuration Section */}
       <section
         id="config"
-        className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-xs space-y-4"
+        className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 space-y-4"
       >
-        <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+        <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
           Konfigurasi Sistem, Keamanan & Route Groups
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600">
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
-            <div className="font-semibold text-slate-900 text-xs">Proteksi Middleware Session</div>
+          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5">
+            <div className="font-bold text-slate-900 text-xs">Proteksi Middleware Session</div>
             <p className="text-slate-500">
               Cookie Name:{" "}
-              <code className="text-blue-700 font-mono">nexed_session_token (HttpOnly)</code>
+              <code className="text-indigo-700 font-mono font-semibold">nexed_session_token (HttpOnly)</code>
             </p>
-            <p className="text-slate-500">
+            <p className="text-slate-500 leading-relaxed">
               Aturan Isolasi: Mahasiswa terisolasi dari portal Dosen/Admin, Dosen terisolasi dari
               portal Mahasiswa/Admin.
             </p>
           </div>
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
-            <div className="font-semibold text-slate-900 text-xs">
+          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5">
+            <div className="font-bold text-slate-900 text-xs">
               Arsitektur Next.js Route Groups & RSC
             </div>
             <p className="text-slate-500">
-              Route Groups: <code className="text-blue-700 font-mono">(auth)</code>,{" "}
-              <code className="text-blue-700 font-mono">(mahasiswa)</code>,{" "}
-              <code className="text-blue-700 font-mono">(dosen)</code>,{" "}
-              <code className="text-blue-700 font-mono">(admin)</code>.
+              Route Groups: <code className="text-indigo-700 font-mono font-semibold">(auth)</code>,{" "}
+              <code className="text-indigo-700 font-mono font-semibold">(mahasiswa)</code>,{" "}
+              <code className="text-indigo-700 font-mono font-semibold">(dosen)</code>,{" "}
+              <code className="text-indigo-700 font-mono font-semibold">(admin)</code>.
             </p>
-            <p className="text-slate-500">
+            <p className="text-slate-500 leading-relaxed">
               Rendering Mode: React Server Components (RSC) dengan Client Component terisolasi
               secara modular.
             </p>

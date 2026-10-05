@@ -75,16 +75,16 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col h-full">
+    <div className="bg-white rounded-3xl border border-black/8 p-6 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col h-full">
       <div className="mb-5">
-        <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded mb-1.5">
-          Target Planner
+        <span className="bg-[#F4F4F6] text-black border border-black/10 font-mono text-xs px-3 py-0.5 rounded-full inline-block mb-1.5">
+          Rencana Mandiri
         </span>
-        <h3 className="text-base font-bold text-slate-900 tracking-tight">
-          Input Target Belajar Mandiri
+        <h3 className="text-base font-light text-black tracking-tight">
+          Target Belajar & Praktikum Tambahan
         </h3>
-        <p className="text-xs text-slate-500 mt-1">
-          Rencanakan target studi Anda dengan kriteria validasi terstruktur.
+        <p className="text-xs text-neutral-500 mt-1">
+          Rencanakan target studi mandiri untuk pendalaman modul dan persiapan responsi praktikum.
         </p>
       </div>
 
@@ -94,7 +94,7 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
           <div>
             <label
               htmlFor="task-title-input"
-              className="block text-xs font-semibold text-slate-700 mb-1"
+              className="block text-neutral-500 font-mono text-xs uppercase tracking-wider mb-1"
             >
               Nama Topik / Capaian <span className="text-rose-500">*</span>
             </label>
@@ -104,10 +104,10 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Contoh: Pemahaman Struktur Data Tree"
-              className={`w-full px-3.5 py-2 rounded-lg bg-white border text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none transition-colors ${
+              className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-black text-xs placeholder:text-neutral-400 focus:outline-none transition-colors ${
                 errors.title
                   ? "border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
-                  : "border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  : "border-black/10 focus:border-black focus:ring-1 focus:ring-black"
               }`}
             />
             {errors.title && (
@@ -122,7 +122,7 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
             <div>
               <label
                 htmlFor="task-category-select"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-neutral-500 font-mono text-xs uppercase tracking-wider mb-1"
               >
                 Kategori
               </label>
@@ -130,10 +130,10 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
                 id="task-category-select"
                 value={formData.category}
                 onChange={(e) => handleInputChange("category", e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                className="w-full px-3 py-2.5 rounded-xl bg-white border border-black/10 text-neutral-800 text-xs focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
               >
                 <option value="Materi">Teori / Materi</option>
-                <option value="Praktikum">Praktikum</option>
+                <option value="Praktikum">Praktikum Lab</option>
                 <option value="Kuis">Evaluasi Kuis</option>
                 <option value="Proyek">Mini Proyek</option>
               </select>
@@ -143,7 +143,7 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
             <div>
               <label
                 htmlFor="task-complexity-select"
-                className="block text-xs font-semibold text-slate-700 mb-1"
+                className="block text-neutral-500 font-mono text-xs uppercase tracking-wider mb-1"
               >
                 Tingkat Kesulitan
               </label>
@@ -151,27 +151,27 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
                 id="task-complexity-select"
                 value={formData.complexity}
                 onChange={(e) => handleInputChange("complexity", e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                className="w-full px-3 py-2.5 rounded-xl bg-white border border-black/10 text-neutral-800 text-xs focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
               >
-                <option value="Beginner">Dasar</option>
-                <option value="Intermediate">Menengah</option>
-                <option value="Advanced">Lanjut</option>
+                <option value="Beginner">Tingkat Dasar</option>
+                <option value="Intermediate">Tingkat Menengah</option>
+                <option value="Advanced">Tingkat Lanjut</option>
               </select>
             </div>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-200">
+        <div className="pt-4 border-t border-black/5">
           <button
             type="submit"
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 px-4 bg-black hover:bg-neutral-800 text-white font-medium text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>+</span>
             <span>Tambah Target Belajar</span>
           </button>
 
           {successMessage && (
-            <div className="mt-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5">
+            <div className="mt-3 bg-emerald-50 border border-emerald-200/80 text-emerald-800 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5">
               <span>✓</span> {successMessage}
             </div>
           )}
