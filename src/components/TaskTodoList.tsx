@@ -50,13 +50,13 @@ export default function TaskTodoList() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col h-full">
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col h-full">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full mb-1">
+          <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded mb-1">
             Checklist Harian
           </span>
-          <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+          <h3 className="text-base font-bold text-slate-900 tracking-tight">
             Daftar Aktivitas Belajar
           </h3>
         </div>
@@ -71,18 +71,18 @@ export default function TaskTodoList() {
           placeholder="Tulis rencana aktivitas baru..."
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
-          className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+          className="flex-1 px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
         />
         <button
           type="submit"
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs shrink-0"
         >
           Tambah
         </button>
       </form>
 
       <div
-        className="flex gap-1.5 mb-4 p-1 bg-slate-100/80 rounded-xl border border-slate-200 self-start"
+        className="flex gap-1.5 mb-4 p-1 bg-slate-100 rounded-lg border border-slate-200 self-start"
         role="tablist"
       >
         {(["all", "active", "completed"] as const).map((f) => {
@@ -94,10 +94,10 @@ export default function TaskTodoList() {
               role="tab"
               aria-selected={isActive}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
                 isActive
-                  ? "bg-white text-slate-900 shadow-xs font-bold"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "bg-white text-slate-900 shadow-xs font-semibold"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               {f === "all" ? "Semua" : f === "active" ? "Aktif" : "Selesai"}
@@ -118,9 +118,9 @@ export default function TaskTodoList() {
           filteredTasks.map((task) => (
             <li
               key={task.id}
-              className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                 task.completed
-                  ? "bg-slate-50/70 border-slate-200/60 opacity-80"
+                  ? "bg-slate-50 border-slate-200 opacity-80"
                   : "bg-white border-slate-200 hover:border-slate-300"
               }`}
             >
@@ -129,10 +129,10 @@ export default function TaskTodoList() {
                   type="button"
                   onClick={() => toggleTask(task.id)}
                   aria-label={task.completed ? "Tandai belum selesai" : "Tandai selesai"}
-                  className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
+                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
                     task.completed
-                      ? "bg-indigo-600 border-indigo-600 text-white"
-                      : "border-slate-300 bg-white hover:border-indigo-500"
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : "border-slate-300 bg-white hover:border-blue-600"
                   }`}
                 >
                   {task.completed && (

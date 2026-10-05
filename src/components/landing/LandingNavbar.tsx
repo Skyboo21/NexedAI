@@ -38,80 +38,79 @@ export function LandingNavbar() {
         <div className="flex items-center justify-between">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-xs transition-colors">
               NX
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-black tracking-tight text-slate-900">
-                  Nexed<span className="text-indigo-600">AI</span>
+                  Nexed<span className="text-blue-600">AI</span>
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   v1.0
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium">
+              <p className="text-[10px] text-slate-500 font-medium">
                 D3 Teknik Informatika • SV UNS
               </p>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav aria-label="Navigasi Utama" className="hidden md:flex items-center gap-7">
+          <nav aria-label="Navigasi Utama" className="hidden md:flex items-center gap-6">
             <a
               href="#fitur"
-              className="text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             >
               Fitur Utama
             </a>
             <a
               href="#demo"
-              className="text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             >
               Simulasi AI
             </a>
             <a
-              href="#peran"
-              className="text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+              href="#roles"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             >
               Pengalaman Peran
             </a>
             <a
-              href="#performa"
-              className="text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+              href="#arsitektur"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             >
               Arsitektur
             </a>
             <a
               href="#faq"
-              className="text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             >
               FAQ
             </a>
           </nav>
 
           {/* Right Action CTA Buttons */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2.5">
             {mounted && user ? (
               <Link
                 href={getDashboardHref()}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center gap-1.5"
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs flex items-center gap-1.5"
               >
                 <span>Buka Dashboard</span>
-                <span className="text-indigo-200">({user.name.split(" ")[0]})</span>
-                <span>→</span>
+                <span className="text-blue-200 font-normal">({user.name.split(" ")[0]})</span>
               </Link>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100/80 transition-colors"
+                  className="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                 >
                   Masuk Akun
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs"
                 >
                   Mulai Belajar Gratis
                 </Link>
@@ -126,7 +125,7 @@ export function LandingNavbar() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Buka menu navigasi"
               aria-expanded={mobileMenuOpen}
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {mobileMenuOpen ? (
@@ -194,7 +193,7 @@ export function LandingNavbar() {
             {mounted && user ? (
               <Link
                 href={getDashboardHref()}
-                className="w-full text-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700"
+                className="w-full text-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700"
               >
                 Buka Dashboard ({user.role})
               </Link>
@@ -202,13 +201,13 @@ export function LandingNavbar() {
               <>
                 <Link
                   href="/login"
-                  className="w-full text-center px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200"
+                  className="w-full text-center px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200"
                 >
                   Masuk Akun
                 </Link>
                 <Link
                   href="/register"
-                  className="w-full text-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="w-full text-center px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700"
                 >
                   Mulai Belajar Gratis
                 </Link>

@@ -177,32 +177,26 @@ export function InteractiveAiDemo() {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/50 overflow-hidden">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Top Demo Bar */}
-      <div className="bg-slate-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-            <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-            <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-          </div>
-          <span className="text-xs font-mono text-slate-400 border-l border-slate-700 pl-3">
-            Nexed_AI_Engine::simulasi_interaktif.tsx
+      <div className="bg-slate-50 px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-blue-600" />
+          <span className="text-xs font-semibold text-slate-700">
+            Simulasi Ekstraksi & Evaluasi Kurikulum
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Live Playground
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Mode Demonstrasi
           </span>
-          <span className="text-[11px] text-slate-400">Pilih modul di bawah ini:</span>
         </div>
       </div>
 
       {/* Topic Switcher Pills */}
-      <div className="p-4 sm:p-6 bg-slate-50/80 border-b border-slate-200">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
+      <div className="p-4 sm:p-5 bg-white border-b border-slate-200">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">
             Sampel Modul:
           </span>
           {SAMPLE_TOPICS.map((topic) => (
@@ -210,10 +204,10 @@ export function InteractiveAiDemo() {
               key={topic.id}
               type="button"
               onClick={() => handleSelectTopic(topic.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 selectedTopicId === topic.id
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-[1.02]"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
               }`}
             >
               {topic.title.split("(")[0]?.trim()}
@@ -228,10 +222,10 @@ export function InteractiveAiDemo() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+              <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                 {currentTopic.level}
               </span>
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-xs text-slate-500 font-medium">
                 Hasil Pemrosesan AI Otomatis
               </span>
             </div>
@@ -244,16 +238,16 @@ export function InteractiveAiDemo() {
           <div
             role="tablist"
             aria-label="Navigasi Hasil AI"
-            className="flex p-1 bg-slate-100 rounded-xl self-start sm:self-auto"
+            className="flex p-1 bg-slate-100 rounded-lg self-start sm:self-auto gap-1"
           >
             <button
               type="button"
               role="tab"
               onClick={() => setActiveTab("ringkasan")}
               aria-selected={activeTab === "ringkasan"}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === "ringkasan"
-                  ? "bg-white text-indigo-700 shadow-xs"
+                  ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -264,9 +258,9 @@ export function InteractiveAiDemo() {
               role="tab"
               onClick={() => setActiveTab("roadmap")}
               aria-selected={activeTab === "roadmap"}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === "roadmap"
-                  ? "bg-white text-indigo-700 shadow-xs"
+                  ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -277,9 +271,9 @@ export function InteractiveAiDemo() {
               role="tab"
               onClick={() => setActiveTab("kuis")}
               aria-selected={activeTab === "kuis"}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === "kuis"
-                  ? "bg-white text-indigo-700 shadow-xs"
+                  ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -290,9 +284,9 @@ export function InteractiveAiDemo() {
               role="tab"
               onClick={() => setActiveTab("tutor")}
               aria-selected={activeTab === "tutor"}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === "tutor"
-                  ? "bg-white text-indigo-700 shadow-xs"
+                  ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -319,20 +313,20 @@ export function InteractiveAiDemo() {
             {/* TAB 1: RINGKASAN */}
             {activeTab === "ringkasan" && (
               <div className="space-y-5">
-                <div className="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100 text-slate-800 leading-relaxed text-sm">
+                <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 leading-relaxed text-sm">
                   {currentTopic.summary}
                 </div>
                 <div>
-                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-3">
-                    📌 Poin Inti Hasil Analisis AI:
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">
+                    Poin Inti Hasil Analisis:
                   </h4>
-                  <ul className="space-y-2.5">
+                  <ul className="space-y-2">
                     {currentTopic.keyPoints.map((point) => (
-                      <li key={point} className="flex items-start gap-3 text-xs text-slate-700">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                      <li key={point} className="flex items-start gap-2.5 text-xs text-slate-700">
+                        <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
                           ✓
                         </span>
-                        <span className="leading-snug">{point}</span>
+                        <span className="leading-relaxed">{point}</span>
                       </li>
                     ))}
                   </ul>
@@ -344,30 +338,29 @@ export function InteractiveAiDemo() {
             {activeTab === "roadmap" && (
               <div className="space-y-4">
                 <p className="text-xs text-slate-500">
-                  AI mengonversi materi mentah menjadi jalur belajar bertahap dengan akumulasi XP
-                  capaian:
+                  AI mengonversi materi mentah menjadi jalur belajar bertahap dengan akumulasi XP capaian:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {currentTopic.roadmap.map((node) => (
                     <div
                       key={node.step}
-                      className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-indigo-300 transition-all flex flex-col justify-between space-y-3"
+                      className="p-4 rounded-lg bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-3"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center">
+                          <span className="w-6 h-6 rounded bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
                             #{node.step}
                           </span>
-                          <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                          <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                             +{node.xp} XP
                           </span>
                         </div>
                         <h5 className="font-bold text-slate-900 text-sm">{node.title}</h5>
                         <p className="text-xs text-slate-500 mt-1">{node.desc}</p>
                       </div>
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-medium text-indigo-600">
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-medium text-blue-700">
                         <span>Status: Rekomendasi</span>
-                        <span>Siap Uji →</span>
+                        <span>Siap Uji &rarr;</span>
                       </div>
                     </div>
                   ))}
@@ -377,9 +370,9 @@ export function InteractiveAiDemo() {
 
             {/* TAB 3: KUIS INTERAKTIF */}
             {activeTab === "kuis" && (
-              <div className="p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-5">
+              <div className="p-5 rounded-lg bg-slate-50 border border-slate-200 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                     Formatif Adaptif • 1 Soal Sampel
                   </span>
                   <span className="text-xs text-slate-500">
@@ -387,23 +380,23 @@ export function InteractiveAiDemo() {
                   </span>
                 </div>
 
-                <h4 className="text-base font-bold text-slate-900 leading-snug">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
                   {currentTopic.quiz.question}
                 </h4>
 
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {currentTopic.quiz.options.map((option, idx) => {
                     const isSelected = selectedQuizOption === idx;
                     const isCorrect = idx === currentTopic.quiz.correctIndex;
                     let optionStyle =
-                      "bg-white border-slate-200 hover:border-indigo-400 hover:bg-slate-50 text-slate-700";
+                      "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700";
 
                     if (quizSubmitted) {
                       if (isCorrect) {
                         optionStyle =
-                          "bg-emerald-50 border-emerald-400 text-emerald-900 font-semibold";
+                          "bg-emerald-50 border-emerald-400 text-emerald-900 font-medium";
                       } else if (isSelected && !isCorrect) {
-                        optionStyle = "bg-rose-50 border-rose-400 text-rose-900 font-semibold";
+                        optionStyle = "bg-rose-50 border-rose-400 text-rose-900 font-medium";
                       }
                     }
 
@@ -412,16 +405,16 @@ export function InteractiveAiDemo() {
                         key={option}
                         type="button"
                         onClick={() => handleQuizAnswer(idx)}
-                        className={`w-full text-left p-4 rounded-xl border text-xs transition-all flex items-center justify-between gap-3 ${optionStyle}`}
+                        className={`w-full text-left p-3.5 rounded-lg border text-xs transition-colors flex items-center justify-between gap-3 ${optionStyle}`}
                       >
                         <span className="leading-relaxed">{option}</span>
                         {quizSubmitted && isCorrect && (
-                          <span className="text-emerald-600 font-black text-sm shrink-0">
+                          <span className="text-emerald-700 font-bold text-xs shrink-0">
                             ✓ Benar
                           </span>
                         )}
                         {quizSubmitted && isSelected && !isCorrect && (
-                          <span className="text-rose-600 font-black text-sm shrink-0">✕ Salah</span>
+                          <span className="text-rose-700 font-bold text-xs shrink-0">✕ Salah</span>
                         )}
                       </button>
                     );
@@ -429,8 +422,8 @@ export function InteractiveAiDemo() {
                 </div>
 
                 {quizSubmitted && (
-                  <div className="p-4 rounded-xl bg-white border border-slate-200 animate-in fade-in duration-200 text-xs text-slate-700 space-y-1">
-                    <span className="font-extrabold text-slate-900 block">Penjelasan Jawaban:</span>
+                  <div className="p-3.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 space-y-1">
+                    <span className="font-bold text-slate-900 block">Penjelasan Jawaban:</span>
                     <p className="leading-relaxed">{currentTopic.quiz.explanation}</p>
                   </div>
                 )}
@@ -440,14 +433,14 @@ export function InteractiveAiDemo() {
             {/* TAB 4: TUTOR CHATBOT */}
             {activeTab === "tutor" && (
               <div className="space-y-4">
-                <div className="p-5 rounded-2xl bg-linear-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-100 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-indigo-600/20 shrink-0">
-                    🤖
+                <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
+                    AI
                   </div>
                   <div className="space-y-1 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-slate-900">Nexed AI Tutor</span>
-                      <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.2 rounded-full border border-emerald-200">
+                      <span className="font-bold text-slate-900">Nexed AI Tutor</span>
+                      <span className="text-[10px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">
                         Online
                       </span>
                     </div>
@@ -455,15 +448,15 @@ export function InteractiveAiDemo() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="p-4 rounded-lg bg-white border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <span className="text-xs text-slate-600">
                     Ingin mengajukan pertanyaan lain atau upload materi lengkap PDF Anda?
                   </span>
                   <a
                     href="/register"
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shrink-0"
+                    className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shrink-0"
                   >
-                    Buka Asisten Penuh di Akun Anda →
+                    Buka Asisten Penuh di Akun Anda &rarr;
                   </a>
                 </div>
               </div>

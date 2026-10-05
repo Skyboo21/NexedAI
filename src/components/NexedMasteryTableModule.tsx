@@ -28,13 +28,13 @@ export default function NexedMasteryTableModule({
   });
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs">
       <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
         <div>
-          <span className="inline-block text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+          <span className="inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded uppercase tracking-wider mb-2">
             Monitoring Penguasaan Siswa
           </span>
-          <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
             Matriks Penguasaan Materi (Live)
           </h2>
           <p className="text-xs md:text-sm text-slate-500 mt-0.5">
@@ -47,7 +47,7 @@ export default function NexedMasteryTableModule({
           type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-2 ${
             isFetching
               ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
               : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-xs"
@@ -68,7 +68,7 @@ export default function NexedMasteryTableModule({
             placeholder="Cari nama mahasiswa atau topik..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
           />
         </div>
 
@@ -80,9 +80,9 @@ export default function NexedMasteryTableModule({
                 key={st}
                 type="button"
                 onClick={() => setStatusFilter(st)}
-                className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
                   isActive
-                    ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
                     : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
@@ -95,18 +95,18 @@ export default function NexedMasteryTableModule({
 
       {isLoading && (
         <div className="py-8 space-y-3">
-          <div className="text-xs text-slate-500 font-semibold mb-2 animate-pulse">
-            ⏳ Sinkronisasi matriks nilai real-time...
+          <div className="text-xs text-slate-500 font-semibold mb-2">
+            Sinkronisasi matriks nilai real-time...
           </div>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
           ))}
         </div>
       )}
 
       {!isLoading && isError && (
-        <div className="p-5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 space-y-3">
-          <div className="font-extrabold text-sm flex items-center gap-2">
+        <div className="p-5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 space-y-3">
+          <div className="font-bold text-sm flex items-center gap-2">
             <span>⚠️</span>
             <span>Gagal Memuat Data Server</span>
           </div>
@@ -116,7 +116,7 @@ export default function NexedMasteryTableModule({
           <button
             type="button"
             onClick={() => refetch()}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors"
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-xs transition-colors"
           >
             Coba Sinkron Ulang
           </button>
@@ -124,10 +124,9 @@ export default function NexedMasteryTableModule({
       )}
 
       {!isLoading && !isError && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
           {filteredData.length === 0 ? (
             <div className="py-14 px-6 text-center">
-              <div className="text-3xl mb-2">🔍</div>
               <div className="text-sm font-bold text-slate-800 mb-1">Tidak Ada Data Ditemukan</div>
               <div className="text-xs text-slate-500">
                 Silakan ubah kata kunci pencarian atau ganti filter status.
@@ -137,7 +136,7 @@ export default function NexedMasteryTableModule({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-600">
+                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-700">
                     <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[11px]">
                       ID
                     </th>
@@ -162,21 +161,21 @@ export default function NexedMasteryTableModule({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredData.map((row) => {
-                    let statusBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
-                    let progressColor = "bg-emerald-500";
+                    let statusBg = "bg-emerald-50 text-emerald-800 border-emerald-200";
+                    let progressColor = "bg-emerald-600";
 
                     if (row.status === "Perlu Perhatian") {
-                      statusBg = "bg-amber-50 text-amber-700 border-amber-200";
+                      statusBg = "bg-amber-50 text-amber-800 border-amber-200";
                       progressColor = "bg-amber-500";
                     } else if (row.status === "Berisiko") {
-                      statusBg = "bg-rose-50 text-rose-700 border-rose-200";
+                      statusBg = "bg-rose-50 text-rose-800 border-rose-200";
                       progressColor = "bg-rose-500";
                     }
 
                     return (
-                      <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
+                      <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4 font-mono text-slate-400">#{row.id}</td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900">{row.name}</td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-900">{row.name}</td>
                         <td className="py-3.5 px-4 text-slate-600">{row.topic}</td>
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
@@ -186,14 +185,14 @@ export default function NexedMasteryTableModule({
                                 style={{ width: `${row.mastery}%` }}
                               />
                             </div>
-                            <span className="font-bold text-slate-700 w-10 text-right">
+                            <span className="font-semibold text-slate-700 w-10 text-right">
                               {row.mastery}%
                             </span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusBg}`}
+                            className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-semibold border ${statusBg}`}
                           >
                             {row.status}
                           </span>
@@ -203,7 +202,7 @@ export default function NexedMasteryTableModule({
                             <button
                               type="button"
                               onClick={() => onReviewLog(row.name)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition-colors cursor-pointer"
                             >
                               <span>Tinjau Log</span>
                               <span>&rarr;</span>

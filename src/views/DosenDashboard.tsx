@@ -69,22 +69,22 @@ export default function DosenDashboard() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4 transition-all">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">
+            <div className="flex items-center space-x-2 text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">
               <span>Portal Pengajar & Pembimbing</span>
               <span className="text-slate-300">/</span>
               <span className="text-slate-500">Algoritma & Pemrograman (Kelas TI-A)</span>
             </div>
             <h1
               suppressHydrationWarning
-              className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight"
+              className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight"
             >
               Dashboard Analitik: {activeUser.name || activeUser.email.split("@")[0]}
             </h1>
           </div>
 
           <div className="flex items-center space-x-3">
-            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700">
-              ● Semester Genap 2026
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700">
+              Semester Genap 2026
             </span>
           </div>
         </div>
@@ -94,38 +94,38 @@ export default function DosenDashboard() {
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8 w-full">
         {/* Quick Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               Total Mahasiswa
             </div>
-            <div className="text-2xl font-black text-slate-900">42 Mahasiswa</div>
-            <p className="text-xs text-emerald-600 mt-1.5 font-semibold">
-              ● 100% Terdaftar di Sistem
+            <div className="text-2xl font-bold text-slate-900">42 Mahasiswa</div>
+            <p className="text-xs text-emerald-700 mt-1.5 font-medium">
+              100% Terdaftar di Sistem
             </p>
           </div>
 
-          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               Rata-rata Skor Kelas
             </div>
-            <div className="text-2xl font-black text-indigo-600">84.6%</div>
+            <div className="text-2xl font-bold text-blue-600">84.6%</div>
             <p className="text-xs text-slate-500 mt-1.5">Target Penguasaan: &gt;75%</p>
           </div>
 
-          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               Perlu Intervensi Remedial
             </div>
-            <div className="text-2xl font-black text-rose-600">2 Mahasiswa</div>
-            <p className="text-xs text-rose-600 mt-1.5 font-semibold">⚠️ Peringatan Dini AI</p>
+            <div className="text-2xl font-bold text-rose-600">2 Mahasiswa</div>
+            <p className="text-xs text-rose-700 mt-1.5 font-medium">Peringatan Dini Sistem</p>
           </div>
 
-          <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               Tingkat Ketuntasan
             </div>
-            <div className="text-2xl font-black text-emerald-600">78.5%</div>
-            <p className="text-xs text-emerald-600 mt-1.5">Kategori: Sangat Baik</p>
+            <div className="text-2xl font-bold text-emerald-600">78.5%</div>
+            <p className="text-xs text-emerald-700 mt-1.5 font-medium">Kategori: Sangat Baik</p>
           </div>
         </div>
 
@@ -134,33 +134,32 @@ export default function DosenDashboard() {
           <div className="flex items-center justify-between">
             <h2
               id="alert-heading"
-              className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2"
+              className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2"
             >
-              <span>⚠️</span>
-              <span>Peringatan Dini Mahasiswa Berisiko (AI Early Warning)</span>
+              <span>Peringatan Dini Mahasiswa Berisiko (Early Warning)</span>
             </h2>
-            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded uppercase tracking-wider">
               2 Peringatan Aktif
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="p-5 bg-white border border-rose-200 rounded-2xl shadow-xs relative overflow-hidden">
+            <div className="p-5 bg-white border border-rose-200 rounded-xl shadow-xs relative overflow-hidden">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Budi Santoso</h3>
+                  <h3 className="font-bold text-base text-slate-900">Budi Santoso</h3>
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401048</span>
                 </div>
                 {studentStatuses["Budi Santoso"] === "Selesai Ditinjau" ? (
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                     ✓ Selesai Ditinjau
                   </span>
                 ) : studentStatuses["Budi Santoso"] === "Dalam Penanganan" ? (
-                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                    🔵 Dalam Bimbingan
+                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                    Dalam Bimbingan
                   </span>
                 ) : (
-                  <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
                     Risiko Tinggi
                   </span>
                 )}
@@ -171,12 +170,12 @@ export default function DosenDashboard() {
               </p>
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">
-                  Rekomendasi AI: Berikan latihan analogi sehari-hari
+                  Rekomendasi: Berikan latihan analogi modular
                 </span>
                 <button
                   type="button"
                   onClick={() => handleOpenLog("Budi Santoso")}
-                  className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
+                  className="font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded hover:bg-blue-50"
                 >
                   <span>Tinjau Log</span>
                   <span>&rarr;</span>
@@ -184,22 +183,22 @@ export default function DosenDashboard() {
               </div>
             </div>
 
-            <div className="p-5 bg-white border border-amber-200 rounded-2xl shadow-xs relative overflow-hidden">
+            <div className="p-5 bg-white border border-amber-200 rounded-xl shadow-xs relative overflow-hidden">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Siti Aminah</h3>
+                  <h3 className="font-bold text-base text-slate-900">Siti Aminah</h3>
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401092</span>
                 </div>
                 {studentStatuses["Siti Aminah"] === "Selesai Ditinjau" ? (
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                     ✓ Selesai Ditinjau
                   </span>
                 ) : studentStatuses["Siti Aminah"] === "Dalam Penanganan" ? (
-                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                    🔵 Dalam Bimbingan
+                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                    Dalam Bimbingan
                   </span>
                 ) : (
-                  <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
                     Perlu Atensi
                   </span>
                 )}
@@ -210,12 +209,12 @@ export default function DosenDashboard() {
               </p>
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">
-                  Rekomendasi AI: Jadwalkan asistensi tatap muka lab
+                  Rekomendasi: Jadwalkan asistensi tatap muka lab
                 </span>
                 <button
                   type="button"
                   onClick={() => handleOpenLog("Siti Aminah")}
-                  className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
+                  className="font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded hover:bg-blue-50"
                 >
                   <span>Tinjau Log</span>
                   <span>&rarr;</span>
@@ -229,15 +228,15 @@ export default function DosenDashboard() {
         <section
           id="distribusi"
           aria-labelledby="chart-heading"
-          className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5"
+          className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs space-y-5"
         >
           <div>
-            <span className="inline-block text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+            <span className="inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded uppercase tracking-wider mb-2">
               Visualisasi Analitik Kelas
             </span>
             <h2
               id="chart-heading"
-              className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight"
+              className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight"
             >
               Distribusi Grade & Capaian Belajar Mahasiswa
             </h2>
@@ -255,7 +254,7 @@ export default function DosenDashboard() {
                     {item.count} Mahasiswa ({item.percentage}%)
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
                   <div
                     className={`${item.color} h-full rounded-full transition-all duration-500`}
                     style={{ width: `${item.percentage}%` }}

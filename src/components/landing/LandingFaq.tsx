@@ -59,7 +59,7 @@ export function LandingFaq() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-4">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -68,7 +68,7 @@ export function LandingFaq() {
                 d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span>Tanya Jawab Populer</span>
+            <span>Tanya Jawab</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Pertanyaan yang Sering Diajukan
@@ -80,15 +80,15 @@ export function LandingFaq() {
         </div>
 
         {/* FAQ Accordion List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {FAQ_DATA.map((item) => {
             const isOpen = openId === item.id;
             return (
               <div
                 key={item.id}
-                className={`bg-white rounded-2xl border transition-all duration-200 shadow-sm ${
+                className={`bg-white rounded-xl border transition-colors shadow-xs ${
                   isOpen
-                    ? "border-indigo-300 ring-2 ring-indigo-50"
+                    ? "border-slate-300 ring-1 ring-blue-100"
                     : "border-slate-200 hover:border-slate-300"
                 }`}
               >
@@ -97,22 +97,22 @@ export function LandingFaq() {
                   onClick={() => toggleItem(item.id)}
                   aria-expanded={isOpen}
                   aria-controls={`faq-answer-${item.id}`}
-                  className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl"
+                  className="w-full text-left px-6 py-4.5 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-xl"
                 >
                   <div className="space-y-1">
-                    <span className="inline-block text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+                    <span className="inline-block text-xs font-semibold text-blue-700 uppercase tracking-wider">
                       {item.category}
                     </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                    <h3 className="text-base font-bold text-slate-900">
                       {item.question}
                     </h3>
                   </div>
                   <div
-                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 ${
-                      isOpen ? "bg-indigo-600 text-white rotate-180" : "bg-slate-100 text-slate-500"
+                    className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-200 ${
+                      isOpen ? "bg-blue-600 text-white rotate-180" : "bg-slate-100 text-slate-500"
                     }`}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -126,7 +126,7 @@ export function LandingFaq() {
                 {isOpen && (
                   <div
                     id={`faq-answer-${item.id}`}
-                    className="px-6 pb-6 pt-1 text-slate-600 leading-relaxed text-sm sm:text-base border-t border-slate-100 mt-1"
+                    className="px-6 pb-5 pt-1 text-slate-600 leading-relaxed text-sm sm:text-base border-t border-slate-100 mt-1"
                   >
                     <p>{item.answer}</p>
                   </div>
@@ -137,10 +137,10 @@ export function LandingFaq() {
         </div>
 
         {/* Sub-card Support */}
-        <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="mt-12 p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -151,16 +151,16 @@ export function LandingFaq() {
             </div>
             <div>
               <h4 className="text-base font-bold text-slate-900">
-                Masih punya pertanyaan lain seputar implementasi?
+                Masih punya pertanyaan seputar kurikulum atau sistem?
               </h4>
               <p className="text-sm text-slate-600">
-                Tim kami siap membantu dosen dan mahasiswa mengoptimalkan proses belajar.
+                Tim pengembang siap membantu dosen dan mahasiswa mengoptimalkan proses pembelajaran.
               </p>
             </div>
           </div>
           <a
             href="mailto:support@nexedai.uns.ac.id"
-            className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 font-semibold text-sm transition-all shadow-sm whitespace-nowrap"
+            className="px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-semibold text-xs sm:text-sm transition-colors whitespace-nowrap"
           >
             Hubungi Tim Teknis
           </a>

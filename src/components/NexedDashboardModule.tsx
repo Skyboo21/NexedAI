@@ -87,28 +87,27 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
   });
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm">
+    <div className="bg-white rounded-xl border border-slate-200 p-6 md:p-8 shadow-xs">
       {/* Header section */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <span className="inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full mb-2">
+          <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded mb-2">
             Learning Path
           </span>
-          <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
             Peta Belajar Adaptif AI
           </h2>
           <p className="text-xs md:text-sm text-slate-500 mt-1">
-            Jalur pembelajaran dinamis yang disesuaikan dengan tingkat penguasaan konsep Anda.
+            Jalur pembelajaran terstruktur yang disesuaikan dengan tingkat penguasaan konsep Anda.
           </p>
         </div>
 
-        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-5 py-3 rounded-xl shadow-xs flex items-center gap-3">
-          <div className="text-2xl">⚡</div>
+        <div className="bg-slate-900 text-white px-4 py-2.5 rounded-lg shadow-xs flex items-center gap-3">
           <div>
-            <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-100">
-              Total Akumulasi XP
+            <div className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+              Total XP
             </div>
-            <div className="text-xl font-black">{totalXp} XP</div>
+            <div className="text-lg font-bold">{totalXp} XP</div>
           </div>
         </div>
       </div>
@@ -128,16 +127,16 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
               role="tab"
               aria-selected={isActive}
               onClick={() => setFilterStatus(status)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
                 isActive
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
                   : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               {status === "all" && "Semua Topik"}
-              {status === "recommended" && "⭐ Rekomendasi AI"}
-              {status === "completed" && "✅ Selesai"}
-              {status === "locked" && "🔒 Terkunci"}
+              {status === "recommended" && "Rekomendasi"}
+              {status === "completed" && "Selesai"}
+              {status === "locked" && "Terkunci"}
             </button>
           );
         })}
@@ -152,10 +151,10 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
             let badgeClass = "bg-slate-100 text-slate-600 border-slate-200";
             let badgeText = "Terkunci";
             if (node.status === "recommended") {
-              badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
-              badgeText = "AI Recommended";
+              badgeClass = "bg-amber-50 text-amber-800 border-amber-200";
+              badgeText = "Rekomendasi";
             } else if (node.status === "completed") {
-              badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+              badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200";
               badgeText = "Selesai";
             }
 
@@ -164,16 +163,16 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
                 key={node.id}
                 type="button"
                 onClick={() => setSelectedNode(node)}
-                className={`text-left p-4 rounded-xl transition-all border ${
+                className={`text-left p-4 rounded-lg transition-colors border ${
                   isSelected
-                    ? "border-indigo-500 bg-indigo-50/40 ring-2 ring-indigo-500/20 shadow-xs"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
+                    ? "border-blue-600 bg-blue-50/40 ring-1 ring-blue-600 shadow-xs"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <h3 className="font-bold text-slate-900 text-base">{node.title}</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">{node.title}</h3>
                   <span
-                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${badgeClass}`}
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded border shrink-0 ${badgeClass}`}
                   >
                     {badgeText}
                   </span>
@@ -181,8 +180,7 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
                 <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                   {node.description}
                 </p>
-                <div className="mt-2 text-xs font-bold text-indigo-600 flex items-center gap-1">
-                  <span>💎</span>
+                <div className="mt-2 text-xs font-semibold text-blue-700 flex items-center gap-1">
                   <span>{node.xp > 0 ? `+${node.xp} XP` : "0 XP"}</span>
                 </div>
               </button>
@@ -191,37 +189,37 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
         </div>
 
         {selectedNode && (
-          <div className="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
+          <div className="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 mb-1">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 mb-1">
                 Topik Terpilih
               </div>
-              <h3 className="text-lg font-extrabold text-slate-900 mb-2">{selectedNode.title}</h3>
+              <h3 className="text-base font-bold text-slate-900 mb-2">{selectedNode.title}</h3>
               <p className="text-xs text-slate-600 leading-relaxed mb-4">
                 {selectedNode.description}
               </p>
 
               <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-1">
-                <div className="text-[11px] font-bold text-slate-400 uppercase">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase">
                   Status Pembelajaran
                 </div>
-                <div className="text-xs font-semibold flex items-center gap-2">
+                <div className="text-xs font-medium flex items-center gap-2">
                   {selectedNode.status === "recommended" && (
-                    <span className="text-amber-700 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                      Perlu Penguatan (Rekomendasi AI)
+                    <span className="text-amber-800 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 inline-block" />
+                      Perlu Penguatan (Rekomendasi)
                     </span>
                   )}
                   {selectedNode.status === "completed" && (
-                    <span className="text-emerald-700 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                    <span className="text-emerald-800 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
                       Materi Telah Dikuasai
                     </span>
                   )}
                   {selectedNode.status === "locked" && (
-                    <span className="text-slate-500 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
-                      Terkunci (Selesaikan Prasyarat)
+                    <span className="text-slate-500 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />
+                      Terkunci (Prasyarat Belum Selesai)
                     </span>
                   )}
                 </div>
@@ -232,15 +230,14 @@ export default function NexedDashboardModule({ initialNodes = defaultNodes }: Ne
               type="button"
               onClick={() => router.push(`/modul/${selectedNode.id}`)}
               disabled={selectedNode.status === "locked"}
-              className={`mt-6 w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`mt-6 w-full py-2.5 px-4 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 ${
                 selectedNode.status === "locked"
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
-                  : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
               }`}
             >
-              <span>🚀</span>
               <span>
-                {selectedNode.status === "locked" ? "Topik Terkunci" : "Buka Modul Belajar"}
+                {selectedNode.status === "locked" ? "Topik Terkunci" : "Buka Modul Belajar &rarr;"}
               </span>
             </button>
           </div>

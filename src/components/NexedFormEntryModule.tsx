@@ -75,16 +75,16 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col h-full">
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex flex-col h-full">
       <div className="mb-5">
-        <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full mb-1.5">
+        <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded mb-1.5">
           Target Planner
         </span>
-        <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+        <h3 className="text-base font-bold text-slate-900 tracking-tight">
           Input Target Belajar Mandiri
         </h3>
         <p className="text-xs text-slate-500 mt-1">
-          Rencanakan target studi Anda dengan validasi kriteria terstruktur.
+          Rencanakan target studi Anda dengan kriteria validasi terstruktur.
         </p>
       </div>
 
@@ -104,10 +104,10 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Contoh: Pemahaman Struktur Data Tree"
-              className={`w-full px-3.5 py-2 rounded-xl bg-slate-50 border text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 transition-all ${
+              className={`w-full px-3.5 py-2 rounded-lg bg-white border text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none transition-colors ${
                 errors.title
-                  ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/20"
-                  : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20"
+                  ? "border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                  : "border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               }`}
             />
             {errors.title && (
@@ -130,12 +130,12 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
                 id="task-category-select"
                 value={formData.category}
                 onChange={(e) => handleInputChange("category", e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:border-indigo-500 focus:ring-indigo-500/20"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               >
-                <option value="Materi">📚 Teori / Materi</option>
-                <option value="Praktikum">💻 Praktikum</option>
-                <option value="Kuis">📝 Evaluasi Kuis</option>
-                <option value="Proyek">🚀 Mini Proyek</option>
+                <option value="Materi">Teori / Materi</option>
+                <option value="Praktikum">Praktikum</option>
+                <option value="Kuis">Evaluasi Kuis</option>
+                <option value="Proyek">Mini Proyek</option>
               </select>
             </div>
 
@@ -151,28 +151,28 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
                 id="task-complexity-select"
                 value={formData.complexity}
                 onChange={(e) => handleInputChange("complexity", e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:border-indigo-500 focus:ring-indigo-500/20"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               >
-                <option value="Beginner">🌱 Dasar</option>
-                <option value="Intermediate">🌟 Menengah</option>
-                <option value="Advanced">🔥 Lanjut</option>
+                <option value="Beginner">Dasar</option>
+                <option value="Intermediate">Menengah</option>
+                <option value="Advanced">Lanjut</option>
               </select>
             </div>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-slate-200">
           <button
             type="submit"
-            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5"
           >
             <span>+</span>
             <span>Tambah Target Belajar</span>
           </button>
 
           {successMessage && (
-            <div className="mt-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5">
-              <span>✅</span> {successMessage}
+            <div className="mt-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5">
+              <span>✓</span> {successMessage}
             </div>
           )}
         </div>

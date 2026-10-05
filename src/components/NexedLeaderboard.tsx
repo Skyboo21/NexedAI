@@ -127,19 +127,19 @@ export default function NexedLeaderboard() {
   return (
     <section
       aria-label="Papan Peringkat dan Lencana Prestasi Belajar"
-      className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5"
+      className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs space-y-5"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded uppercase tracking-wider">
               Gamifikasi Belajar • SKPL UNS
             </span>
-            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-              ● Live Season 2026
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+              Live Season 2026
             </span>
           </div>
-          <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+          <h3 className="text-xl font-bold text-slate-900 tracking-tight">
             Papan Peringkat & Lencana Capaian
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -151,33 +151,33 @@ export default function NexedLeaderboard() {
         <div
           role="tablist"
           aria-label="Navigasi Peringkat dan Lencana"
-          className="flex p-1 bg-slate-100 rounded-xl self-start sm:self-auto"
+          className="flex p-1 bg-slate-100 rounded-lg self-start sm:self-auto"
         >
           <button
             type="button"
             role="tab"
             onClick={() => setActiveTab("leaderboard")}
             aria-selected={activeTab === "leaderboard"}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               activeTab === "leaderboard"
-                ? "bg-white text-indigo-700 shadow-xs"
+                ? "bg-white text-blue-700 shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            🏆 Peringkat XP
+            Peringkat XP
           </button>
           <button
             type="button"
             role="tab"
             onClick={() => setActiveTab("badges")}
             aria-selected={activeTab === "badges"}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               activeTab === "badges"
-                ? "bg-white text-indigo-700 shadow-xs"
+                ? "bg-white text-blue-700 shadow-xs font-bold"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            🎖️ Koleksi Lencana ({BADGES_LIST.filter((b) => b.unlocked).length}/{BADGES_LIST.length})
+            Koleksi Lencana ({BADGES_LIST.filter((b) => b.unlocked).length}/{BADGES_LIST.length})
           </button>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function NexedLeaderboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-slate-600">
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-700">
                 <th className="py-3 px-4 font-semibold uppercase tracking-wider text-[11px] w-12 text-center">
                   Pos
                 </th>
@@ -210,24 +210,24 @@ export default function NexedLeaderboard() {
                   key={entry.nim}
                   className={`transition-colors ${
                     entry.isCurrentUser
-                      ? "bg-indigo-50/60 font-semibold hover:bg-indigo-50"
+                      ? "bg-blue-50/50 font-semibold hover:bg-blue-50/80"
                       : "hover:bg-slate-50/80"
                   }`}
                 >
-                  <td className="py-3.5 px-4 text-center font-black text-xs">
+                  <td className="py-3.5 px-4 text-center font-bold text-xs">
                     {entry.rank === 1 ? (
-                      <span className="text-amber-500 text-base">🥇</span>
+                      <span className="text-amber-600 font-bold">#1</span>
                     ) : entry.rank === 2 ? (
-                      <span className="text-slate-400 text-base">🥈</span>
+                      <span className="text-slate-600 font-bold">#2</span>
                     ) : entry.rank === 3 ? (
-                      <span className="text-amber-700 text-base">🥉</span>
+                      <span className="text-amber-800 font-bold">#3</span>
                     ) : (
-                      <span className="text-slate-400 font-mono">#{entry.rank}</span>
+                      <span className="text-slate-500 font-mono">#{entry.rank}</span>
                     )}
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
+                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-700">
                         {entry.name
                           .split(" ")
                           .map((n) => n[0])
@@ -235,10 +235,10 @@ export default function NexedLeaderboard() {
                           .join("")}
                       </div>
                       <div>
-                        <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
                           <span>{entry.name}</span>
                           {entry.isCurrentUser && (
-                            <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-indigo-600 text-white">
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white">
                               Anda
                             </span>
                           )}
@@ -248,12 +248,12 @@ export default function NexedLeaderboard() {
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-slate-700 font-medium">{entry.level}</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-indigo-700">
-                    🎖️ {entry.badgesCount}
+                  <td className="py-3.5 px-4 text-center font-semibold text-blue-700">
+                    {entry.badgesCount}
                   </td>
                   <td
                     suppressHydrationWarning
-                    className="py-3.5 px-4 text-right font-black text-indigo-600"
+                    className="py-3.5 px-4 text-right font-bold text-slate-900"
                   >
                     {`${formatXp(entry.xp)} XP`}
                   </td>
@@ -267,24 +267,24 @@ export default function NexedLeaderboard() {
           {BADGES_LIST.map((b) => (
             <div
               key={b.id}
-              className={`p-4 rounded-2xl border transition-all flex items-start gap-3 ${
+              className={`p-4 rounded-xl border transition-colors flex items-start gap-3 ${
                 b.unlocked
-                  ? "bg-white border-slate-200 shadow-xs hover:border-indigo-300"
-                  : "bg-slate-50 border-slate-200/60 opacity-60"
+                  ? "bg-white border-slate-200 shadow-xs hover:border-slate-300"
+                  : "bg-slate-50 border-slate-200 opacity-60"
               }`}
             >
               <div
-                className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 ${
-                  b.unlocked ? "bg-indigo-50 border border-indigo-100" : "bg-slate-200"
+                className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 ${
+                  b.unlocked ? "bg-blue-50 border border-blue-200 text-blue-700" : "bg-slate-200"
                 }`}
               >
                 {b.icon}
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-extrabold text-xs text-slate-900">{b.title}</h4>
+                  <h4 className="font-bold text-xs text-slate-900">{b.title}</h4>
                   <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                    className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
                       b.tier === "Gold"
                         ? "bg-amber-100 text-amber-800"
                         : b.tier === "Silver"
@@ -296,11 +296,11 @@ export default function NexedLeaderboard() {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-snug">{b.description}</p>
-                <div className="text-[10px] font-bold pt-0.5">
+                <div className="text-[10px] font-semibold pt-0.5">
                   {b.unlocked ? (
-                    <span className="text-emerald-600">✓ Terbuka</span>
+                    <span className="text-emerald-700">✓ Terbuka</span>
                   ) : (
-                    <span className="text-slate-400">🔒 Belum Tercapai</span>
+                    <span className="text-slate-400">Belum Tercapai</span>
                   )}
                 </div>
               </div>

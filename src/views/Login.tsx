@@ -54,27 +54,23 @@ export default function Login() {
   };
 
   return (
-    <div className="bg-slate-950 text-slate-200 min-h-screen flex items-center justify-center relative overflow-hidden font-['Outfit'] antialiased">
-      {/* Ambient Background */}
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-600 rounded-full mix-blend-screen filter blur-[150px] opacity-40 pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-screen filter blur-[150px] opacity-40 pointer-events-none" />
-
-      <main className="w-full max-w-md p-8 sm:p-10 bg-slate-900/70 backdrop-blur-2xl rounded-3xl shadow-2xl relative z-10 m-4 border-t border-white/20 border-b border-white/10">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl mx-auto flex items-center justify-center font-bold text-white shadow-lg shadow-purple-500/40 text-2xl mb-4">
+    <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center p-4 sm:p-6 relative font-['Outfit'] antialiased">
+      <main className="w-full max-w-md p-8 sm:p-10 bg-white border border-slate-200 rounded-xl shadow-xs relative z-10 space-y-6">
+        <div className="text-center">
+          <div className="w-11 h-11 bg-blue-600 text-white rounded-lg mx-auto flex items-center justify-center font-bold text-base shadow-xs mb-3">
             NX
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Selamat Datang</h1>
-          <p className="text-slate-400 mt-1.5 text-sm font-light">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Selamat Datang</h1>
+          <p className="text-slate-500 mt-1 text-xs font-normal">
             Masuk ke platform pembelajaran adaptif <strong>NEXED AI</strong>
           </p>
         </div>
 
         {/* 1-Click Role Login Presets */}
-        <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-          <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
             <span>Pilih Cepat Role Pengguna:</span>
-            <span className="text-purple-400 font-bold bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+            <span className="text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded text-[10px]">
               1-Klik Masuk
             </span>
           </div>
@@ -84,16 +80,16 @@ export default function Login() {
               type="button"
               disabled={isLoading}
               onClick={() => handleQuickDemo("mahasiswa@nexed.ai", "mahasiswa", "/dashboard")}
-              className={`p-3 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              className={`p-3 rounded-lg border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
                 activeRole === "mahasiswa"
-                  ? "bg-purple-600 text-white border-purple-400 ring-2 ring-purple-500/50 shadow-lg shadow-purple-600/30"
-                  : "bg-purple-600/15 hover:bg-purple-600/30 border-purple-500/30 text-purple-300 hover:text-white"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                  : "bg-white hover:bg-blue-50/60 border-slate-200 text-slate-700 hover:text-blue-700"
               }`}
             >
-              <span className="text-xl">🎓</span>
+              <span className="text-lg">🎓</span>
               <span>Mahasiswa</span>
               {activeRole === "mahasiswa" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
                   ✓ Masuk...
                 </span>
               )}
@@ -103,16 +99,16 @@ export default function Login() {
               type="button"
               disabled={isLoading}
               onClick={() => handleQuickDemo("dosen@nexed.ai", "dosen", "/dosen-dashboard")}
-              className={`p-3 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              className={`p-3 rounded-lg border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
                 activeRole === "dosen"
-                  ? "bg-blue-600 text-white border-blue-400 ring-2 ring-blue-500/50 shadow-lg shadow-blue-600/30"
-                  : "bg-blue-600/15 hover:bg-blue-600/30 border-blue-500/30 text-blue-300 hover:text-white"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                  : "bg-white hover:bg-blue-50/60 border-slate-200 text-slate-700 hover:text-blue-700"
               }`}
             >
-              <span className="text-xl">👨‍🏫</span>
+              <span className="text-lg">👨‍🏫</span>
               <span>Dosen</span>
               {activeRole === "dosen" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
                   ✓ Masuk...
                 </span>
               )}
@@ -122,16 +118,16 @@ export default function Login() {
               type="button"
               disabled={isLoading}
               onClick={() => handleQuickDemo("admin@nexed.ai", "admin", "/admin-dashboard")}
-              className={`p-3 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              className={`p-3 rounded-lg border text-xs font-semibold transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-[0.98] ${
                 activeRole === "admin"
-                  ? "bg-amber-600 text-white border-amber-400 ring-2 ring-amber-500/50 shadow-lg shadow-amber-600/30"
-                  : "bg-amber-600/15 hover:bg-amber-600/30 border-amber-500/30 text-amber-300 hover:text-white"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  : "bg-white hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900"
               }`}
             >
-              <span className="text-xl">🛡️</span>
+              <span className="text-lg">🛡️</span>
               <span>Admin</span>
               {activeRole === "admin" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
                   ✓ Masuk...
                 </span>
               )}
@@ -144,7 +140,7 @@ export default function Login() {
           <div>
             <label
               htmlFor="login-email-input"
-              className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
             >
               Email Pengguna
             </label>
@@ -154,7 +150,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-black/40 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none text-white text-sm transition-all placeholder-slate-500"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none text-slate-900 text-sm transition-colors placeholder-slate-400"
               placeholder="contoh: mahasiswa@nexed.ai"
             />
           </div>
@@ -163,18 +159,18 @@ export default function Login() {
             <div className="flex justify-between items-center mb-1.5">
               <label
                 htmlFor="login-password-input"
-                className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+                className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
               >
                 Kata Sandi
               </label>
-              <span className="text-[11px] text-purple-400">Demo (Bebas)</span>
+              <span className="text-[11px] text-blue-600 font-medium">Demo (Bebas)</span>
             </div>
             <input
               id="login-password-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-black/40 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none text-white text-sm transition-all placeholder-slate-500"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none text-slate-900 text-sm transition-colors placeholder-slate-400"
               placeholder="••••••••"
             />
           </div>
@@ -182,7 +178,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg shadow-purple-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex justify-center items-center mt-3 cursor-pointer"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg shadow-xs hover:shadow-sm transition-colors flex justify-center items-center text-sm cursor-pointer"
           >
             {isLoading ? "Sedang Mengalihkan..." : "Masuk ke Sistem"}
           </button>
