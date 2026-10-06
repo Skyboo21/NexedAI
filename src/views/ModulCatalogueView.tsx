@@ -83,20 +83,20 @@ export default function ModulCatalogueView() {
       <header className="bg-white/90 backdrop-blur-md border-b border-black/8 sticky top-0 z-20 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">
-              <span>Portal Pembelajaran</span>
+            <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1">
+              <span>Portal Akademik Mahasiswa</span>
               <span className="text-black/20">/</span>
-              <span className="text-black">Katalog Modul Adaptif</span>
+              <span className="text-black font-semibold">D3 TI SV UNS</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-light text-black tracking-tight">
-              Modul Pembelajaran & AI Study Hub
+              Katalog Modul Praktikum & Asisten Riset Adaptif
             </h1>
           </div>
 
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black transition-colors border border-black/8"
+              className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black transition-colors border border-black/10 shadow-2xs"
             >
               &larr; Kembali ke Dashboard
             </Link>
@@ -111,14 +111,14 @@ export default function ModulCatalogueView() {
 
         {/* FITUR 1.5: DOKUMEN MODUL PRIBADI MAHASISWA */}
         {uploadedModules.length > 0 && (
-          <div className="space-y-4 pt-4 border-t border-slate-200">
+          <div className="space-y-4 pt-4 border-t border-black/5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded mb-1 inline-block">
-                  Arsip Dokumen Anda
+                <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full mb-1 inline-block">
+                  Arsip Berkas Praktikum
                 </span>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                  Modul yang Diunggah ({uploadedModules.length})
+                <h2 className="text-xl font-light text-black tracking-tight">
+                  Modul Mandiri Terunggah ({uploadedModules.length})
                 </h2>
               </div>
               <button
@@ -130,7 +130,7 @@ export default function ModulCatalogueView() {
                     window.dispatchEvent(new Event("nexed_modules_updated"));
                   }
                 }}
-                className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-semibold transition-colors border border-slate-200 hover:border-rose-200 flex items-center gap-1.5 cursor-pointer"
+                className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[#F4F4F6] hover:bg-rose-50 hover:text-rose-600 text-neutral-600 text-xs font-medium transition-colors border border-black/10 hover:border-rose-200 flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 title="Hapus seluruh riwayat modul yang diunggah"
               >
                 <span>Bersihkan Riwayat Modul</span>
@@ -141,27 +141,27 @@ export default function ModulCatalogueView() {
               {uploadedModules.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition-colors flex flex-col justify-between"
+                  className="bg-white rounded-3xl border border-black/8 p-6 shadow-xs hover:border-black/20 transition-all flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded uppercase">
+                      <span className="text-[10px] font-mono uppercase text-black bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
                         {item.filename.split(".").pop() || "DOC"}
                       </span>
-                      <span className="text-[10px] text-slate-500 font-medium">
+                      <span className="text-[10px] text-neutral-400 font-mono">
                         {item.uploadedAt}
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-slate-900 line-clamp-1 mb-1">
+                    <h3 className="text-sm font-medium text-black line-clamp-1 mb-1">
                       {item.title}
                     </h3>
-                    <p className="text-xs text-slate-500 mb-3 truncate">
+                    <p className="text-xs text-neutral-500 mb-4 truncate font-mono">
                       {item.filename} &bull; {item.chunkCount} chunk ({item.totalWords} kata)
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2 pt-4 border-t border-black/5">
                     <button
                       type="button"
                       onClick={() => {
@@ -169,7 +169,7 @@ export default function ModulCatalogueView() {
                         const evt = new CustomEvent("nexed_load_module", { detail: item });
                         window.dispatchEvent(evt);
                       }}
-                      className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 py-2 px-4 bg-black hover:bg-neutral-800 text-white font-medium text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>Pelajari Sekarang &rarr;</span>
                     </button>
@@ -180,7 +180,7 @@ export default function ModulCatalogueView() {
                         setUploadedModules(next);
                         localStorage.setItem("nexed_uploaded_modules", JSON.stringify(next));
                       }}
-                      className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-2 text-neutral-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer text-xs"
                       title="Hapus modul dari daftar"
                     >
                       Hapus
@@ -193,31 +193,31 @@ export default function ModulCatalogueView() {
         )}
 
         {/* FITUR 2: MODUL KURIKULUM RESMI */}
-        <div className="space-y-6 pt-4 border-t border-slate-200">
+        <div className="space-y-6 pt-4 border-t border-black/5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded mb-1 inline-block">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full mb-1.5 inline-block">
                 Kurikulum Resmi D3 TI SV UNS
               </span>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                Daftar Modul Pembelajaran Terstruktur
+              <h2 className="text-xl font-light text-black tracking-tight">
+                Silabus Modul Praktikum Terstruktur
               </h2>
             </div>
 
             {/* Quick Completion Stats */}
-            <div className="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs self-start sm:self-auto">
+            <div className="text-xs font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-3.5 py-1.5 rounded-full shadow-2xs self-start sm:self-auto">
               <span>
                 {completedIds.length} dari {LEARNING_TOPICS.length} Modul Tuntas
               </span>
-              <span className="text-slate-300 mx-2">•</span>
-              <span className="font-bold text-amber-600">
+              <span className="text-black/20 mx-2">•</span>
+              <span className="font-semibold text-black">
                 {earnedXp} / {totalXp} XP
               </span>
             </div>
           </div>
 
           {/* Filter & Search Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-black/8 shadow-xs">
             {/* Tabs */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0" role="tablist">
               {(["all", "completed", "recommended", "locked"] as const).map((status) => {
@@ -229,10 +229,10 @@ export default function ModulCatalogueView() {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setFilter(status)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                       isActive
-                        ? "bg-blue-600 text-white shadow-xs"
-                        : "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        ? "bg-black text-white shadow-xs"
+                        : "bg-[#F4F4F6] text-neutral-600 border border-black/10 hover:bg-neutral-200 hover:text-black"
                     }`}
                   >
                     {status === "all" && "Semua Modul"}
@@ -251,7 +251,7 @@ export default function ModulCatalogueView() {
                 placeholder="Cari modul atau topik..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                className="w-full px-4 py-2 bg-[#FAFAFA] border border-black/10 rounded-full text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all"
               />
             </div>
           </div>
@@ -266,51 +266,51 @@ export default function ModulCatalogueView() {
               return (
                 <div
                   key={topic.id}
-                  className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs hover:border-slate-300 transition-colors flex flex-col justify-between"
+                  className="bg-white rounded-3xl border border-black/8 p-6 shadow-xs hover:border-black/20 transition-all flex flex-col justify-between"
                 >
                   <div>
                     {/* Card Header Badges */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
                         {topic.meeting}
                       </span>
 
                       {isCompleted ? (
-                        <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
                           Selesai
                         </span>
                       ) : isRecommended ? (
-                        <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-mono text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
                           Rekomendasi
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-mono text-neutral-500 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
                           Terkunci
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 mb-2 leading-snug">
+                    <h3 className="text-base font-medium text-black mb-2 leading-snug">
                       {topic.title}
                     </h3>
-                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed mb-4">
+                    <p className="text-xs text-neutral-600 line-clamp-3 leading-relaxed mb-4">
                       {topic.description}
                     </p>
 
-                    <div className="space-y-1 text-[11px] text-slate-500 border-t border-slate-100 pt-3 mb-4">
+                    <div className="space-y-1.5 text-[11px] text-neutral-500 border-t border-black/5 pt-3 mb-5">
                       <div className="flex justify-between">
                         <span>Dosen Pengampu:</span>
-                        <span className="font-medium text-slate-700">{topic.lecturer}</span>
+                        <span className="font-medium text-black">{topic.lecturer}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Beban Studi:</span>
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-black">
                           {topic.sks} SKS ({topic.duration})
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Hadiah XP:</span>
-                        <span className="font-semibold text-amber-700">+{topic.xp} XP</span>
+                        <span>Reward XP:</span>
+                        <span className="font-mono font-medium text-black">+{topic.xp} XP</span>
                       </div>
                     </div>
                   </div>
@@ -318,12 +318,12 @@ export default function ModulCatalogueView() {
                   {/* Footer Action */}
                   <Link
                     href={isLocked ? "#" : `/modul/${topic.id}`}
-                    className={`w-full py-2.5 px-4 rounded-lg text-xs font-semibold text-center transition-colors flex items-center justify-center gap-1.5 ${
+                    className={`w-full py-2.5 px-4 rounded-full text-xs font-medium text-center transition-all flex items-center justify-center gap-1.5 ${
                       isLocked
-                        ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none"
+                        ? "bg-neutral-100 text-neutral-400 border border-neutral-200 cursor-not-allowed pointer-events-none"
                         : isCompleted
-                          ? "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200"
-                          : "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                          ? "bg-[#F4F4F6] hover:bg-neutral-200 text-black border border-black/10 shadow-2xs"
+                          : "bg-black hover:bg-neutral-800 text-white shadow-xs"
                     }`}
                   >
                     <span>

@@ -93,7 +93,7 @@ function CodeBlockSnippet({ code, language }: { code: string; language: string }
           )}
         </button>
       </div>
-      <pre className="p-3.5 text-[11px] font-mono leading-relaxed overflow-x-auto text-indigo-200">
+      <pre className="p-3.5 text-[11px] font-mono leading-relaxed overflow-x-auto text-neutral-200">
         <code>{code}</code>
       </pre>
     </div>
@@ -105,7 +105,7 @@ function renderInlineFormatted(text: string): React.ReactNode {
   return parts.map((part, idx) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
       return (
-        <strong key={`b-${idx}`} className="font-bold text-slate-900">
+        <strong key={`b-${idx}`} className="font-semibold text-black">
           {part.slice(2, -2)}
         </strong>
       );
@@ -114,7 +114,7 @@ function renderInlineFormatted(text: string): React.ReactNode {
       return (
         <code
           key={`c-${idx}`}
-          className="px-1.5 py-0.5 rounded bg-slate-100 text-indigo-700 font-mono text-[11px] font-semibold border border-slate-200/80"
+          className="px-1.5 py-0.5 rounded-md bg-[#F4F4F6] text-black font-mono text-[11px] font-medium border border-black/10"
         >
           {part.slice(1, -1)}
         </code>
@@ -169,13 +169,13 @@ function ChatMessageContent({ text, isUser }: { text: string; isUser: boolean })
           renderedElements.push(
             <ul key={`${keyPrefix}-list`} className="space-y-1 my-1 pl-1">
               {currentList.map((item, lIdx) => (
-                <li key={`li-${lIdx}`} className="flex items-start gap-2 text-slate-700">
+                <li key={`li-${lIdx}`} className="flex items-start gap-2 text-neutral-700">
                   {item.type === "bullet" ? (
-                    <span className="text-indigo-600 font-bold select-none text-xs leading-5">
+                    <span className="text-black font-bold select-none text-xs leading-5">
                       •
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 rounded px-1.5 py-0.2 select-none min-w-[18px] text-center mt-0.5">
+                    <span className="text-[10px] font-mono font-bold text-black bg-[#F4F4F6] border border-black/10 rounded-full px-2 py-0.5 select-none min-w-[20px] text-center mt-0.5">
                       {item.num}
                     </span>
                   )}
@@ -206,9 +206,9 @@ function ChatMessageContent({ text, isUser }: { text: string; isUser: boolean })
             renderedElements.push(
               <div
                 key={`h-${i}`}
-                className="font-bold text-slate-900 text-xs sm:text-sm mt-3 mb-1 flex items-center gap-1.5"
+                className="font-bold text-black text-xs sm:text-sm mt-3 mb-1 flex items-center gap-1.5"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block" />
+                <span className="w-1.5 h-1.5 rounded-full bg-black inline-block" />
                 <span>{renderInlineFormatted(headingText)}</span>
               </div>,
             );
@@ -796,22 +796,22 @@ Silabus & Fokus Pembahasan:
   return (
     <section
       aria-label="Nexed AI Study Hub"
-      className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6"
+      className="bg-white rounded-3xl border border-black/8 shadow-xs hover:border-black/20 p-6 sm:p-8 space-y-6 transition-all"
     >
       {/* Top Banner Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/5 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full text-indigo-700 text-xs font-bold uppercase tracking-wider mb-2">
-            <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
-            <span>Nexed AI Module Study Hub</span>
+          <div className="inline-flex items-center gap-2 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full text-black font-mono text-xs uppercase tracking-wider mb-2">
+            <span className="w-2 h-2 rounded-full bg-black" />
+            <span>Laboratorium Sintesis Modul • Asisten Riset Mandiri</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-            Unggah Materi & Analisis Adaptif Instan
+          <h2 className="text-xl sm:text-2xl font-light text-black tracking-tight">
+            Bedah Materi & Sintesis Modul Pembelajaran
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-            Unggah modul kuliah (PDF, TXT, DOCX) atau tempel topik belajar. Asisten cerdas Nexed AI
-            akan mengekstrak poin inti, merancang peta belajar bertahap, kuis active recall, serta
-            tutor AI interaktif.
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1 max-w-2xl leading-relaxed">
+            Unggah berkas modul perkuliahan (PDF, DOCX, TXT) atau pilih topik silabus. Asisten akademik Nexed AI
+            membedah intisari teori, menyusun tahapan penguasaan praktikum, simulasi kuis pemahaman, dan ruang
+            konsultasi interaktif.
           </p>
         </div>
 
@@ -830,7 +830,7 @@ Silabus & Fokus Pembahasan:
                 fileInputRef.current.value = "";
               }
             }}
-            className="self-start md:self-auto px-4 py-2 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-bold transition-all border border-slate-200 hover:border-indigo-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="self-start md:self-auto px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black text-xs font-medium transition-all border border-black/10 flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <span>🔄</span>
             <span>Ganti / Unggah Modul Baru</span>
@@ -843,14 +843,14 @@ Silabus & Fokus Pembahasan:
         <div className="space-y-6 animate-in fade-in">
           {/* Quick Preset Selector Chips */}
           <div className="space-y-2">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              💡 Atau Pilih Modul Cepat untuk Diuji Langsung:
+            <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-wider block">
+              💡 Atau Pilih Modul Silabus Cepat untuk Pengujian:
             </span>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => handleStartAnalysis("binary_search")}
-                className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
+                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 <span>🔍</span>
                 <span>Pencarian Biner (O(log N))</span>
@@ -858,7 +858,7 @@ Silabus & Fokus Pembahasan:
               <button
                 type="button"
                 onClick={() => handleStartAnalysis("tree_traversal")}
-                className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
+                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 <span>🌲</span>
                 <span>Pohon Biner & Traversal Rekursif</span>
@@ -866,7 +866,7 @@ Silabus & Fokus Pembahasan:
               <button
                 type="button"
                 onClick={() => handleStartAnalysis("database_sql")}
-                className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
+                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 <span>🗄️</span>
                 <span>Basis Data & Kueri SQL</span>
@@ -874,7 +874,7 @@ Silabus & Fokus Pembahasan:
               <button
                 type="button"
                 onClick={() => handleStartAnalysis("oop_clean")}
-                className="px-3.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs"
+                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 <span>📦</span>
                 <span>Pemrograman Berorientasi Objek (OOP)</span>
@@ -883,14 +883,14 @@ Silabus & Fokus Pembahasan:
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex gap-2 border-b border-slate-200 overflow-x-auto">
+          <div className="flex gap-2 border-b border-black/8 overflow-x-auto">
             <button
               type="button"
               onClick={() => setInputMode("file")}
-              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
+              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                 inputMode === "file"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
+                  ? "border-black text-black"
+                  : "border-transparent text-neutral-500 hover:text-black"
               }`}
             >
               📁 Unggah File Dokumen (PDF, TXT, DOCX)
@@ -898,10 +898,10 @@ Silabus & Fokus Pembahasan:
             <button
               type="button"
               onClick={() => setInputMode("text")}
-              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
+              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                 inputMode === "text"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
+                  ? "border-black text-black"
+                  : "border-transparent text-neutral-500 hover:text-black"
               }`}
             >
               📝 Tempel Teks Modul / Topik Cepat
@@ -909,10 +909,10 @@ Silabus & Fokus Pembahasan:
             <button
               type="button"
               onClick={() => setInputMode("rag")}
-              className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
+              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                 inputMode === "rag"
-                  ? "border-sky-600 text-sky-600 font-extrabold"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
+                  ? "border-black text-black font-semibold"
+                  : "border-transparent text-neutral-500 hover:text-black"
               }`}
             >
               🔬 Strict RAG Engine (Groq Llama 3.3)
@@ -944,27 +944,26 @@ Silabus & Fokus Pembahasan:
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={`relative block w-full border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer select-none ${
+                  className={`relative block w-full border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer select-none ${
                     isDragging
-                      ? "border-indigo-500 bg-indigo-50/60 scale-[1.01]"
-                      : "border-slate-300 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-400"
+                      ? "border-black bg-black/5 scale-[1.01]"
+                      : "border-black/15 bg-[#FAFAFA] hover:bg-neutral-50 hover:border-black/30"
                   }`}
                 >
                   <div className="w-full flex flex-col items-center justify-center space-y-3 py-4 pointer-events-none">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-indigo-100 text-indigo-600">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-[#F4F4F6] border border-black/10 text-black">
                       ☁️
                     </div>
                     <div className="space-y-2">
-                      <span className="text-sm font-bold text-slate-800 block">
+                      <span className="text-sm font-medium text-black block">
                         Tarik & jatuhkan file modul di sini, atau
                       </span>
-                      <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all">
+                      <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium shadow-xs transition-all">
                         <span>📂</span>
                         <span>Pilih Dokumen dari Komputer</span>
                       </span>
-                      <span className="text-xs text-slate-400 block pt-1">
-                        Mendukung PDF, Word (DOCX), PPT, TXT, Markdown, atau Berkas Kode (Maks. 25
-                        MB)
+                      <span className="text-xs text-neutral-400 font-mono block pt-1">
+                        Mendukung PDF, Word (DOCX), PPT, TXT, Markdown, atau Berkas Kode (Maks. 25 MB)
                       </span>
                     </div>
                   </div>
@@ -972,7 +971,7 @@ Silabus & Fokus Pembahasan:
               ) : (
                 <section
                   aria-label="Area unggah dokumen modul"
-                  className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-8 text-center transition-all outline-none ${
+                  className={`relative overflow-hidden border-2 border-dashed rounded-3xl p-8 text-center transition-all outline-none ${
                     uploadDocError
                       ? "border-rose-400 bg-rose-50/40"
                       : "border-emerald-500/70 bg-emerald-50/40 hover:border-emerald-600"
@@ -980,14 +979,14 @@ Silabus & Fokus Pembahasan:
                 >
                   {isUploadingDoc ? (
                     <div className="flex flex-col items-center justify-center space-y-3 py-4 pointer-events-none">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-indigo-100 text-indigo-600">
-                        <span className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-[#F4F4F6] border border-black/10 text-black">
+                        <span className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-sm font-extrabold text-indigo-700 block">
+                        <span className="text-sm font-medium text-black block">
                           Sedang Mengunggah & Mengekstrak Dokumen...
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-neutral-500 font-mono">
                           {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
                         </span>
                       </div>
@@ -1005,16 +1004,16 @@ Silabus & Fokus Pembahasan:
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-center gap-1.5">
-                          <span className="text-sm font-extrabold text-slate-900 block truncate max-w-md">
+                          <span className="text-sm font-medium text-black block truncate max-w-md">
                             {selectedFile.name}
                           </span>
                           {uploadedDocMeta && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
                               ✓ Siap Dianalisis
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-slate-500 block">
+                        <span className="text-xs text-neutral-500 font-mono block">
                           Ukuran: {(selectedFile.size / 1024).toFixed(1)} KB
                           {uploadedDocMeta && (
                             <>
@@ -1030,12 +1029,12 @@ Silabus & Fokus Pembahasan:
                         <button
                           type="button"
                           onClick={() => handleStartAnalysis()}
-                          className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-4 py-2 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="text-xs bg-black hover:bg-neutral-800 text-white font-medium px-5 py-2.5 rounded-full shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <span>🚀</span>
                           <span>Buka & Pelajari Sekarang</span>
                         </button>
-                        <label className="relative text-xs text-indigo-600 hover:text-indigo-700 font-semibold px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer inline-flex items-center overflow-hidden">
+                        <label className="relative text-xs text-black hover:bg-neutral-200 font-medium px-4 py-2 rounded-full bg-[#F4F4F6] border border-black/10 transition-colors cursor-pointer inline-flex items-center overflow-hidden">
                           <span>Ganti File</span>
                           <input
                             type="file"
@@ -1058,7 +1057,7 @@ Silabus & Fokus Pembahasan:
                               fileInputRef.current.value = "";
                             }
                           }}
-                          className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 transition-colors cursor-pointer"
+                          className="text-xs text-neutral-500 hover:text-rose-600 font-medium px-4 py-2 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
                         >
                           Hapus File
                         </button>
@@ -1070,10 +1069,10 @@ Silabus & Fokus Pembahasan:
 
               {/* Upload Error Message */}
               {uploadDocError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
+                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
                   <span className="text-base leading-none">⚠️</span>
                   <div className="flex-1">
-                    <strong className="font-bold">Gagal memproses dokumen: </strong>
+                    <strong className="font-semibold">Gagal memproses dokumen: </strong>
                     {uploadDocError}
                   </div>
                 </div>
@@ -1086,7 +1085,7 @@ Silabus & Fokus Pembahasan:
             <div className="space-y-2">
               <label
                 htmlFor="pasted-content-input"
-                className="block text-xs font-bold text-slate-700"
+                className="block text-xs font-mono uppercase tracking-wider text-neutral-600"
               >
                 Isi Materi atau Rangkuman Topik Belajar
               </label>
@@ -1096,7 +1095,7 @@ Silabus & Fokus Pembahasan:
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Tempelkan teks materi kuliah, diktat praktikum, atau deskripsi topik yang ingin kamu bedah bersama AI di sini..."
-                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all leading-relaxed"
+                className="w-full p-4 rounded-2xl border border-black/10 bg-[#FAFAFA] text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-black focus:border-black transition-all leading-relaxed"
               />
             </div>
           )}
@@ -1124,7 +1123,7 @@ Silabus & Fokus Pembahasan:
                   handleStartAnalysis();
                 }}
                 disabled={isAnalyzing || isUploadingDoc}
-                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                className="px-6 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer"
               >
                 {isUploadingDoc ? (
                   <>
@@ -1145,32 +1144,32 @@ Silabus & Fokus Pembahasan:
 
       {/* VIEW B: REAL-TIME PROGRESS BAR & ANALYSIS STATE */}
       {isAnalyzing && (
-        <div className="py-12 px-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-6 animate-in fade-in">
+        <div className="py-12 px-6 rounded-3xl bg-[#FAFAFA] border border-black/8 text-center space-y-6 animate-in fade-in">
           <div className="max-w-md mx-auto space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-3xl mx-auto shadow-md animate-bounce">
+            <div className="w-16 h-16 rounded-2xl bg-black text-white flex items-center justify-center text-3xl mx-auto shadow-md">
               {ANALYSIS_STEPS[currentStepIndex]?.icon || "🤖"}
             </div>
 
             <div>
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-base font-medium text-black">
                 Memproses Modul dengan Nexed AI Engine...
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-neutral-500 mt-1">
                 {ANALYSIS_STEPS[currentStepIndex]?.label}
               </p>
             </div>
 
             {/* Animated Progress Bar */}
-            <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden shadow-inner">
+            <div className="w-full bg-neutral-200 h-2.5 rounded-full overflow-hidden">
               <div
-                className="bg-indigo-600 h-full rounded-full transition-all duration-500 ease-out"
+                className="bg-black h-full rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${ANALYSIS_STEPS[currentStepIndex]?.percent || 25}%` }}
               />
             </div>
 
-            <div className="flex justify-between items-center text-[11px] font-bold text-slate-400 px-1">
+            <div className="flex justify-between items-center text-[11px] font-mono text-neutral-400 px-1">
               <span>Fase {currentStepIndex + 1} dari 4</span>
-              <span className="text-indigo-600 font-extrabold">
+              <span className="text-black font-semibold">
                 {ANALYSIS_STEPS[currentStepIndex]?.percent || 25}% Selesai
               </span>
             </div>
@@ -1182,45 +1181,45 @@ Silabus & Fokus Pembahasan:
       {analysisResult && !isAnalyzing && (
         <div className="space-y-6 animate-in fade-in">
           {/* Header of analyzed module */}
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
+          <div className="p-6 rounded-2xl bg-[#FAFAFA] border border-black/8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full">
                   ✓ Berhasil Dianalisis AI
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full">
                   Tingkat: {analysisResult.difficulty}
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+              <h3 className="text-base sm:text-lg font-light text-black tracking-tight">
                 {analysisResult.title}
               </h3>
-              <p className="text-xs text-slate-500">
-                Estimasi Waktu Belajar: <strong>{analysisResult.estimatedTime}</strong> • Potensi
-                Reward: <strong className="text-amber-600">+{analysisResult.xpReward} XP</strong>
+              <p className="text-xs text-neutral-500">
+                Estimasi Waktu Belajar: <strong className="text-black">{analysisResult.estimatedTime}</strong> • Potensi
+                Reward: <strong className="text-black font-mono">+{analysisResult.xpReward} XP</strong>
               </p>
             </div>
 
             {/* Quick action badges */}
             <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-              <div className="p-2.5 bg-white border border-slate-200 rounded-xl text-center min-w-[90px]">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Penguasaan</div>
-                <div className="text-sm font-black text-indigo-600">{roadmapPercent}%</div>
+              <div className="p-3 bg-white border border-black/8 rounded-2xl text-center min-w-[96px] shadow-2xs">
+                <div className="text-[10px] text-neutral-400 font-mono uppercase">Penguasaan</div>
+                <div className="text-base font-light text-black font-mono">{roadmapPercent}%</div>
               </div>
             </div>
           </div>
 
           {/* Navigation for the 4 Assistant Tabs */}
-          <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-1" role="tablist">
+          <div className="flex gap-2 border-b border-black/8 overflow-x-auto pb-2" role="tablist">
             <button
               type="button"
               role="tab"
               aria-selected={activeResultTab === "summary"}
               onClick={() => setActiveResultTab("summary")}
-              className={`pb-2.5 px-4 text-xs font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${
+              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
                 activeResultTab === "summary"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
               }`}
             >
               <span>📖</span>
@@ -1232,15 +1231,17 @@ Silabus & Fokus Pembahasan:
               role="tab"
               aria-selected={activeResultTab === "roadmap"}
               onClick={() => setActiveResultTab("roadmap")}
-              className={`pb-2.5 px-4 text-xs font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${
+              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
                 activeResultTab === "roadmap"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
               }`}
             >
               <span>🗺️</span>
               <span>2. Peta Belajar Adaptif</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
+                activeResultTab === "roadmap" ? "bg-neutral-800 text-white" : "bg-neutral-200 text-neutral-800"
+              }`}>
                 {roadmapCompletedCount}/{roadmapTotal}
               </span>
             </button>
@@ -1250,15 +1251,17 @@ Silabus & Fokus Pembahasan:
               role="tab"
               aria-selected={activeResultTab === "quiz"}
               onClick={() => setActiveResultTab("quiz")}
-              className={`pb-2.5 px-4 text-xs font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${
+              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
                 activeResultTab === "quiz"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
               }`}
             >
               <span>📝</span>
               <span>3. Kuis Active Recall</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
+                activeResultTab === "quiz" ? "bg-neutral-800 text-white" : "bg-neutral-200 text-neutral-800"
+              }`}>
                 {analysisResult.quiz.length} Soal
               </span>
             </button>
@@ -1268,10 +1271,10 @@ Silabus & Fokus Pembahasan:
               role="tab"
               aria-selected={activeResultTab === "chat"}
               onClick={() => setActiveResultTab("chat")}
-              className={`pb-2.5 px-4 text-xs font-bold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${
+              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
                 activeResultTab === "chat"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
               }`}
             >
               <span>💬</span>
@@ -1284,29 +1287,29 @@ Silabus & Fokus Pembahasan:
           {activeResultTab === "summary" && (
             <div className="space-y-6 animate-in fade-in">
               {/* Executive Summary Card */}
-              <div className="bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 rounded-2xl p-6 border border-slate-200/90 shadow-xs space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-600 text-white text-xs font-black shadow-xs">
+              <div className="bg-[#FAFAFA] rounded-3xl p-6 sm:p-8 border border-black/8 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-black/8">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-black text-white text-xs font-black shadow-xs">
                       📋
                     </span>
                     <div>
-                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
                         Ringkasan Eksekutif & Sintesis Modul
                       </h4>
-                      <span className="text-[10px] text-slate-500 font-medium">
+                      <span className="text-[11px] text-neutral-500 font-normal">
                         Ekstraksi intisari akademik terstruktur dari materi perkuliahan
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-                    <span>Analisis Komprehensif AI</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-700 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-black" />
+                    <span>Sintesis AI Terverifikasi</span>
                   </span>
                 </div>
 
                 {/* Structured Narrative Paragraphs */}
-                <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                <div className="space-y-3 text-xs sm:text-sm text-neutral-700 leading-relaxed">
                   {analysisResult.summary.overview.split(/\n\s*\n/).map((para, pIdx) => (
                     <p key={`ov-p-${pIdx}`} className="text-justify sm:text-left">
                       {para}
@@ -1317,10 +1320,10 @@ Silabus & Fokus Pembahasan:
                 {/* Key Takeaways Section if Available */}
                 {analysisResult.summary.keyTakeaways &&
                   analysisResult.summary.keyTakeaways.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                    <div className="mt-4 pt-4 border-t border-black/8 space-y-3">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs">🎯</span>
-                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider">
+                        <span className="text-[11px] font-mono font-bold text-neutral-800 uppercase tracking-wider">
                           Pokok Bahasan & Capaian Pembelajaran:
                         </span>
                       </div>
@@ -1328,9 +1331,9 @@ Silabus & Fokus Pembahasan:
                         {analysisResult.summary.keyTakeaways.map((takeaway, tIdx) => (
                           <div
                             key={`takeaway-${tIdx}`}
-                            className="p-3 bg-white rounded-xl border border-indigo-100/80 shadow-2xs text-xs text-slate-700 leading-snug flex items-start gap-2.5"
+                            className="p-3.5 bg-white rounded-2xl border border-black/8 shadow-2xs text-xs text-neutral-700 leading-snug flex items-start gap-2.5"
                           >
-                            <span className="text-indigo-600 font-black text-sm shrink-0 mt-0.5">
+                            <span className="text-black font-black text-sm shrink-0 mt-0.5">
                               ✓
                             </span>
                             <span>{takeaway}</span>
@@ -1346,11 +1349,11 @@ Silabus & Fokus Pembahasan:
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xs">📚</span>
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-700">
                       Istilah & Konsep Esensial
                     </h4>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
                     {analysisResult.summary.keyPoints.length} Konsep
                   </span>
                 </div>
@@ -1359,21 +1362,21 @@ Silabus & Fokus Pembahasan:
                   {analysisResult.summary.keyPoints.map((pt, i) => (
                     <div
                       key={`term-${i}`}
-                      className="group p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-xs transition-all flex flex-col justify-between"
+                      className="group p-4 sm:p-5 rounded-2xl border border-black/8 bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between"
                     >
                       <div>
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="text-xs font-extrabold text-indigo-700 group-hover:text-indigo-800 transition-colors flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="text-xs font-bold text-black flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-black" />
                             <span>{pt.term}</span>
                           </div>
                           {pt.category && (
-                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-50 group-hover:bg-indigo-50 group-hover:text-indigo-700 transition-colors px-2 py-0.5 rounded-md border border-slate-200/70">
+                            <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] group-hover:text-black transition-colors px-2.5 py-0.5 rounded-full border border-black/8">
                               {pt.category}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed">{pt.definition}</p>
+                        <p className="text-xs text-neutral-600 leading-relaxed">{pt.definition}</p>
                       </div>
                     </div>
                   ))}
@@ -1381,37 +1384,37 @@ Silabus & Fokus Pembahasan:
               </div>
 
               {/* Pro Tips Callout */}
-              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-3 shadow-2xs">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFAFA] border border-black/8 text-neutral-800 text-xs leading-relaxed flex items-start gap-3 shadow-2xs">
                 <span className="text-base shrink-0 mt-0.5">💡</span>
                 <div>
-                  <span className="font-extrabold block mb-0.5 text-amber-950">
+                  <span className="font-bold block mb-0.5 text-black">
                     Tips Belajar & Insight AI Tutor:
                   </span>
-                  <span className="text-amber-900/90">{analysisResult.summary.proTips}</span>
+                  <span className="text-neutral-600">{analysisResult.summary.proTips}</span>
                 </div>
               </div>
 
               {/* Estimated Study Breakdown */}
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">
+                <div className="p-3.5 bg-[#FAFAFA] rounded-2xl border border-black/8 shadow-2xs">
+                  <div className="text-[10px] text-neutral-400 font-mono font-bold uppercase">
                     Teori & Konsep
                   </div>
-                  <div className="text-xs font-extrabold text-slate-800 mt-1">
+                  <div className="text-xs font-mono font-bold text-black mt-1">
                     {analysisResult.summary.breakdownTime.concept}
                   </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">Praktik Kode</div>
-                  <div className="text-xs font-extrabold text-slate-800 mt-1">
+                <div className="p-3.5 bg-[#FAFAFA] rounded-2xl border border-black/8 shadow-2xs">
+                  <div className="text-[10px] text-neutral-400 font-mono font-bold uppercase">Praktik Kode</div>
+                  <div className="text-xs font-mono font-bold text-black mt-1">
                     {analysisResult.summary.breakdownTime.practice}
                   </div>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">
+                <div className="p-3.5 bg-[#FAFAFA] rounded-2xl border border-black/8 shadow-2xs">
+                  <div className="text-[10px] text-neutral-400 font-mono font-bold uppercase">
                     Evaluasi Kuis
                   </div>
-                  <div className="text-xs font-extrabold text-slate-800 mt-1">
+                  <div className="text-xs font-mono font-bold text-black mt-1">
                     {analysisResult.summary.breakdownTime.quiz}
                   </div>
                 </div>
@@ -1422,17 +1425,17 @@ Silabus & Fokus Pembahasan:
           {/* TAB PANEL 2: PETA BELAJAR ADAPTIF (ROADMAP) */}
           {activeResultTab === "roadmap" && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="flex items-center justify-between p-5 bg-[#FAFAFA] rounded-3xl border border-black/8">
                 <div>
-                  <h4 className="text-xs font-extrabold text-slate-900">
+                  <h4 className="text-xs font-bold text-black">
                     Progres Pemahaman Materi Anda
                   </h4>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-neutral-500">
                     Tandai setiap tahapan yang sudah Anda pahami untuk memperbarui grafik capaian.
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-black text-indigo-600">
+                  <span className="text-xs font-mono font-bold text-black">
                     {roadmapPercent}% Selesai
                   </span>
                 </div>
@@ -1447,54 +1450,54 @@ Silabus & Fokus Pembahasan:
                   return (
                     <div
                       key={`roadmap-${stepItem.step}`}
-                      className={`rounded-2xl border transition-all overflow-hidden ${
+                      className={`rounded-3xl border transition-all overflow-hidden ${
                         isUnderstood
-                          ? "bg-emerald-50/30 border-emerald-200/90 shadow-2xs"
-                          : "bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs"
+                          ? "bg-emerald-50/20 border-emerald-300 shadow-2xs"
+                          : "bg-white border-black/8 hover:border-black/20 shadow-2xs"
                       }`}
                     >
                       {/* Step Header Summary Row */}
-                      <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="space-y-1.5 flex-1">
+                      <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="space-y-2 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span
-                              className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                              className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${
                                 isUnderstood
                                   ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                  : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                  : "bg-[#F4F4F6] text-neutral-800 border-black/10"
                               }`}
                             >
                               {stepItem.stage}
                             </span>
                             {isUnderstood && (
-                              <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                                 <span>✓</span> <span>Dikuasai</span>
                               </span>
                             )}
                           </div>
 
-                          <h5 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight">
+                          <h5 className="text-sm sm:text-base font-bold text-black tracking-tight">
                             {stepItem.title}
                           </h5>
-                          <p className="text-xs text-slate-600 leading-relaxed">
+                          <p className="text-xs text-neutral-600 leading-relaxed">
                             {stepItem.description}
                           </p>
 
-                          <div className="text-[11px] font-semibold text-indigo-700 bg-indigo-50/70 border border-indigo-100/80 px-3 py-1 rounded-xl w-fit flex items-center gap-1.5">
+                          <div className="text-[10px] font-mono text-neutral-800 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full w-fit flex items-center gap-1.5">
                             <span>🎯</span>
                             <span>Aksi Mandiri: {stepItem.actionItem}</span>
                           </div>
                         </div>
 
                         {/* Controls: Expand / Collapse & Mark Understood */}
-                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-black/8">
                           <button
                             type="button"
                             onClick={() => toggleExpandRoadmapStep(stepItem.step)}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            className={`px-3.5 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                               isExpanded
-                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                : "bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200"
+                                ? "bg-black text-white"
+                                : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border border-black/10"
                             }`}
                           >
                             <span>{isExpanded ? "▲ Tutup Materi" : "📖 Buka Materi"}</span>
@@ -1503,10 +1506,10 @@ Silabus & Fokus Pembahasan:
                           <button
                             type="button"
                             onClick={() => toggleRoadmapStep(stepItem.step)}
-                            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                            className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                               isUnderstood
-                                ? "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs"
-                                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                                ? "bg-white hover:bg-neutral-100 text-black border border-black/15 shadow-2xs"
+                                : "bg-black hover:bg-neutral-800 text-white shadow-xs"
                             }`}
                           >
                             <span>{isUnderstood ? "Batal Tandai" : "✓ Tandai Paham"}</span>
@@ -1516,18 +1519,18 @@ Silabus & Fokus Pembahasan:
 
                       {/* Expandable Learning Material Drawer (Tahap Isi Materi Lengkap) */}
                       {isExpanded && (
-                        <div className="border-t border-slate-100 bg-slate-50/60 p-5 space-y-4 animate-in fade-in">
+                        <div className="border-t border-black/8 bg-[#FAFAFA] p-5 sm:p-6 space-y-4 animate-in fade-in">
                           {/* 1. Panduan & Uraian Materi Tahap Ini */}
-                          <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs space-y-2">
+                          <div className="bg-white rounded-2xl p-5 border border-black/8 shadow-2xs space-y-2">
                             <div className="flex items-center gap-2">
-                              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-black">
+                              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-xs font-black">
                                 📘
                               </span>
-                              <h6 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                              <h6 className="text-xs font-mono font-bold text-black uppercase tracking-wider">
                                 Uraian Materi & Panduan Belajar Tahap Ini
                               </h6>
                             </div>
-                            <div className="text-xs text-slate-700 leading-relaxed pl-8">
+                            <div className="text-xs text-neutral-700 leading-relaxed pl-8">
                               <ChatMessageContent
                                 text={stepItem.detailedGuide || stepItem.description}
                                 isUser={false}
@@ -1538,14 +1541,14 @@ Silabus & Fokus Pembahasan:
                           {/* 2. Konsep Kunci yang Dipelajari */}
                           {stepItem.keyConcepts && stepItem.keyConcepts.length > 0 && (
                             <div className="space-y-1.5">
-                              <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                              <span className="text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1">
                                 <span>🔑</span> <span>Konsep Kunci yang Dipelajari:</span>
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {stepItem.keyConcepts.map((concept, cIdx) => (
                                   <span
                                     key={cIdx}
-                                    className="px-2.5 py-1 bg-white border border-indigo-200/80 rounded-lg text-[11px] font-semibold text-indigo-800 shadow-2xs"
+                                    className="px-3 py-1 bg-white border border-black/10 rounded-full text-[11px] font-medium text-neutral-800 shadow-2xs"
                                   >
                                     {concept}
                                   </span>
@@ -1556,22 +1559,22 @@ Silabus & Fokus Pembahasan:
 
                           {/* 3. Skenario Praktik Mandiri */}
                           {stepItem.practiceScenario && (
-                            <div className="bg-gradient-to-r from-indigo-50/80 to-white rounded-xl p-3.5 border-l-4 border-l-indigo-600 border border-indigo-100/60 text-xs space-y-1">
-                              <div className="font-extrabold text-indigo-900 flex items-center gap-1.5">
+                            <div className="bg-[#F4F4F6] rounded-2xl p-4 border border-black/8 text-xs space-y-1">
+                              <div className="font-bold text-black flex items-center gap-1.5">
                                 <span>💻</span>
                                 <span>Skenario Praktik Mandiri:</span>
                               </div>
-                              <p className="text-slate-700 leading-relaxed pl-5">
+                              <p className="text-neutral-700 leading-relaxed pl-5">
                                 {stepItem.practiceScenario}
                               </p>
                             </div>
                           )}
 
                           {/* 4. Evaluasi & Tanya Tutor AI */}
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-black/8">
                             {stepItem.checkQuestion ? (
-                              <div className="text-[11px] text-slate-600 flex items-start gap-1.5 flex-1">
-                                <span className="text-amber-500 font-bold">❓</span>
+                              <div className="text-[11px] text-neutral-600 flex items-start gap-1.5 flex-1">
+                                <span className="font-bold">❓</span>
                                 <span>
                                   <strong>Uji Pemahaman:</strong> {stepItem.checkQuestion}
                                 </span>
@@ -1583,7 +1586,7 @@ Silabus & Fokus Pembahasan:
                             <button
                               type="button"
                               onClick={() => handleAskAboutStep(stepItem)}
-                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 shrink-0"
+                              className="px-4 py-1.5 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                             >
                               <span>💬</span>
                               <span>Tanya AI Tutor tentang Tahap Ini</span>
@@ -1603,17 +1606,17 @@ Silabus & Fokus Pembahasan:
             <div className="space-y-6 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-extrabold text-slate-900">
+                  <h4 className="text-sm font-bold text-black">
                     Kuis Evaluasi Pemahaman Modul
                   </h4>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-neutral-500">
                     Uji daya serap konsep esensial yang diekstrak langsung oleh AI dari materi Anda.
                   </p>
                 </div>
               </div>
 
               {/* Questions list */}
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {analysisResult.quiz.map((q, qIndex) => {
                   const selected = userAnswers[qIndex];
                   const isCorrect = selected === q.correctIndex;
@@ -1621,13 +1624,13 @@ Silabus & Fokus Pembahasan:
                   return (
                     <div
                       key={`quiz-q-${q.id}`}
-                      className="p-5 rounded-2xl border border-slate-200 bg-slate-50/40 space-y-3"
+                      className="p-5 sm:p-6 rounded-3xl border border-black/8 bg-[#FAFAFA] space-y-3.5"
                     >
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
                           {qIndex + 1}
                         </span>
-                        <h5 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                        <h5 className="text-xs sm:text-sm font-semibold text-black leading-snug">
                           {q.question}
                         </h5>
                       </div>
@@ -1636,7 +1639,7 @@ Silabus & Fokus Pembahasan:
                         {q.options.map((opt, optIndex) => {
                           const isOptionSelected = selected === optIndex;
                           let btnStyle =
-                            "bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
+                            "bg-white border-black/8 text-neutral-800 hover:border-black/20 hover:bg-[#FAFAFA]";
 
                           if (isQuizChecked) {
                             if (optIndex === q.correctIndex) {
@@ -1647,7 +1650,7 @@ Silabus & Fokus Pembahasan:
                             }
                           } else if (isOptionSelected) {
                             btnStyle =
-                              "bg-indigo-50 border-indigo-300 text-indigo-900 font-bold ring-2 ring-indigo-500/20";
+                              "bg-black/5 border-black text-black font-semibold ring-1 ring-black/20";
                           }
 
                           return (
@@ -1658,7 +1661,7 @@ Silabus & Fokus Pembahasan:
                               onClick={() =>
                                 setUserAnswers((prev) => ({ ...prev, [qIndex]: optIndex }))
                               }
-                              className={`w-full text-left p-3 rounded-xl border text-xs transition-all flex items-center justify-between ${btnStyle}`}
+                              className={`w-full text-left p-3.5 rounded-2xl border text-xs transition-all flex items-center justify-between cursor-pointer ${btnStyle}`}
                             >
                               <span>{opt}</span>
                               {isQuizChecked && optIndex === q.correctIndex && (
@@ -1675,13 +1678,13 @@ Silabus & Fokus Pembahasan:
                       {/* Explanation Callout */}
                       {isQuizChecked && (
                         <div
-                          className={`p-3.5 rounded-xl text-xs leading-relaxed ${
+                          className={`p-4 rounded-2xl text-xs leading-relaxed ${
                             isCorrect
                               ? "bg-emerald-50 border border-emerald-200 text-emerald-900"
                               : "bg-rose-50 border border-rose-200 text-rose-900"
                           }`}
                         >
-                          <span className="font-extrabold block mb-1">
+                          <span className="font-bold block mb-1">
                             {isCorrect ? "✅ Jawaban Anda Tepat!" : "⚠️ Belum Tepat:"}
                           </span>
                           <span>{q.explanation}</span>
@@ -1693,7 +1696,7 @@ Silabus & Fokus Pembahasan:
               </div>
 
               {/* Quiz Submit & Reset Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-black/8">
                 {!isQuizChecked ? (
                   <button
                     type="button"
@@ -1707,7 +1710,7 @@ Silabus & Fokus Pembahasan:
                         triggerConfetti();
                       }
                     }}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                    className="px-6 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all cursor-pointer"
                   >
                     Periksa Jawaban Kuis
                   </button>
@@ -1719,11 +1722,11 @@ Silabus & Fokus Pembahasan:
                         setIsQuizChecked(false);
                         setUserAnswers({});
                       }}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
+                      className="px-4 py-2 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 text-xs font-medium rounded-full transition-colors cursor-pointer"
                     >
                       Ulangi Kuis
                     </button>
-                    <span className="text-xs font-bold text-slate-700">
+                    <span className="text-xs font-mono font-bold text-black">
                       Nilai:{" "}
                       {
                         Object.entries(userAnswers).filter(
@@ -1741,20 +1744,21 @@ Silabus & Fokus Pembahasan:
 
           {/* TAB PANEL 4: AI TUTOR CHAT DRAWER */}
           {activeResultTab === "chat" && (
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-200 overflow-hidden flex flex-col h-[520px] animate-in fade-in">
+            <div className="bg-[#FAFAFA] rounded-3xl border border-black/8 overflow-hidden flex flex-col h-[540px] animate-in fade-in">
               {/* Chat Header */}
-              <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
+              <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-black flex items-center gap-1.5">
                     <span>🤖</span>
                     <span>Tanya Nexed AI - Modul "{analysisResult.title}"</span>
                   </h4>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-neutral-500">
                     Bebas tanyakan keraguan materi, minta analogi, atau perjelas baris kode.
                   </p>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                  Live Assistant
+                <span className="text-[10px] font-mono text-neutral-700 bg-[#F4F4F6] border border-black/8 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Live Assistant</span>
                 </span>
               </div>
 
@@ -1768,8 +1772,8 @@ Silabus & Fokus Pembahasan:
                     <div
                       className={`max-w-[90%] sm:max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
                         msg.sender === "user"
-                          ? "bg-indigo-600 text-white rounded-br-none shadow-xs"
-                          : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-none shadow-xs"
+                          ? "bg-black text-white rounded-br-none shadow-xs"
+                          : "bg-white text-neutral-800 border border-black/8 rounded-bl-none shadow-2xs"
                       }`}
                     >
                       <ChatMessageContent text={msg.text} isUser={msg.sender === "user"} />
@@ -1778,15 +1782,15 @@ Silabus & Fokus Pembahasan:
                 ))}
 
                 {isAiReplying && (
-                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 w-fit">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                  <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white border border-black/8 rounded-full px-3.5 py-2 w-fit">
+                    <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
                     <span>Nexed AI sedang merangkai penjelasan...</span>
                   </div>
                 )}
               </div>
 
               {/* Quick Prompt Suggestions */}
-              <div className="p-2.5 bg-white border-t border-slate-100 flex gap-2 overflow-x-auto">
+              <div className="p-3 bg-white border-t border-black/8 flex gap-2 overflow-x-auto">
                 <button
                   type="button"
                   onClick={() =>
@@ -1794,7 +1798,7 @@ Silabus & Fokus Pembahasan:
                       "Berikan analogi sederhana kehidupan sehari-hari tentang materi ini!",
                     )
                   }
-                  className="text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-3 py-1 rounded-full whitespace-nowrap transition-colors"
+                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
                 >
                   💡 Minta Analogi Nyata
                 </button>
@@ -1803,7 +1807,7 @@ Silabus & Fokus Pembahasan:
                   onClick={() =>
                     handleSendChat("Berikan contoh kode implementasi dan sintaks dasarnya!")
                   }
-                  className="text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-3 py-1 rounded-full whitespace-nowrap transition-colors"
+                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
                 >
                   💻 Contoh Kode & Sintaks
                 </button>
@@ -1814,7 +1818,7 @@ Silabus & Fokus Pembahasan:
                       "Apa perbedaan utama metode ini dibanding pendekatan konvensional?",
                     )
                   }
-                  className="text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-3 py-1 rounded-full whitespace-nowrap transition-colors"
+                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
                 >
                   📊 Perbandingan Efisiensi
                 </button>
@@ -1825,7 +1829,7 @@ Silabus & Fokus Pembahasan:
                       "Apa saja kesalahan umum (common pitfalls) saat mengimplementasikan materi ini?",
                     )
                   }
-                  className="text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-3 py-1 rounded-full whitespace-nowrap transition-colors"
+                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
                 >
                   ⚠️ Kesalahan Umum & Debugging
                 </button>
@@ -1837,19 +1841,19 @@ Silabus & Fokus Pembahasan:
                   e.preventDefault();
                   handleSendChat();
                 }}
-                className="p-3 bg-white border-t border-slate-200 flex gap-2"
+                className="p-3.5 bg-white border-t border-black/8 flex gap-2"
               >
                 <input
                   type="text"
                   placeholder="Ketik pertanyaan terkait materi ini..."
                   value={chatPrompt}
                   onChange={(e) => setChatPrompt(e.target.value)}
-                  className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="flex-1 px-4 py-2.5 bg-[#FAFAFA] border border-black/10 rounded-full text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-black transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!chatPrompt.trim() || isAiReplying}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all"
+                  className="px-5 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all cursor-pointer"
                 >
                   Kirim
                 </button>
