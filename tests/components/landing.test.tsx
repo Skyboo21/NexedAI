@@ -186,13 +186,13 @@ describe('Landing Page Components & User Interactivity', () => {
       expect(heading).toHaveTextContent(/Berbasis AI/i);
 
       expect(
-        screen.getByText(/Dirancang untuk Kebutuhan Riil Praktikum Vokasi/i)
+        screen.getByText(/Dirancang untuk Kebutuhan Riil Setiap Jenjang Pendidikan/i)
       ).toBeInTheDocument();
       expect(
         screen.getByText(/Dibangun di Atas Fondasi Rekayasa Modern/i)
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/Tingkatkan Pemahaman Algoritma & Pemrograman Anda Hari Ini/i)
+        screen.getByText(/Tingkatkan Potensi dan Kecepatan Belajar Anda Hari Ini/i)
       ).toBeInTheDocument();
     });
   });

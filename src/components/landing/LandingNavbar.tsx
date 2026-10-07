@@ -10,10 +10,17 @@ import { useAuthStore } from "../../store/authStore";
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, role } = useAuthStore();
 
   useEffect(() => {
     setMounted(true);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const getDashboardHref = () => {
@@ -27,9 +34,13 @@ export function LandingNavbar() {
       initial={{ y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 pointer-events-none p-4 md:py-6 md:px-8 font-['Inter',sans-serif]"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-['Inter',sans-serif] ${
+        scrolled
+          ? "bg-white/85 backdrop-blur-md border-b border-black/8 py-3 px-4 md:px-8 shadow-xs"
+          : "bg-white/60 backdrop-blur-sm border-b border-black/[0.04] py-4 md:py-5 px-4 md:px-8"
+      }`}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Left Side: Custom Logo + Brand + Menu Pill + Tags Pill */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Logo with 2 rotated rounded rectangles at -35deg */}
