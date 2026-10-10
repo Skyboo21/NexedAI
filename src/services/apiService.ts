@@ -8,7 +8,13 @@ import {
   StudentMasterySchema,
 } from "../schemas/taskSchema";
 
-// === DATABASE SIMULASI (Mock Data) ===
+/**
+ * Base URL Backend FastAPI (baca dari process.env.NEXT_PUBLIC_API_URL dengan fallback http://localhost:8000)
+ */
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// === DATABASE SIMULASI (Fallback Data) ===
 const studentMasteryDb: StudentMastery[] = [
   { id: 101, name: "Ucik Dika Maharani", topic: "Looping & Iterasi", mastery: 92, status: "Aman" },
   { id: 102, name: "Budi Santoso", topic: "Struktur Array", mastery: 45, status: "Berisiko" },
@@ -62,21 +68,57 @@ const rawLearningNodes = [
   },
 ];
 
+/**
+ * Generic fetcher dengan base URL FastAPI dan fallback lokal
+ */
+async function fetchWithFallback<T>(
+  endpoint: string,
+  options?: RequestInit,
+  fallbackData?: T,
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options?.headers || {}),
+      },
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // Graceful fallback jika FastAPI backend offline atau belum dijalankan
+  }
+
+  if (fallbackData !== undefined) {
+    return fallbackData;
+  }
+  throw new Error(`Gagal memanggil endpoint ${endpoint}`);
+}
+
 // === ASYNC API SERVICES ===
 
 export async function fetchLearningNodesApi(): Promise<LearningNode[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return rawLearningNodes.map((item) => LearningNodeSchema.parse(item));
+  const data = await fetchWithFallback<unknown[]>(
+    "/api/tasks/nodes",
+    { method: "GET" },
+    rawLearningNodes,
+  );
+  return data.map((item) => LearningNodeSchema.parse(item));
 }
 
 export async function fetchStudentMasteryApi(): Promise<StudentMastery[]> {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  return studentMasteryDb.map((item) => StudentMasterySchema.parse(item));
+  const data = await fetchWithFallback<unknown[]>(
+    "/api/mastery",
+    { method: "GET" },
+    studentMasteryDb,
+  );
+  return data.map((item) => StudentMasterySchema.parse(item));
 }
 
 export async function fetchAIExplanationApi(text: string): Promise<AiResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
   const lowerText = text.toLowerCase();
   let message = `Konsep "${text}" ini sangat krusial dalam algoritma. Ini sering dipakai untuk memanipulasi banyak data sekaligus secara otomatis. Tetap semangat belajarnya!`;
 
@@ -91,11 +133,20 @@ export async function fetchAIExplanationApi(text: string): Promise<AiResponse> {
       "WHILE Loop ibarat kamu disuruh berlari keliling lapangan sampai kamu capek. Kamu tidak tahu berapa putaran pastinya, tapi tahu persis kapan harus berhenti (saat capek).";
   }
 
-  const rawResponse = {
+  const defaultMock = {
     status: "success",
     message: message,
     timestamp: new Date().toISOString(),
   };
 
-  return AiResponseSchema.parse(rawResponse);
+  const data = await fetchWithFallback<unknown>(
+    "/api/modul/chat",
+    {
+      method: "POST",
+      body: JSON.stringify({ prompt: text }),
+    },
+    defaultMock,
+  );
+
+  return AiResponseSchema.parse(data);
 }

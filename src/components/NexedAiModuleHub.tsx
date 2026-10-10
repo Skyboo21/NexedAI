@@ -5,6 +5,14 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import ModuleRagChat from "./ModuleRagChat";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Helper fetch yang memanggil FastAPI backend dengan fallback ke Next.js internal route
+const apiFetch = (endpoint: string, init?: RequestInit): Promise<Response> => {
+  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  return fetch(url, init).catch(() => fetch(endpoint, init));
+};
+
 export interface AnalyzedModuleResult {
   title: string;
   sourceType: "file" | "text";
@@ -355,7 +363,7 @@ export default function NexedAiModuleHub() {
           .replace(/[^a-z0-9-_]/g, "-"),
       );
 
-      const res = await fetch("/api/modul/upload", {
+      const res = await apiFetch("/api/modul/upload", {
         method: "POST",
         body: formData,
       });
@@ -601,7 +609,7 @@ Silabus & Fokus Pembahasan:
       if (resultOverride) {
         executeAnalysis(contentOverride, resultOverride);
       } else {
-        fetch("/api/modul/analyze", {
+        apiFetch("/api/modul/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -623,7 +631,7 @@ Silabus & Fokus Pembahasan:
         if (resultOverride) {
           executeAnalysis(uploadedDocMeta.rawText, resultOverride);
         } else {
-          fetch("/api/modul/analyze", {
+          apiFetch("/api/modul/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -650,7 +658,7 @@ Silabus & Fokus Pembahasan:
             .toLowerCase()
             .replace(/[^a-z0-9-_]/g, "-"),
         );
-        fetch("/api/modul/upload", { method: "POST", body: formData })
+        apiFetch("/api/modul/upload", { method: "POST", body: formData })
           .then((res) => res.json())
           .then((data) => {
             const content = data.rawText || data.message || activeFile.name;
@@ -661,7 +669,7 @@ Silabus & Fokus Pembahasan:
           });
       }
     } else if (textInput.trim()) {
-      fetch("/api/modul/analyze", {
+      apiFetch("/api/modul/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: textInput }),
@@ -733,7 +741,7 @@ Silabus & Fokus Pembahasan:
     setIsAiReplying(true);
 
     try {
-      const res = await fetch("/api/modul/chat", {
+      const res = await apiFetch("/api/modul/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

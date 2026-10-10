@@ -14,6 +14,13 @@ export interface RegisteredUserRecord {
   prodi?: string;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+const authFetch = (endpoint: string, init?: RequestInit): Promise<Response> => {
+  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  return fetch(url, { ...init, credentials: "include" }).catch(() => fetch(endpoint, init));
+};
+
 export interface AuthState {
   user: User | null;
   role: Role;
@@ -123,7 +130,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkSession: async (): Promise<User | null> => {
     try {
       set({ isLoading: true });
-      const res = await fetch("/api/auth/me");
+      const res = await authFetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json();
         if (data.authenticated && data.user) {
@@ -161,8 +168,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     const password = !isRoleArg && typeof passwordOrRole === "string" ? passwordOrRole : "";
 
     try {
-      // Call BFF login route handler
-      const res = await fetch("/api/auth/login", {
+      // Call login route handler
+      const res = await authFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -226,7 +233,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   ): Promise<{ success: boolean; user?: User; message?: string }> => {
     set({ isLoading: true });
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await authFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -291,7 +298,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await authFetch("/api/auth/logout", { method: "POST" });
     } catch {
       // ignore
     }

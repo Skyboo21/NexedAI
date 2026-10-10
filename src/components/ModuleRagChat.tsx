@@ -148,14 +148,20 @@ export default function ModuleRagChat({
     setUploadError(null);
 
     try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("moduleId", currentId);
 
-      const response = await fetch("/api/modul/upload", {
+      const response = await fetch(`${apiBase}/api/modul/upload`, {
         method: "POST",
         body: formData,
-      });
+      }).catch(() =>
+        fetch("/api/modul/upload", {
+          method: "POST",
+          body: formData,
+        }),
+      );
 
       const data = await response.json();
 
@@ -215,14 +221,24 @@ export default function ModuleRagChat({
     setIsAiSearching(true);
 
     try {
-      const res = await fetch("/api/modul/chat", {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiBase}/api/modul/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           moduleId: indexedModule.moduleId,
           message: textToSend.trim(),
         }),
-      });
+      }).catch(() =>
+        fetch("/api/modul/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            moduleId: indexedModule.moduleId,
+            message: textToSend.trim(),
+          }),
+        }),
+      );
 
       const data = await res.json();
 
