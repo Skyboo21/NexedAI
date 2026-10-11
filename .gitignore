@@ -25,17 +25,26 @@ yarn-error.log*
 *.pem
 Thumbs.db
 
-# Local Environment Variables
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment Variables
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.env
 
 # IDE & Editor Settings
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
 .idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
 
 # Vercel
 .vercel

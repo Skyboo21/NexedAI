@@ -1,5 +1,14 @@
 {
   "svelte.plugin.svelte.diagnostics.enable": false,
   "svelte.plugin.typescript.diagnostics.enable": false,
-  "typescript.validate.enable": true
+  "typescript.validate.enable": true,
+  "python.defaultInterpreterPath": "C:\\Python314\\python.exe",
+  "python.analysis.extraPaths": [
+    "./backend-fastapi",
+    "C:/Users/hariz/AppData/Roaming/Python/Python314/site-packages"
+  ],
+  "python.autoComplete.extraPaths": [
+    "./backend-fastapi",
+    "C:/Users/hariz/AppData/Roaming/Python/Python314/site-packages"
+  ]
 }

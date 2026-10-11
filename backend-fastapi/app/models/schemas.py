@@ -45,3 +45,21 @@ class StudentMasteryItem(BaseModel):
     topic: str
     mastery: int
     status: str
+
+class ExternalResource(BaseModel):
+    title: str
+    type: str  # "YouTube" atau "Dokumentasi"
+    url: str
+    duration: str
+    description: str
+
+class AdaptiveLearningResponse(BaseModel):
+    topic: str
+    summary: str
+    diagnostic_questions: List[str]
+    external_resources: List[ExternalResource]
+
+class AdaptiveRecommendationRequest(BaseModel):
+    topic: Optional[str] = None
+    summary: Optional[str] = None
+

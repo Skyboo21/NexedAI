@@ -150,3 +150,76 @@ export async function fetchAIExplanationApi(text: string): Promise<AiResponse> {
 
   return AiResponseSchema.parse(data);
 }
+
+export interface ExternalResource {
+  title: string;
+  type: "YouTube" | "Dokumentasi" | string;
+  url: string;
+  duration: string;
+  description: string;
+}
+
+export interface AdaptiveLearningResponse {
+  topic: string;
+  summary: string;
+  diagnostic_questions: string[];
+  external_resources: ExternalResource[];
+}
+
+/**
+ * Mengambil rekomendasi materi eksternal & kurasi adaptif dari backend FastAPI
+ */
+export async function getAdaptiveRecommendations(
+  moduleId: string,
+  topicTitle?: string,
+  summary?: string,
+): Promise<AdaptiveLearningResponse> {
+  const cleanTitle = topicTitle || moduleId.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const defaultFallback: AdaptiveLearningResponse = {
+    topic: cleanTitle,
+    summary: summary || "Pendalaman materi komputasi terapan, fondasi logika pemrograman, dan arsitektur perangkat lunak modern.",
+    diagnostic_questions: [
+      "Bagaimana konsep ini dapat dihubungkan dengan skenario proyek industri nyata?",
+      "Apa trade-off utama efisiensi komputasi waktu dan ruang dalam penerapan materi ini?",
+    ],
+    external_resources: [
+      {
+        title: `${cleanTitle} - Video Tutorial & Panduan Arsitektur`,
+        type: "YouTube",
+        url: `https://www.youtube.com/results?search_query=${encodeURIComponent(cleanTitle + " tutorial")}`,
+        duration: "20 Menit",
+        description: "Visualisasi mendalam dan tutorial terstruktur untuk memperkuat pemahaman logika praktis.",
+      },
+      {
+        title: `${cleanTitle} - Dokumentasi Resmi & Spesifikasi API`,
+        type: "Dokumentasi",
+        url: "https://developer.mozilla.org/",
+        duration: "15 Min Read",
+        description: "Spesifikasi standar, best practice implementasi, dan dokumentasi teknis otoritatif.",
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/modul/${encodeURIComponent(moduleId)}/adaptive-recommendations`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: cleanTitle,
+          summary,
+        }),
+      },
+    );
+
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (_err) {
+    // Fallback jika FastAPI offline
+  }
+
+  return defaultFallback;
+}
+

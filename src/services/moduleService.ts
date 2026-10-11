@@ -375,3 +375,10 @@ export async function fetchClassAnalyticsApi(): Promise<ClassAnalytics> {
 
   return ClassAnalyticsSchema.parse(analyticsData);
 }
+
+export {
+  getAdaptiveRecommendations,
+  type ExternalResource,
+  type AdaptiveLearningResponse,
+} from "./apiService";
+

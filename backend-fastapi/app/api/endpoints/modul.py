@@ -1,7 +1,14 @@
 from fastapi import APIRouter, UploadFile, File, Form
-from typing import List
+from typing import List, Optional
 from datetime import datetime
-from app.models.schemas import ModulItem, ChatPromptRequest, AiChatResponse
+from app.models.schemas import (
+    ModulItem,
+    ChatPromptRequest,
+    AiChatResponse,
+    AdaptiveLearningResponse,
+    AdaptiveRecommendationRequest,
+)
+from app.services.recommender_service import generate_adaptive_recommendations
 
 router = APIRouter()
 
@@ -55,3 +62,18 @@ def chat_modul(payload: ChatPromptRequest):
         "message": f"NEXED AI Tutor (FastAPI Engine): Penjelasan interaktif terkait '{user_query}' berhasil dirangkum berdasarkan materi modul.",
         "timestamp": datetime.now().isoformat(),
     }
+
+@router.post("/modul/{id}/adaptive-recommendations", response_model=AdaptiveLearningResponse)
+def get_module_adaptive_recommendations_post(
+    id: str,
+    payload: Optional[AdaptiveRecommendationRequest] = None,
+):
+    topic = payload.topic if (payload and payload.topic) else id.replace("-", " ").title()
+    summary = payload.summary if payload else None
+    return generate_adaptive_recommendations(topic=topic, summary=summary)
+
+@router.get("/modul/{id}/adaptive-recommendations", response_model=AdaptiveLearningResponse)
+def get_module_adaptive_recommendations_get(id: str):
+    topic = id.replace("-", " ").title()
+    return generate_adaptive_recommendations(topic=topic)
+

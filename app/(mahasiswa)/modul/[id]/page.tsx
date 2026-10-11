@@ -6,7 +6,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ModuleRagChat from "../../../../src/components/ModuleRagChat";
 import { LEARNING_TOPICS, type LearningTopic } from "../../../../src/data/learningTopics";
-import { fetchAIExplanationApi } from "../../../../src/services/apiService";
+import {
+  fetchAIExplanationApi,
+  getAdaptiveRecommendations,
+  type AdaptiveLearningResponse,
+} from "../../../../src/services/apiService";
 
 interface ChatMessage {
   id: string;
@@ -27,6 +31,10 @@ export default function DynamicModulReaderPage() {
 
   const [activeTab, setActiveTab] = useState<"materi" | "rag" | "ai" | "kuis">("materi");
   const [completedTopicIds, setCompletedTopicIds] = useState<number[]>([]);
+
+  // Adaptive recommendations state
+  const [adaptiveRecs, setAdaptiveRecs] = useState<AdaptiveLearningResponse | null>(null);
+  const [isLoadingRecs, setIsLoadingRecs] = useState<boolean>(true);
 
   // Code runner & copy state
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
@@ -75,6 +83,30 @@ export default function DynamicModulReaderPage() {
     setSelectedAnswers({});
     setQuizSubmitted(false);
     setRunCodeIndex(null);
+  }, [currentTopic]);
+
+  // Load Adaptive Recommendations from FastAPI
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingRecs(true);
+    getAdaptiveRecommendations(
+      `modul-${currentTopic.id}`,
+      currentTopic.title,
+      currentTopic.keyConcepts.map((k) => k.subtitle).join(", "),
+    )
+      .then((data) => {
+        if (isMounted) {
+          setAdaptiveRecs(data);
+          setIsLoadingRecs(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsLoadingRecs(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentTopic]);
 
   // Auto scroll chat
@@ -382,6 +414,117 @@ export default function DynamicModulReaderPage() {
                   )}
                 </div>
               ))}
+
+              {/* SECTION: REKOMENDASI MATERI PENGAYAAN (AI CURATED) */}
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/8">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-[#F4F4F6] text-black border border-black/10 font-mono text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        AI Adaptive Learning
+                      </span>
+                      <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                        <span>Terverifikasi Kurikulum</span>
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-black flex items-center gap-2">
+                      <span>🌐</span>
+                      <span>Rekomendasi Materi Pengayaan (AI Curated)</span>
+                    </h3>
+                    <p className="text-xs text-neutral-500">
+                      Rekomendasi video tutorial YouTube dan dokumentasi teknis resmi yang dikurasi cerdas oleh NexedAI untuk memperluas wawasan topik ini.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Cards Grid: Minimal 2 cards */}
+                {isLoadingRecs ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+                    <div className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3">
+                      <div className="h-4 bg-neutral-200 rounded w-1/3" />
+                      <div className="h-5 bg-neutral-200 rounded w-3/4" />
+                      <div className="h-3 bg-neutral-200 rounded w-full" />
+                    </div>
+                    <div className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3">
+                      <div className="h-4 bg-neutral-200 rounded w-1/3" />
+                      <div className="h-5 bg-neutral-200 rounded w-3/4" />
+                      <div className="h-3 bg-neutral-200 rounded w-full" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {adaptiveRecs?.external_resources.map((item, rIdx) => {
+                      const isVideo =
+                        item.type.toLowerCase().includes("youtube") ||
+                        item.type.toLowerCase().includes("video");
+
+                      return (
+                        <div
+                          key={`ext-resource-${rIdx}`}
+                          className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-4"
+                        >
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
+                                  isVideo
+                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    : "bg-[#F4F4F6] text-black border-black/10"
+                                }`}
+                              >
+                                <span>{isVideo ? "▶ YouTube" : "📖 Dokumentasi"}</span>
+                              </span>
+                              <span className="text-[10px] font-mono text-neutral-500">
+                                ⏱ {item.duration}
+                              </span>
+                            </div>
+                            <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
+                              {item.title}
+                            </h5>
+                            <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 border-t border-black/8 flex items-center justify-between">
+                            <span className="text-[10px] font-mono text-neutral-400 truncate max-w-[140px] sm:max-w-[180px]">
+                              {item.url.replace(/^https?:\/\//, "")}
+                            </span>
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-1.5 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                            >
+                              <span>Buka Materi</span>
+                              <span className="text-[10px]">&nearr;</span>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Diagnostic Active Recall Questions from Recommender */}
+                {adaptiveRecs?.diagnostic_questions && adaptiveRecs.diagnostic_questions.length > 0 && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-[#F4F4F6] border border-black/8 space-y-2">
+                    <span className="text-[11px] font-mono font-bold text-black flex items-center gap-1.5">
+                      <span>❓</span>
+                      <span>Uji Diagnostik Active Recall:</span>
+                    </span>
+                    <ul className="space-y-1.5 text-xs text-neutral-700 pl-1">
+                      {adaptiveRecs.diagnostic_questions.map((q, qIdx) => (
+                        <li key={`diag-q-${qIdx}`} className="flex items-start gap-2">
+                          <span className="font-bold text-black mt-0.5">•</span>
+                          <span>{q}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Action Button: Selesaikan Modul */}
               <div className="flex justify-end pt-2">
