@@ -1,4 +1,3 @@
-// src/services/apiService.ts
 import {
   type AiResponse,
   AiResponseSchema,
@@ -7,12 +6,12 @@ import {
   type StudentMastery,
   StudentMasterySchema,
 } from "../schemas/taskSchema";
+import { getApiBaseUrl, smartApiFetch } from "../utils/apiConfig";
 
 /**
- * Base URL Backend FastAPI (baca dari process.env.NEXT_PUBLIC_API_URL dengan fallback http://localhost:8000)
+ * Base URL Backend FastAPI (otomatis cerdas: kosong pada Vercel production untuk zero timeout delay)
  */
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_BASE_URL = getApiBaseUrl();
 
 // === DATABASE SIMULASI (Fallback Data) ===
 const studentMasteryDb: StudentMastery[] = [
@@ -76,15 +75,14 @@ async function fetchWithFallback<T>(
   options?: RequestInit,
   fallbackData?: T,
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
   try {
-    const res = await fetch(url, {
+    const res = await smartApiFetch(endpoint, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         ...(options?.headers || {}),
       },
-    });
+    }, 2500);
     if (res.ok) {
       return await res.json();
     }
@@ -201,8 +199,8 @@ export async function getAdaptiveRecommendations(
   };
 
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/api/modul/${encodeURIComponent(moduleId)}/adaptive-recommendations`,
+    const res = await smartApiFetch(
+      `/api/modul/${encodeURIComponent(moduleId)}/adaptive-recommendations`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -211,6 +209,7 @@ export async function getAdaptiveRecommendations(
           summary,
         }),
       },
+      2500,
     );
 
     if (res.ok) {

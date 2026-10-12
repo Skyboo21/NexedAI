@@ -5,13 +5,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import ModuleRagChat from "./ModuleRagChat";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-// Helper fetch yang memanggil FastAPI backend dengan fallback ke Next.js internal route
-const apiFetch = (endpoint: string, init?: RequestInit): Promise<Response> => {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-  return fetch(url, init).catch(() => fetch(endpoint, init));
-};
+import { smartApiFetch as apiFetch } from "../utils/apiConfig";
 
 export interface AnalyzedModuleResult {
   title: string;

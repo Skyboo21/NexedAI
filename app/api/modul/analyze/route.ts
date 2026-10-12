@@ -8,6 +8,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { generateAiModuleAnalysis } from "@/lib/aiModuleServer";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);

@@ -178,11 +178,13 @@ Struktur JSON yang WAJIB dipatuhi:
 Teks Dokumen Modul yang Diunggah Mahasiswa:
 ${textSample}`;
 
-    // Model cascading: Coba openai/gpt-oss-120b dulu (kapasitas token besar), jika gagal gunakan alternatif
+    // Model cascading: Utamakan model berkecepatan tinggi (qwen & 20b: ~0.4s), dengan fallback ke 120b
+    const preferredModel = process.env.GROQ_MODEL?.trim();
     const candidateModels = [
-      { name: "openai/gpt-oss-120b", maxTokens: 1800 },
+      ...(preferredModel ? [{ name: preferredModel, maxTokens: 1400 }] : []),
+      { name: "qwen/qwen3.8-27b", maxTokens: 1100 },
       { name: "openai/gpt-oss-20b", maxTokens: 1200 },
-      { name: "qwen/qwen3.8-27b", maxTokens: 950 },
+      { name: "openai/gpt-oss-120b", maxTokens: 1600 },
     ];
 
     let rawReply = "";
@@ -490,10 +492,13 @@ ATURAN WAJIB & PEDOMAN INTEGRITAS AKADEMIK:
    - Jika menyertakan contoh kode, WAJIB gunakan code block berlabel bahasa (contoh: \`\`\`python ... \`\`\`).
    - Gunakan bahasa Indonesia yang baik, akademis namun santun dan menyemangati mahasiswa.`;
 
+    // Chat model cascading: Utamakan model berlatensi ultra-rendah (qwen & 20b ~0.4s)
+    const preferredModel = process.env.GROQ_MODEL?.trim();
     const candidateModels = [
-      { name: "openai/gpt-oss-120b", maxTokens: 1200 },
-      { name: "openai/gpt-oss-20b", maxTokens: 1000 },
-      { name: "qwen/qwen3.8-27b", maxTokens: 900 },
+      ...(preferredModel ? [{ name: preferredModel, maxTokens: 850 }] : []),
+      { name: "qwen/qwen3.8-27b", maxTokens: 800 },
+      { name: "openai/gpt-oss-20b", maxTokens: 850 },
+      { name: "openai/gpt-oss-120b", maxTokens: 1000 },
     ];
 
     for (const model of candidateModels) {
