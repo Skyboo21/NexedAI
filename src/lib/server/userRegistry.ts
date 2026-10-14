@@ -1,9 +1,11 @@
 // src/lib/server/userRegistry.ts
 /**
- * Server-Side User Registry & Secure Password Verifier.
+ * Server-Side User Registry & Secure Password Verifier with PostgreSQL (Prisma) integration.
  * This runs exclusively on server runtime (Node.js / Route Handlers),
  * keeping sensitive credentials and hashing logic safe from client bundles.
  */
+
+import { prisma, isDatabaseConfigured } from "./db";
 
 export interface ServerUserRecord {
   id: string;
@@ -18,7 +20,7 @@ export interface ServerUserRecord {
   createdAt: string;
 }
 
-// In-memory server registry (persists across Next.js reloads via globalThis)
+// In-memory server registry (persists across Next.js reloads via globalThis and acts as speed cache)
 const globalRegistry = globalThis as unknown as {
   __nexed_server_users?: Map<string, ServerUserRecord>;
   __nexed_users_initialized?: boolean;
@@ -62,7 +64,7 @@ function generateSalt(): string {
     .join("");
 }
 
-// Initialize seed users
+// Initialize seed users (caches to memory and seeds PostgreSQL if empty)
 export async function initServerUserRegistry() {
   if (globalRegistry.__nexed_users_initialized && SERVER_USERS.size > 0) return;
 
@@ -114,6 +116,29 @@ export async function initServerUserRegistry() {
       createdAt: new Date().toISOString(),
     };
     SERVER_USERS.set(userRecord.email, userRecord);
+
+    // If PostgreSQL database is connected, persist seed users if they don't already exist
+    if (prisma && isDatabaseConfigured()) {
+      try {
+        await prisma.user.upsert({
+          where: { email: userRecord.email },
+          update: {},
+          create: {
+            id: userRecord.id,
+            name: userRecord.name,
+            email: userRecord.email,
+            role: userRecord.role,
+            nimOrNip: userRecord.nimOrNip,
+            passwordHash: userRecord.passwordHash,
+            salt: userRecord.salt,
+            semester: userRecord.semester,
+            prodi: userRecord.prodi,
+          },
+        });
+      } catch (err) {
+        console.warn("[PostgreSQL] Seed upsert skipped or database not migrated yet:", (err as Error).message);
+      }
+    }
   }
 
   globalRegistry.__nexed_users_initialized = true;
@@ -121,11 +146,13 @@ export async function initServerUserRegistry() {
 
 /**
  * Find user by email, NIM, or username prefix
+ * Checks in-memory cache first, falls back to PostgreSQL query.
  */
 export async function findUserByIdentifier(identifier: string): Promise<ServerUserRecord | null> {
   await initServerUserRegistry();
   const cleanId = identifier.trim().toLowerCase();
 
+  // 1. Check in-memory cache
   for (const user of SERVER_USERS.values()) {
     if (
       user.email === cleanId ||
@@ -134,6 +161,40 @@ export async function findUserByIdentifier(identifier: string): Promise<ServerUs
       user.name.toLowerCase() === cleanId
     ) {
       return user;
+    }
+  }
+
+  // 2. If not found in memory, query PostgreSQL if connected
+  if (prisma && isDatabaseConfigured()) {
+    try {
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: cleanId },
+            { email: { startsWith: `${cleanId}@` } },
+            { nimOrNip: { equals: cleanId, mode: "insensitive" } },
+          ],
+        },
+      });
+
+      if (dbUser) {
+        const record: ServerUserRecord = {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          role: dbUser.role as "mahasiswa" | "dosen" | "admin",
+          nimOrNip: dbUser.nimOrNip ?? undefined,
+          passwordHash: dbUser.passwordHash,
+          salt: dbUser.salt,
+          semester: dbUser.semester ?? undefined,
+          prodi: dbUser.prodi ?? undefined,
+          createdAt: dbUser.createdAt.toISOString(),
+        };
+        SERVER_USERS.set(record.email, record);
+        return record;
+      }
+    } catch (err) {
+      console.warn("[PostgreSQL] findUserByIdentifier error, using memory fallback:", (err as Error).message);
     }
   }
 
@@ -187,7 +248,7 @@ export async function verifyUserCredentials(
 }
 
 /**
- * Register a new user securely on the server
+ * Register a new user securely on the server and in PostgreSQL database
  */
 export async function registerServerUser(params: {
   name: string;
@@ -222,6 +283,30 @@ export async function registerServerUser(params: {
     createdAt: new Date().toISOString(),
   };
 
+  // 1. Save to in-memory cache
   SERVER_USERS.set(cleanEmail, newUser);
+
+  // 2. Persist to PostgreSQL if connected
+  if (prisma && isDatabaseConfigured()) {
+    try {
+      await prisma.user.create({
+        data: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          nimOrNip: newUser.nimOrNip,
+          passwordHash: newUser.passwordHash,
+          salt: newUser.salt,
+          semester: newUser.semester,
+          prodi: newUser.prodi,
+        },
+      });
+      console.log(`[PostgreSQL] User ${newUser.email} persisted successfully.`);
+    } catch (err) {
+      console.warn("[PostgreSQL] User persist error, registered in-memory only:", (err as Error).message);
+    }
+  }
+
   return newUser;
 }
