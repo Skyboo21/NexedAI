@@ -377,6 +377,9 @@ export default function NexedAiModuleHub() {
 
     let serverAnalyzedResult: AnalyzedModuleResult | null = null;
 
+    const uploadController = new AbortController();
+    const uploadTimer = setTimeout(() => uploadController.abort(), 12000);
+
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -391,7 +394,9 @@ export default function NexedAiModuleHub() {
       const res = await apiFetch("/api/modul/upload", {
         method: "POST",
         body: formData,
+        signal: uploadController.signal,
       });
+      clearTimeout(uploadTimer);
 
       const data = await res.json();
       if (res.ok) {
@@ -405,6 +410,7 @@ export default function NexedAiModuleHub() {
         throw new Error(data.error || "Gagal memproses dokumen di server.");
       }
     } catch (err: unknown) {
+      clearTimeout(uploadTimer);
       console.warn("Server upload warning, attempting client-side extraction fallback:", err);
       // Fallback sisi client agar alur belajar mahasiswa tidak pernah terhenti
       try {
@@ -437,6 +443,7 @@ Silabus & Fokus Pembahasan:
       totalWords = extractedContent.split(/\s+/).length;
       chunkCount = Math.max(1, Math.ceil(totalWords / 450));
     } finally {
+      clearTimeout(uploadTimer);
       setIsUploadingDoc(false);
     }
 

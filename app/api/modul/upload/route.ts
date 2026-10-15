@@ -10,6 +10,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { generateAiModuleAnalysis } from "@/lib/aiModuleServer";
 import { chunkText, extractTextFromPdf, getModule, listModules, saveModule } from "@/lib/ragEngine";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     let formData: FormData;
@@ -138,12 +141,16 @@ Dokumen ini berhasil diproses ke dalam arsip belajar Nexed AI dan siap dipelajar
     // 6. Simpan potongan konteks ke RAG Engine Store
     const saved = saveModule(moduleId, fileName, chunks, totalWords);
 
-    // 7. Hasilkan analisis AI komprehensif langsung dari konten riil dokumen
+    // 7. Hasilkan analisis AI HANYA jika diminta eksplisit (field 'analyze' === 'true')
+    // Memisahkan ekstraksi upload (~0.5s) dari analisis AI membuat UI responsif seketika
+    const shouldAnalyze = formData.get("analyze") === "true";
     let analyzedResult = null;
-    try {
-      analyzedResult = await generateAiModuleAnalysis(cleanText, fileName);
-    } catch (analysisErr) {
-      console.warn("AI module analysis warning (fallback applied):", analysisErr);
+    if (shouldAnalyze) {
+      try {
+        analyzedResult = await generateAiModuleAnalysis(cleanText, fileName);
+      } catch (analysisErr) {
+        console.warn("AI module analysis warning (fallback applied):", analysisErr);
+      }
     }
 
     return NextResponse.json(
