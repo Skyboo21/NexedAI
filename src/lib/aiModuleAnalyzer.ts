@@ -1,5 +1,6 @@
 // src/lib/aiModuleAnalyzer.ts
 import type { AnalyzedModuleResult } from "../components/NexedAiModuleHub";
+import { resolveCuratedResources } from "./curatedResources";
 
 export interface AnalysisInput {
   title: string;
@@ -561,6 +562,8 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     },
   ];
 
+  const curated = resolveCuratedResources(`${formattedTitle} ${cleanContent.slice(0, 500)}`);
+
   return {
     title: formattedTitle,
     sourceType: input.sourceType,
@@ -582,6 +585,8 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     },
     roadmap,
     quiz,
+    recommendedVideos: curated.videos,
+    recommendedDocs: curated.docs,
   };
 }
 

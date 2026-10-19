@@ -1,12 +1,21 @@
 // src/lib/aiModuleServer.ts
 import Groq from "groq-sdk";
-import type { AnalyzedModuleResult } from "../components/NexedAiModuleHub";
+import type {
+  AnalyzedModuleResult,
+  RecommendedDoc,
+  RecommendedVideo,
+} from "../components/NexedAiModuleHub";
 import {
   analyzeModuleContent,
   cleanModuleRawText,
   extractSalientTitle,
   generateChatResponse,
 } from "./aiModuleAnalyzer";
+import {
+  resolveCuratedResources,
+  sanitizeDocumentation,
+  sanitizeYoutubeVideo,
+} from "./curatedResources";
 
 /**
  * Server-side AI Module Analysis using Groq LLM
@@ -57,6 +66,10 @@ PEDOMAN PENTING:
      * Tahap 3: Praktik & Implementasi Kasus (studi kasus / penerapan nyata yang ada di dokumen)
      * Tahap 4: Pengujian & Validasi Integritas (pengecekan kesalahan umum, validasi integritas, atau debugging)
    - Setiap item tahap WAJIB menyertakan: 'step', 'stage', 'title', 'description', 'keyConcepts', 'detailedGuide', 'actionItem', 'practiceScenario', dan 'checkQuestion'.
+7. 'recommendedVideos': Array berisi 2 video edukasi terpercaya spesifik (misal dari Web Programming UNPAS, Programmer Zaman Now, Dea Afrizal, freeCodeCamp.org).
+   - DILARANG KERAS menghasilkan link pencarian (/results?search_query= atau /search)!
+   - Wajib menyertakan URL video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dan 'embedId' 11 karakter yang valid.
+8. 'recommendedDocs': Array berisi 2 dokumentasi teknis resmi (MDN Web Docs, PostgreSQL Docs, W3Schools, Python Docs, dll) dengan URL bab/sub-bab spesifik yang membahas materi ini (BUKAN beranda website kosong).
 
 Struktur JSON yang WAJIB dipatuhi:
 {
@@ -171,6 +184,24 @@ Struktur JSON yang WAJIB dipatuhi:
       "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
       "correctIndex": 0,
       "explanation": "Penjelasan mengapa jawaban tersebut benar berdasarkan materi dokumen"
+    }
+  ],
+  "recommendedVideos": [
+    {
+      "title": "Judul Video Tutorial Terverifikasi",
+      "channel": "Nama Kreator / Channel Resmi",
+      "duration": "20 Menit",
+      "videoUrl": "https://www.youtube.com/watch?v=1NigbK3Jk7Q",
+      "embedId": "1NigbK3Jk7Q",
+      "summaryTopic": "Uraian materi yang dibahas dalam video"
+    }
+  ],
+  "recommendedDocs": [
+    {
+      "title": "Judul Bab Dokumentasi Resmi",
+      "source": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide",
+      "description": "Deskripsi konten bab dokumentasi spesifik"
     }
   ]
 }
@@ -390,6 +421,29 @@ ${textSample}`;
             },
           ];
 
+    // Sanitasi & Resolusi Rekomendasi Video YouTube & Dokumentasi (Direct Deep-Links)
+    const curatedResources = resolveCuratedResources(`${sanitizedTitle} ${cleanContent.slice(0, 500)}`);
+
+    let recommendedVideos: RecommendedVideo[] = [];
+    if (Array.isArray(parsed.recommendedVideos) && parsed.recommendedVideos.length > 0) {
+      recommendedVideos = parsed.recommendedVideos
+        .map((v) => sanitizeYoutubeVideo(v as Partial<RecommendedVideo>, sanitizedTitle))
+        .filter((v) => v.videoUrl.startsWith("https://www.youtube.com/watch?v="));
+    }
+    if (recommendedVideos.length < 2) {
+      recommendedVideos = curatedResources.videos;
+    }
+
+    let recommendedDocs: RecommendedDoc[] = [];
+    if (Array.isArray(parsed.recommendedDocs) && parsed.recommendedDocs.length > 0) {
+      recommendedDocs = parsed.recommendedDocs
+        .map((d) => sanitizeDocumentation(d as Partial<RecommendedDoc>, sanitizedTitle))
+        .filter((d) => d.url.startsWith("http"));
+    }
+    if (recommendedDocs.length < 2) {
+      recommendedDocs = curatedResources.docs;
+    }
+
     return {
       title: sanitizedTitle,
       sourceType: "file",
@@ -406,6 +460,8 @@ ${textSample}`;
       },
       roadmap,
       quiz,
+      recommendedVideos,
+      recommendedDocs,
     };
   } catch (error) {
     console.warn("Gagal mengeksekusi analisis AI Groq, menggunakan fallback lokal:", error);

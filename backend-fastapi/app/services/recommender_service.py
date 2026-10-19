@@ -235,6 +235,11 @@ def generate_adaptive_recommendations(
         Topik: {topic_clean}
         Ringkasan Materi: {summary or "Materi perkuliahan informatika dasar hingga lanjutan"}
 
+        ATURAN KHUSUS EXTERNAL RESOURCES:
+        - DILARANG KERAS menghasilkan link pencarian umum (/results?search_query= atau /search)!
+        - Link YouTube HARUS direct link video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dari kreator terpercaya.
+        - Link Dokumentasi HARUS direct link ke spesifikasi/bab/sub-bab resmi (misal MDN, W3Schools, PostgreSQL Docs, Oracle Docs).
+
         Format output HARUS berupa JSON valid dengan struktur:
         {{
             "topic": "{topic_clean}",
@@ -246,16 +251,16 @@ def generate_adaptive_recommendations(
             ],
             "external_resources": [
                 {{
-                    "title": "Judul Video YouTube edukatif yang sangat relevan",
+                    "title": "Judul Video YouTube spesifik",
                     "type": "YouTube",
-                    "url": "https://www.youtube.com/results?search_query={topic_encoded}",
+                    "url": "https://www.youtube.com/watch?v=VIDEO_ID",
                     "duration": "15-25 Menit",
                     "description": "Deskripsi singkat isi video dan topik yang dibahas"
                 }},
                 {{
-                    "title": "Dokumentasi Resmi / Web Tutorial Interaktif",
+                    "title": "Dokumentasi Resmi / Panduan Sub-Bab",
                     "type": "Dokumentasi",
-                    "url": "https://developer.mozilla.org/ atau https://docs.oracle.com/",
+                    "url": "https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Statements/for",
                     "duration": "10-20 Min Read",
                     "description": "Panduan resmi spesifikasi sintaks dan best practice"
                 }}
@@ -295,16 +300,26 @@ def generate_adaptive_recommendations(
         raw_json = completion.choices[0].message.content.strip()
         parsed = json.loads(raw_json)
 
-        resources = [
-            ExternalResource(
-                title=_clean_str(res.get("title", "Materi Pendukung")),
-                type=_clean_str(res.get("type", "Dokumentasi")),
-                url=str(res.get("url", "#")).strip(),
-                duration=_clean_str(res.get("duration", "15 Menit")),
-                description=_clean_str(res.get("description", "Materi pengayaan eksternal terkurasi.")),
+        resources: List[ExternalResource] = []
+        for res in parsed.get("external_resources", []):
+            url_str = str(res.get("url", "#")).strip()
+            # Tolak link pencarian umum atau link yang tidak diawali http
+            if (
+                "results?search_query" in url_str
+                or "/search" in url_str
+                or url_str == "#"
+                or not url_str.startswith("http")
+            ):
+                continue
+            resources.append(
+                ExternalResource(
+                    title=_clean_str(res.get("title", "Materi Pendukung")),
+                    type=_clean_str(res.get("type", "Dokumentasi")),
+                    url=url_str,
+                    duration=_clean_str(res.get("duration", "15 Menit")),
+                    description=_clean_str(res.get("description", "Materi pengayaan eksternal terkurasi.")),
+                )
             )
-            for res in parsed.get("external_resources", [])
-        ]
 
         if len(resources) < 2:
             fallback = get_curated_fallback(topic_clean)

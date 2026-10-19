@@ -7,6 +7,22 @@ import ModuleRagChat from "./ModuleRagChat";
 
 import { smartApiFetch as apiFetch } from "../utils/apiConfig";
 
+export interface RecommendedVideo {
+  title: string;
+  channel: string;
+  duration: string;
+  videoUrl: string; // URL video spesifik (misal: https://www.youtube.com/watch?v=VIDEO_ID)
+  embedId: string; // ID video 11 karakter untuk pemutar embed langsung
+  summaryTopic: string;
+}
+
+export interface RecommendedDoc {
+  title: string;
+  source: string; // Misal: "MDN Web Docs", "W3Schools", "PostgreSQL Docs"
+  url: string; // URL bab spesifik (misal: https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Statements/for)
+  description: string;
+}
+
 export interface AnalyzedModuleResult {
   title: string;
   sourceType: "file" | "text";
@@ -48,10 +64,13 @@ export interface AnalyzedModuleResult {
     correctIndex: number;
     explanation: string;
   }>;
+  recommendedVideos?: RecommendedVideo[];
+  recommendedDocs?: RecommendedDoc[];
 }
 
 import { analyzeModuleContent, generateChatResponse } from "../lib/aiModuleAnalyzer";
 import { getAdaptiveRecommendations, type AdaptiveLearningResponse } from "../services/apiService";
+import { resolveCuratedResources } from "../lib/curatedResources";
 
 const ANALYSIS_STEPS = [
   { percent: 25, label: "Membaca dan mengekstraksi konten materi...", icon: "📄" },
@@ -306,6 +325,38 @@ export default function NexedAiModuleHub() {
   });
   const [hubMobileSyllabusOpen, setHubMobileSyllabusOpen] = useState<boolean>(false);
   const hubStageContainerRef = useRef<HTMLDivElement>(null);
+
+  // Active Video Modal for Direct Embedded Playback
+  const [activeVideoModal, setActiveVideoModal] = useState<RecommendedVideo | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveVideoModal(null);
+      }
+    };
+    if (activeVideoModal) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeVideoModal]);
+
+  // Curated Fallback & Deep-Linked Video / Docs Resolution
+  const curatedFallback = analysisResult
+    ? resolveCuratedResources(`${analysisResult.title} ${analysisResult.summary?.overview || ""}`)
+    : null;
+
+  const activeRecommendedVideos: RecommendedVideo[] =
+    analysisResult?.recommendedVideos && analysisResult.recommendedVideos.length > 0
+      ? analysisResult.recommendedVideos
+      : curatedFallback?.recommendedVideos ?? [];
+
+  const activeRecommendedDocs: RecommendedDoc[] =
+    analysisResult?.recommendedDocs && analysisResult.recommendedDocs.length > 0
+      ? analysisResult.recommendedDocs
+      : curatedFallback?.recommendedDocs ?? [];
 
   // Adaptive Learning & External Recommendations
   const [adaptiveRecs, setAdaptiveRecs] = useState<AdaptiveLearningResponse | null>(null);
@@ -1825,117 +1876,191 @@ Silabus & Fokus Pembahasan:
           {/* ======================================================== */}
           {hubCurrentStage === 3 && (
             <div className="space-y-6 animate-in fade-in">
-              {/* REKOMENDASI MATERI PENGAYAAN (AI CURATED) - SECTION ADAPTIVE LEARNING */}
-              <div className="space-y-4 bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/8">
+              {/* REKOMENDASI REFERENSI TERVERIFIKASI (DIRECT DEEP-LINK) */}
+              <div className="space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/8">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-[11px] font-black">
                         🌐
                       </span>
                       <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
-                        Rekomendasi Materi Pengayaan (AI Curated)
+                        Rekomendasi Referensi Terverifikasi (Direct Deep-Link)
                       </h4>
                     </div>
                     <p className="text-[11px] text-neutral-500 mt-1">
-                      Materi pendukung interaktif dan referensi industri pilihan AI dengan verified direct deep-links.
+                      Video pembelajaran spesifik dan dokumentasi teknis otoritatif langsung ke pokok bahasan (tanpa halaman pencarian umum).
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto">
+                    <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto font-medium">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>{adaptiveRecs?.external_resources ? `${adaptiveRecs.external_resources.length} Sumber` : "Live AI"}</span>
+                      <span>{activeRecommendedVideos.length} Video • {activeRecommendedDocs.length} Dokumen</span>
                     </span>
                   </div>
                 </div>
 
-                {loadingAdaptiveRecs ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map((idx) => (
-                      <div
-                        key={`loading-rec-${idx}`}
-                        className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3"
-                      >
-                        <div className="h-4 w-24 bg-neutral-200 rounded-full" />
-                        <div className="h-5 w-3/4 bg-neutral-200 rounded-md" />
-                        <div className="h-10 w-full bg-neutral-200 rounded-md" />
-                        <div className="h-8 w-28 bg-neutral-200 rounded-full pt-2" />
-                      </div>
-                    ))}
+                {/* SUBSECTION 1: VIDEO YOUTUBE SPESIFIK */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-600 font-bold text-sm">▶</span>
+                      <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                        Video Tutorial & Panduan Praktik Terverifikasi
+                      </h5>
+                    </div>
+                    <span className="text-[10px] font-mono text-neutral-500">
+                      Putar Langsung di Web atau Buka YouTube
+                    </span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(adaptiveRecs?.external_resources && adaptiveRecs.external_resources.length > 0
-                      ? adaptiveRecs.external_resources
-                      : [
-                          {
-                            title: `Video Panduan Praktik: ${analysisResult.title}`,
-                            type: "youtube" as const,
-                            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(analysisResult.title + " tutorial")}`,
-                            duration: "15-20 min",
-                            description: "Visualisasi konsep mendalam dan panduan langkah demi langkah dari praktisi industri.",
-                          },
-                          {
-                            title: `Dokumentasi Resmi & Panduan: ${analysisResult.title}`,
-                            type: "documentation" as const,
-                            url: "https://developer.mozilla.org",
-                            duration: "10-15 min baca",
-                            description: "Spesifikasi standar, best practices, dan studi kasus arsitektur teknis.",
-                          },
-                        ]
-                    ).map((item, idx) => {
-                      const isVideo = item.type.toLowerCase().includes("youtube") || item.type.toLowerCase().includes("video");
-                      return (
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activeRecommendedVideos.map((video, vIdx) => (
+                      <div
+                        key={`rec-video-${vIdx}-${video.embedId}`}
+                        className="group rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between"
+                      >
+                        {/* Video Thumbnail with overlay */}
                         <div
-                          key={`ext-rec-${idx}`}
-                          className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-4"
+                          onClick={() => setActiveVideoModal(video)}
+                          className="relative aspect-video w-full bg-slate-900 overflow-hidden cursor-pointer"
+                          title={`Klik untuk putar langsung: ${video.title}`}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setActiveVideoModal(video);
+                            }
+                          }}
                         >
-                          <div className="space-y-2.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span
-                                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
-                                  isVideo
-                                    ? "bg-rose-50 text-rose-700 border-rose-200"
-                                    : "bg-[#F4F4F6] text-black border-black/10"
-                                }`}
-                              >
-                                <span>{isVideo ? "▶ YouTube" : "📖 Dokumentasi"}</span>
-                              </span>
-                              <span className="text-[10px] font-mono text-neutral-500">
-                                ⏱ {item.duration}
-                              </span>
+                          <img
+                            src={`https://img.youtube.com/vi/${video.embedId}/hqdefault.jpg`}
+                            alt={video.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          {/* Hover Play Button Overlay */}
+                          <div className="absolute inset-0 bg-black/35 group-hover:bg-black/15 transition-colors flex items-center justify-center">
+                            <div className="w-11 h-11 rounded-full bg-black/80 group-hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-md group-hover:scale-110">
+                              <span className="text-sm font-bold ml-0.5">▶</span>
+                            </div>
+                          </div>
+                          {/* Badges */}
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="text-[10px] font-mono font-bold bg-black/85 text-white px-2 py-0.5 rounded-md backdrop-blur-xs">
+                              ⏱ {video.duration}
+                            </span>
+                          </div>
+                          <div className="absolute top-2.5 right-2.5">
+                            <span className="text-[10px] font-semibold bg-rose-600 text-white px-2 py-0.5 rounded-md shadow-xs">
+                              YouTube
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Video Details */}
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-neutral-500">
+                              <span className="truncate">{video.channel}</span>
+                              <span className="text-emerald-600 font-bold shrink-0" title="Kreator Terverifikasi">✓</span>
                             </div>
                             <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
-                              {item.title}
+                              {video.title}
                             </h5>
-                            <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">
-                              {item.description}
+                            <p className="text-[11px] text-neutral-600 leading-relaxed line-clamp-2">
+                              {video.summaryTopic}
                             </p>
                           </div>
 
-                          <div className="pt-3 border-t border-black/8 flex items-center justify-between">
-                            <span className="text-[11px] font-mono text-neutral-400">
-                              {isVideo ? "Media Video Interaktif" : "Dokumentasi Terverifikasi"}
-                            </span>
+                          {/* Action Buttons */}
+                          <div className="pt-3 border-t border-black/8 flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setActiveVideoModal(video)}
+                              className="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
+                            >
+                              <span>▶ Tonton di Sini</span>
+                            </button>
                             <a
-                              href={item.url}
+                              href={video.videoUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium transition-all shadow-2xs hover:shadow-xs"
+                              className="min-h-[44px] inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 text-xs font-medium transition-colors border border-black/10 shrink-0"
+                              title="Buka video di tab baru YouTube"
                             >
-                              <span>Buka Materi</span>
+                              <span>Buka</span>
                               <span className="text-[10px]">↗</span>
                             </a>
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+
+                {/* SUBSECTION 2: DOKUMENTASI RESMI SPESIFIK */}
+                <div className="space-y-3.5 pt-4 border-t border-black/8">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-indigo-600 font-bold text-sm">📖</span>
+                      <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                        Dokumentasi Resmi & Panduan Teknis (Direct Sub-Chapter)
+                      </h5>
+                    </div>
+                    <span className="text-[10px] font-mono text-neutral-500">
+                      Otoritatif & Standar Industri
+                    </span>
+                  </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {activeRecommendedDocs.map((doc, dIdx) => (
+                      <div
+                        key={`rec-doc-${dIdx}-${doc.url}`}
+                        className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-3"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                              {doc.source}
+                            </span>
+                            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span>Sub-Bab Spesifik</span>
+                            </span>
+                          </div>
+                          <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
+                            {doc.title}
+                          </h5>
+                          <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">
+                            {doc.description}
+                          </p>
+                        </div>
+
+                        <div className="pt-3 border-t border-black/8 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-mono text-neutral-400 truncate max-w-[150px] sm:max-w-[200px]">
+                            {doc.url.replace(/^https?:\/\//, "")}
+                          </span>
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-medium transition-all shadow-2xs hover:shadow-xs shrink-0 cursor-pointer"
+                          >
+                            <span>Buka Panduan</span>
+                            <span className="text-[10px]">↗</span>
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Diagnostic Active Recall Questions if provided by Adaptive Learning */}
                 {adaptiveRecs?.diagnostic_questions && adaptiveRecs.diagnostic_questions.length > 0 && (
-                  <div className="p-4 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-2.5 mt-2">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-2.5 mt-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs">⚡</span>
                       <h5 className="text-[11px] font-mono font-bold uppercase tracking-wider text-black">
@@ -2303,6 +2428,87 @@ Silabus & Fokus Pembahasan:
                   <span>{isQuizChecked ? "✓ Selesaikan Modul" : "Periksa Kuis"}</span>
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PEMUTAR VIDEO EMBED YOUTUBE RESPONTIF (DIRECT DEEP-LINK) */}
+      {activeVideoModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in"
+          onClick={() => setActiveVideoModal(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Pemutar video: ${activeVideoModal.title}`}
+        >
+          <div
+            className="bg-white rounded-3xl border border-black/10 shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between gap-3">
+              <div className="min-w-0 pr-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-black bg-[#F4F4F6] px-2 py-0.5 rounded-md border border-black/8">
+                    {activeVideoModal.channel}
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500">
+                    ⏱ {activeVideoModal.duration}
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    Direct Deep-Link
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-black truncate">
+                  {activeVideoModal.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveVideoModal(null)}
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer shrink-0 font-bold"
+                aria-label="Tutup pemutar video"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Responsive aspect-video iframe */}
+            <div className="relative w-full aspect-video bg-black">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${activeVideoModal.embedId}?autoplay=1&rel=0`}
+                title={activeVideoModal.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 bg-[#FAFAFA] border-t border-black/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs text-neutral-600 line-clamp-2 sm:line-clamp-1">
+                <span className="font-semibold text-black">Pokok Bahasan: </span>
+                {activeVideoModal.summaryTopic}
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={activeVideoModal.videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black text-xs font-medium border border-black/10 transition-colors"
+                >
+                  <span>Buka di YouTube</span>
+                  <span className="text-[11px]">↗</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setActiveVideoModal(null)}
+                  className="min-h-[44px] inline-flex items-center justify-center px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Selesai Menonton
+                </button>
+              </div>
             </div>
           </div>
         </div>
