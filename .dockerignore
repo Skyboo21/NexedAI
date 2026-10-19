@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+.env*.local
+coverage
+dist
+tests
+scripts
+backend-fastapi
+*.log
+README.md
