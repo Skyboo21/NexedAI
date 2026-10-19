@@ -5,11 +5,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import LogoutButton from "./LogoutButton";
+import {
+  LayoutDashboard,
+  BookOpen,
+  GitFork,
+  History,
+  UserCircle2,
+  BarChart3,
+  AlertTriangle,
+  TrendingUp,
+  Users,
+  Settings,
+  ShieldCheck,
+  FileText,
+  Menu,
+  X,
+} from "lucide-react";
 
 export interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon?: React.ReactNode | string;
   badge?: string;
   badgeColor?: "indigo" | "emerald" | "amber" | "rose";
 }
@@ -21,6 +37,52 @@ interface AppSidebarProps {
   userStatusTitle: string;
   userStatusSubtitle: string;
   navItems: NavItem[];
+}
+
+function getNavIcon(item: NavItem, isActive: boolean) {
+  if (item.icon && typeof item.icon !== "string") {
+    return item.icon;
+  }
+
+  const labelLower = item.label.toLowerCase();
+  const hrefLower = item.href.toLowerCase();
+
+  const iconClass = `w-4 h-4 shrink-0 transition-colors ${
+    isActive ? "text-white" : "text-slate-500 group-hover:text-indigo-600"
+  }`;
+
+  if (labelLower.includes("beranda") || hrefLower === "/dashboard") {
+    return <LayoutDashboard className={iconClass} />;
+  }
+  if (labelLower.includes("modul") || hrefLower.startsWith("/modul")) {
+    return <BookOpen className={`w-4 h-4 shrink-0 transition-colors ${isActive ? "text-white" : "text-indigo-600"}`} />;
+  }
+  if (labelLower.includes("peta") || hrefLower.includes("peta")) {
+    return <GitFork className={iconClass} />;
+  }
+  if (labelLower.includes("riwayat") || hrefLower.includes("riwayat") || labelLower.includes("aktivitas")) {
+    return <History className={iconClass} />;
+  }
+  if (labelLower.includes("profil") || hrefLower.includes("profil")) {
+    return <UserCircle2 className={iconClass} />;
+  }
+  if (labelLower.includes("analitik") || hrefLower === "/dosen-dashboard") {
+    return <BarChart3 className={iconClass} />;
+  }
+  if (labelLower.includes("alert") || hrefLower.includes("alert")) {
+    return <AlertTriangle className={`w-4 h-4 shrink-0 transition-colors ${isActive ? "text-white" : "text-amber-500"}`} />;
+  }
+  if (labelLower.includes("distribusi") || hrefLower.includes("distribusi") || labelLower.includes("nilai")) {
+    return <TrendingUp className={iconClass} />;
+  }
+  if (labelLower.includes("pengguna") || hrefLower === "/admin-dashboard") {
+    return <Users className={iconClass} />;
+  }
+  if (labelLower.includes("konfigurasi") || hrefLower.includes("config")) {
+    return <Settings className={iconClass} />;
+  }
+
+  return <FileText className={iconClass} />;
 }
 
 export default function AppSidebar({
@@ -48,7 +110,7 @@ export default function AppSidebar({
   const getLogoBadge = () => {
     switch (userRole) {
       case "admin":
-        return "🛡️";
+        return <ShieldCheck className="w-5 h-5 text-white" />;
       default:
         return (
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
@@ -77,9 +139,19 @@ export default function AppSidebar({
           type="button"
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           aria-label={mobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
-          className="p-2 rounded-xl bg-[#F4F4F6] hover:bg-neutral-200 text-black text-xs font-medium border border-black/10 transition-colors cursor-pointer"
+          className="p-2 rounded-xl bg-[#F4F4F6] hover:bg-neutral-200 text-black text-xs font-medium border border-black/10 transition-colors cursor-pointer flex items-center gap-1.5"
         >
-          {mobileMenuOpen ? "✕ Tutup" : "☰ Menu"}
+          {mobileMenuOpen ? (
+            <>
+              <X className="w-4 h-4" />
+              <span>Tutup</span>
+            </>
+          ) : (
+            <>
+              <Menu className="w-4 h-4" />
+              <span>Menu</span>
+            </>
+          )}
         </button>
       </header>
 
@@ -130,10 +202,10 @@ export default function AppSidebar({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden p-1.5 rounded-xl text-neutral-400 hover:text-black hover:bg-neutral-100"
+              className="md:hidden p-1.5 rounded-xl text-neutral-400 hover:text-black hover:bg-neutral-100 cursor-pointer"
               aria-label="Tutup sidebar"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
 
@@ -167,8 +239,8 @@ export default function AppSidebar({
                   }`}
                 >
                   <div className="flex items-center space-x-2.5 min-w-0">
-                    <span className="text-sm shrink-0" aria-hidden="true">
-                      {item.icon}
+                    <span className="shrink-0" aria-hidden="true">
+                      {getNavIcon(item, isActive)}
                     </span>
                     <span className="truncate">{item.label}</span>
                   </div>

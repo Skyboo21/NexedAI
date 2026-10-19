@@ -111,7 +111,7 @@ describe('Landing Page Components & User Interactivity', () => {
       });
       fireEvent.click(correctOption);
 
-      expect(screen.getByText(/✓ Benar/i)).toBeInTheDocument();
+      expect(screen.getByText(/Benar/i)).toBeInTheDocument();
       expect(screen.getByText(/Penjelasan Jawaban:/i)).toBeInTheDocument();
     });
   });

@@ -30,13 +30,9 @@ export default function ProfileLayoutClient({ initialRole, children }: ProfileLa
           userStatusTitle: "Super Administrator",
           userStatusSubtitle: "Akses Penuh Konfigurasi & Audit",
           navItems: [
-            { label: "Kelola Pengguna", href: "/admin-dashboard", icon: "👥" },
-            {
-              label: "Konfigurasi Sistem",
-              href: "/admin-dashboard#config",
-              icon: "⚙️",
-            },
-            { label: "Profil Admin", href: "/profil", icon: "👤" },
+            { label: "Kelola Pengguna", href: "/admin-dashboard" },
+            { label: "Konfigurasi Sistem", href: "/admin-dashboard#config" },
+            { label: "Profil Admin", href: "/profil" },
           ] as NavItem[],
         };
       case "dosen":
@@ -50,23 +46,20 @@ export default function ProfileLayoutClient({ initialRole, children }: ProfileLa
             {
               label: "Analitik Kelas",
               href: "/dosen-dashboard",
-              icon: "📊",
               badge: "Live",
               badgeColor: "emerald" as const,
             },
             {
               label: "Alert Mahasiswa",
               href: "/dosen-dashboard#alerts",
-              icon: "⚠️",
               badge: "2 Alert",
               badgeColor: "rose" as const,
             },
             {
               label: "Distribusi Nilai",
               href: "/dosen-dashboard#distribusi",
-              icon: "📈",
             },
-            { label: "Profil Dosen", href: "/profil", icon: "👤" },
+            { label: "Profil Dosen", href: "/profil" },
           ] as NavItem[],
         };
       default:
@@ -77,17 +70,16 @@ export default function ProfileLayoutClient({ initialRole, children }: ProfileLa
           userStatusTitle: "Mahasiswa Aktif",
           userStatusSubtitle: "Semester 4 • Algoritma & Pemrograman",
           navItems: [
-            { label: "Beranda", href: "/dashboard", icon: "🏠" },
+            { label: "Beranda", href: "/dashboard" },
             {
               label: "Modul Adaptif",
               href: "/modul",
-              icon: "📚",
               badge: "5 Bab",
               badgeColor: "indigo" as const,
             },
-            { label: "Peta Belajar", href: "/dashboard#peta", icon: "🗺️" },
-            { label: "Riwayat Aktivitas", href: "/dashboard#riwayat", icon: "📝" },
-            { label: "Profil Saya", href: "/profil", icon: "👤" },
+            { label: "Peta Belajar", href: "/dashboard#peta" },
+            { label: "Riwayat Aktivitas", href: "/dashboard#riwayat" },
+            { label: "Profil Saya", href: "/profil" },
           ] as NavItem[],
         };
     }

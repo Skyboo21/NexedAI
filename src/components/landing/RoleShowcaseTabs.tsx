@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { GraduationCap, BookOpen, ShieldCheck, Check, ArrowRight } from "lucide-react";
 
 export function RoleShowcaseTabs() {
   const [activeRole, setActiveRole] = useState<"mahasiswa" | "dosen" | "admin">("mahasiswa");
@@ -27,7 +28,7 @@ export function RoleShowcaseTabs() {
                 : "text-black/60 hover:text-black"
             }`}
           >
-            <span>🎓</span>
+            <GraduationCap className="w-4 h-4" />
             <span>Untuk Mahasiswa</span>
           </button>
           <button
@@ -41,7 +42,7 @@ export function RoleShowcaseTabs() {
                 : "text-black/60 hover:text-black"
             }`}
           >
-            <span>👨‍🏫</span>
+            <BookOpen className="w-4 h-4" />
             <span>Untuk Dosen</span>
           </button>
           <button
@@ -55,7 +56,7 @@ export function RoleShowcaseTabs() {
                 : "text-black/60 hover:text-black"
             }`}
           >
-            <span>🛡️</span>
+            <ShieldCheck className="w-4 h-4" />
             <span>Untuk Admin</span>
           </button>
         </div>
@@ -78,20 +79,20 @@ export function RoleShowcaseTabs() {
               </p>
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Upload Modul PDF / DOCX langsung diproses AI</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Papan Peringkat (Leaderboard) & Koleksi Lencana Prestasi</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Efek selebrasi konfeti interaktif saat menuntaskan materi</span>
                 </div>
@@ -99,10 +100,10 @@ export function RoleShowcaseTabs() {
               <div className="pt-2">
                 <Link
                   href="/register"
-                  className="btn-pill-black"
+                  className="btn-pill-black inline-flex items-center gap-1.5"
                 >
                   <span>Daftar Akun Mahasiswa</span>
-                  <span>&rarr;</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
@@ -158,20 +159,20 @@ export function RoleShowcaseTabs() {
               </p>
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Distribusi Grade A–E dan metrik penguasaan kelas</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Log aktivitas detail pengerjaan kuis per mahasiswa</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Pemberian tugas remedial langsung tersimpan ke server</span>
                 </div>
@@ -179,10 +180,10 @@ export function RoleShowcaseTabs() {
               <div className="pt-2">
                 <Link
                   href="/login"
-                  className="btn-pill-black"
+                  className="btn-pill-black inline-flex items-center gap-1.5"
                 >
                   <span>Masuk Portal Dosen</span>
-                  <span>&rarr;</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
@@ -230,14 +231,14 @@ export function RoleShowcaseTabs() {
               </p>
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Audit log perubahan hak akses &amp; otentikasi</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs font-medium text-black/80">
-                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center font-bold text-[9px] shrink-0">
-                    ✓
+                  <span className="w-4 h-4 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+                    <Check size={10} strokeWidth={3} />
                   </span>
                   <span>Zero Vulnerabilities &amp; Keamanan HttpOnly Cookies</span>
                 </div>
@@ -245,10 +246,10 @@ export function RoleShowcaseTabs() {
               <div className="pt-2">
                 <Link
                   href="/login"
-                  className="btn-pill-black"
+                  className="btn-pill-black inline-flex items-center gap-1.5"
                 >
                   <span>Masuk Portal Administrator</span>
-                  <span>&rarr;</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>

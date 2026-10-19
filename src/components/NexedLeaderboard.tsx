@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { Trophy, Zap, Brain, Target, Shield, Rocket, Check } from "lucide-react";
 
 interface LeaderboardEntry {
   rank: number;
@@ -15,7 +16,7 @@ interface LeaderboardEntry {
 
 interface BadgeItem {
   id: string;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   description: string;
   unlocked: boolean;
@@ -69,7 +70,7 @@ const LEADERBOARD_DATA: LeaderboardEntry[] = [
 const BADGES_LIST: BadgeItem[] = [
   {
     id: "b1",
-    icon: "🏆",
+    icon: <Trophy className="w-5 h-5 text-amber-500" />,
     title: "Algo Master",
     description: "Menuntaskan modul algoritma sorting dengan skor 100",
     unlocked: true,
@@ -77,7 +78,7 @@ const BADGES_LIST: BadgeItem[] = [
   },
   {
     id: "b2",
-    icon: "⚡",
+    icon: <Zap className="w-5 h-5 text-amber-500" />,
     title: "Active Recaller",
     description: "Menjawab kuis active recall berturut-turut tanpa jeda",
     unlocked: true,
@@ -85,7 +86,7 @@ const BADGES_LIST: BadgeItem[] = [
   },
   {
     id: "b3",
-    icon: "🧠",
+    icon: <Brain className="w-5 h-5 text-indigo-500" />,
     title: "Deep Thinker",
     description: "Menganalisis 3 modul pohon biner bersama Nexed AI Tutor",
     unlocked: true,
@@ -93,7 +94,7 @@ const BADGES_LIST: BadgeItem[] = [
   },
   {
     id: "b4",
-    icon: "🎯",
+    icon: <Target className="w-5 h-5 text-indigo-500" />,
     title: "Target Achiever",
     description: "Menyelesaikan 5 target belajar mingguan tepat waktu",
     unlocked: true,
@@ -101,7 +102,7 @@ const BADGES_LIST: BadgeItem[] = [
   },
   {
     id: "b5",
-    icon: "🛡️",
+    icon: <Shield className="w-5 h-5 text-amber-700" />,
     title: "Bug Hunter",
     description: "Mengoreksi 10 syntax edge cases praktikum lab",
     unlocked: false,
@@ -109,7 +110,7 @@ const BADGES_LIST: BadgeItem[] = [
   },
   {
     id: "b6",
-    icon: "🚀",
+    icon: <Rocket className="w-5 h-5 text-amber-700" />,
     title: "Speed Demon",
     description: "Menyelesaikan kuis dalam waktu kurang dari 3 menit",
     unlocked: false,
@@ -298,7 +299,10 @@ export default function NexedLeaderboard() {
                 <p className="text-[11px] text-neutral-500 leading-snug">{b.description}</p>
                 <div className="text-[10px] font-mono pt-0.5">
                   {b.unlocked ? (
-                    <span className="text-emerald-800 font-medium">✓ Terbuka</span>
+                    <span className="text-emerald-800 font-medium inline-flex items-center gap-1">
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      Terbuka
+                    </span>
                   ) : (
                     <span className="text-neutral-400">Belum Tercapai</span>
                   )}

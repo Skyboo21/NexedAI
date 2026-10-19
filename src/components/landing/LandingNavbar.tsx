@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Check, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 
@@ -120,8 +120,8 @@ export function LandingNavbar() {
               href={getDashboardHref()}
               className="inline-flex items-center gap-2 bg-[#F4F4F6] hover:bg-[#eaeaea] text-black px-3.5 py-1.5 rounded-full text-[12px] font-medium border border-black/8 transition-colors shadow-xs"
             >
-              <span className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-bold">
-                ✓
+              <span className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center">
+                <Check size={11} strokeWidth={3} />
               </span>
               <span>Buka Dashboard</span>
               <span className="text-black/50 text-[11px]">({user.name.split(" ")[0]})</span>
@@ -156,7 +156,7 @@ export function LandingNavbar() {
                 className="hidden sm:inline-flex items-center gap-1.5 bg-black hover:bg-neutral-800 text-white px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all shadow-xs"
               >
                 <span>Mulai Belajar Gratis</span>
-                <span className="text-white/60">&rarr;</span>
+                <ArrowRight size={12} className="text-white/70" />
               </Link>
             </div>
           )}

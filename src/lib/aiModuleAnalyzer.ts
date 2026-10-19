@@ -1390,10 +1390,10 @@ export function generateChatResponse(params: {
 
     let clueText = "";
     if (targetQ) {
-      clueText = `\n\n💡 **Petunjuk & Arah Berpikir Soal ${qNum}:**\n> *"${targetQ.question}"*\n\n**Landasan Teori:** ${targetQ.explanation || "Perhatikan fondasi utama yang mendasari integritas pemrosesan modul ini."}`;
+      clueText = `\n\n[Petunjuk Akademik] **Arah Berpikir Soal ${qNum}:**\n> *"${targetQ.question}"*\n\n**Landasan Teori:** ${targetQ.explanation || "Perhatikan fondasi utama yang mendasari integritas pemrosesan modul ini."}`;
     }
 
-    return `🎯 **Integritas Akademik Kuis Active Recall:**\n\nSebagai AI Tutor akademik, saya tidak boleh memberikan kunci jawaban atau membocorkan opsi langsung (A, B, C, atau D) agar Anda dapat melatih retensi memori dan daya analisis (*active recall*) secara optimal.${clueText}\n\nSilakan telaah opsi yang tersedia di tab **Kuis Active Recall**, pilih yang paling selaras dengan prinsip di atas, lalu tekan **Periksa Jawaban**! Jika masih ragu pada konsepnya, tanyakan kepada saya bagian teori mana yang perlu diperdalam.`;
+    return `[Integritas Akademik] **Kuis Active Recall:**\n\nSebagai AI Tutor akademik, saya tidak boleh memberikan kunci jawaban atau membocorkan opsi langsung (A, B, C, atau D) agar Anda dapat melatih retensi memori dan daya analisis (*active recall*) secara optimal.${clueText}\n\nSilakan telaah opsi yang tersedia di tab **Kuis Active Recall**, pilih yang paling selaras dengan prinsip di atas, lalu tekan **Periksa Jawaban**! Jika masih ragu pada konsepnya, tanyakan kepada saya bagian teori mana yang perlu diperdalam.`;
   }
 
   // 2. Pertanyaan Spesifik: Pseudocode & Desain Algoritma
@@ -1402,7 +1402,7 @@ export function generateChatResponse(params: {
     lowerQ.includes("pseudo-code") ||
     lowerQ.includes("pseudo code")
   ) {
-    return `📝 **Tujuan Utama Membuat Pseudocode Sebelum Menulis Kode Program:**\n\n1. **Memisahkan Logika Solusi dari Sintaks Bahasa:**\n   • Menulis pseudocode memungkinkan programmer fokus 100% pada **alur algoritma pemecahan masalah** tanpa terdistraksi oleh aturan sintaksis teknis (seperti titik koma, tipe data memori, atau library tertentu).\n\n2. **Mendeteksi Kesalahan Logika Sejak Dini:**\n   • Menemukan kesalahan alur (seperti loop tanpa henti atau kondisi percabangan yang salah) jauh lebih mudah diperbaiki pada teks pseudocode dibanding saat kode sudah dikompilasi.\n\n3. **Jembatan Komunikasi Lintas Tim:**\n   • Pseudocode menggunakan bahasa semi-alami yang dapat ditinjau bersama analis sistem, penguji QA, maupun programmer yang menggunakan bahasa pemrograman berbeda (Python, Java, C++).\n\n4. **Mempercepat dan Menyederhanakan Proses Coding:**\n   • Ketika struktur logika pseudocode sudah matang dan teruji, penulisan kode program sesungguhnya menjadi jauh lebih cepat karena tinggal mentranslasikan setiap baris konsep ke sintaks bahasa yang dipilih.\n\n*Intinya:* Pseudocode adalah **cetak biru (blueprint)** logika sebelum Anda mendirikan bangunan kode program nyata.`;
+    return `[Fondasi Desain] **Tujuan Utama Membuat Pseudocode Sebelum Menulis Kode Program:**\n\n1. **Memisahkan Logika Solusi dari Sintaks Bahasa:**\n   • Menulis pseudocode memungkinkan programmer fokus 100% pada **alur algoritma pemecahan masalah** tanpa terdistraksi oleh aturan sintaksis teknis (seperti titik koma, tipe data memori, atau library tertentu).\n\n2. **Mendeteksi Kesalahan Logika Sejak Dini:**\n   • Menemukan kesalahan alur (seperti loop tanpa henti atau kondisi percabangan yang salah) jauh lebih mudah diperbaiki pada teks pseudocode dibanding saat kode sudah dikompilasi.\n\n3. **Jembatan Komunikasi Lintas Tim:**\n   • Pseudocode menggunakan bahasa semi-alami yang dapat ditinjau bersama analis sistem, penguji QA, maupun programmer yang menggunakan bahasa pemrograman berbeda (Python, Java, C++).\n\n4. **Mempercepat dan Menyederhanakan Proses Coding:**\n   • Ketika struktur logika pseudocode sudah matang dan teruji, penulisan kode program sesungguhnya menjadi jauh lebih cepat karena tinggal mentranslasikan setiap baris konsep ke sintaks bahasa yang dipilih.\n\n*Intinya:* Pseudocode adalah **cetak biru (blueprint)** logika sebelum Anda mendirikan bangunan kode program nyata.`;
   }
 
   // 3. Kategori: Tipe Data, Variabel, Konstanta & Operator
@@ -1414,15 +1414,15 @@ export function generateChatResponse(params: {
     lowerQ.includes("data type")
   ) {
     if (lowerQ.includes("beda") || lowerQ.includes("perbedaan") || lowerQ.includes("konstanta")) {
-      return `📌 **Perbedaan Fundamental Variabel vs Konstanta:**\n\n| Aspek | Variabel | Konstanta (Constant) |\n| :--- | :--- | :--- |\n| **Sifat Nilai** | **Dapat berubah (Mutable)** selama runtime | **Tetap (Immutable)** sejak dideklarasikan |\n| **Tujuan** | Menampung nilai dinamis (contoh: \`skor\`, \`counter\`) | Menampung nilai patokan (contoh: \`PI = 3.14\`, \`PAJAK = 0.11\`) |\n| **Keamanan** | Fleksibel untuk kalkulasi bertahap | Mencegah bug perubahan nilai yang tidak disengaja |\n\n*Praktik Baik:* Gunakan konstanta dengan huruf kapital (\`MAX_BUFFER\`) untuk memudahkan pembacaan kode.`;
+      return `[Perbandingan] **Perbedaan Fundamental Variabel vs Konstanta:**\n\n| Aspek | Variabel | Konstanta (Constant) |\n| :--- | :--- | :--- |\n| **Sifat Nilai** | **Dapat berubah (Mutable)** selama runtime | **Tetap (Immutable)** sejak dideklarasikan |\n| **Tujuan** | Menampung nilai dinamis (contoh: \`skor\`, \`counter\`) | Menampung nilai patokan (contoh: \`PI = 3.14\`, \`PAJAK = 0.11\`) |\n| **Keamanan** | Fleksibel untuk kalkulasi bertahap | Mencegah bug perubahan nilai yang tidak disengaja |\n\n*Praktik Baik:* Gunakan konstanta dengan huruf kapital (\`MAX_BUFFER\`) untuk memudahkan pembacaan kode.`;
     }
 
     if (lowerQ.includes("numerik") || lowerQ.includes("integer") || lowerQ.includes("float")) {
-      return `🔢 **Klasifikasi Data Numerik (Integer vs Float):**\n\n1. **Integer (Bilangan Bulat):**\n   • Menyimpan angka bulat positif/negatif tanpa desimal (contoh: \`42\`, \`-7\`, \`0\`).\n   • Efisien dalam alokasi memori dan operasi aritmatika diskrit.\n\n2. **Float / Real (Bilangan Pecahan):**\n   • Menyimpan angka berkoma / desimal (contoh: \`3.14159\`, \`-0.05\`).\n   • Digunakan untuk kalkulasi saintifik, pengukuran, dan persentase.`;
+      return `[Klasifikasi] **Klasifikasi Data Numerik (Integer vs Float):**\n\n1. **Integer (Bilangan Bulat):**\n   • Menyimpan angka bulat positif/negatif tanpa desimal (contoh: \`42\`, \`-7\`, \`0\`).\n   • Efisien dalam alokasi memori dan operasi aritmatika diskrit.\n\n2. **Float / Real (Bilangan Pecahan):**\n   • Menyimpan angka berkoma / desimal (contoh: \`3.14159\`, \`-0.05\`).\n   • Digunakan untuk kalkulasi saintifik, pengukuran, dan persentase.`;
     }
 
     if (lowerQ.includes("boolean") || lowerQ.includes("logika")) {
-      return `⚖️ **Tipe Data Boolean:**\n\n• Hanya memiliki dua nilai kebenaran: \`True\` (Benar / 1) atau \`False\` (Salah / 0).\n• **Fungsi Utama:** Mengontrol struktur keputusan percabangan (\`if-else\`) dan kondisi penghentian perulangan (\`while\`).\n• Dihasilkan dari ekspresi relasional (contoh: \`5 > 3\` menghasilkan \`True\`).`;
+      return `[Konsep Inti] **Tipe Data Boolean:**\n\n• Hanya memiliki dua nilai kebenaran: \`True\` (Benar / 1) atau \`False\` (Salah / 0).\n• **Fungsi Utama:** Mengontrol struktur keputusan percabangan (\`if-else\`) dan kondisi penghentian perulangan (\`while\`).\n• Dihasilkan dari ekspresi relasional (contoh: \`5 > 3\` menghasilkan \`True\`).`;
     }
   }
 
@@ -1437,7 +1437,7 @@ export function generateChatResponse(params: {
     lowerQ.includes("diagram konteks")
   ) {
     if (lowerQ.includes("beda") || lowerQ.includes("perbedaan") || lowerQ.includes("vs")) {
-      return `📊 **Perbedaan Fundamental Flowchart vs Data Flow Diagram (DFD):**\n\n| Aspek | Flowchart Sistem | Data Flow Diagram (DFD) |\n| :--- | :--- | :--- |\n| **Fokus Utama** | WAKTU & LOGIKA KONTROL (Urutan langkah, percabangan If-Else, looping) | ALIRAN DATA murni (Asal data, transformasi proses, tempat simpan) |\n| **Konsep Waktu** | Sangat terikat waktu (Langkah 1, Langkah 2, Selesai) | TIDAK mengenal urutan waktu maupun nomor langkah |\n| **Percabangan** | Menggunakan simbol Decision (Belah Ketupat) | TIDAK ADA simbol percabangan kondisi (No If-Else) |\n| **Analogi** | **Buku Resep Roti** (Langkah 1 masukkan terigu, langkah 2 panggang) | **Pipa Saluran Air** (Menunjukkan dari tangki mana air mengalir) |\n\n*Kesimpulan Analis:* Gunakan Flowchart untuk memetakan alur komputasi/prosedur kerja, dan gunakan DFD untuk merancang arsitektur lalu lintas data perangkat lunak.`;
+      return `[Perbandingan] **Perbedaan Fundamental Flowchart vs Data Flow Diagram (DFD):**\n\n| Aspek | Flowchart Sistem | Data Flow Diagram (DFD) |\n| :--- | :--- | :--- |\n| **Fokus Utama** | WAKTU & LOGIKA KONTROL (Urutan langkah, percabangan If-Else, looping) | ALIRAN DATA murni (Asal data, transformasi proses, tempat simpan) |\n| **Konsep Waktu** | Sangat terikat waktu (Langkah 1, Langkah 2, Selesai) | TIDAK mengenal urutan waktu maupun nomor langkah |\n| **Percabangan** | Menggunakan simbol Decision (Belah Ketupat) | TIDAK ADA simbol percabangan kondisi (No If-Else) |\n| **Analogi** | **Buku Resep Roti** (Langkah 1 masukkan terigu, langkah 2 panggang) | **Pipa Saluran Air** (Menunjukkan dari tangki mana air mengalir) |\n\n*Kesimpulan Analis:* Gunakan Flowchart untuk memetakan alur komputasi/prosedur kerja, dan gunakan DFD untuk merancang arsitektur lalu lintas data perangkat lunak.`;
     }
 
     if (
@@ -1447,7 +1447,7 @@ export function generateChatResponse(params: {
       lowerQ.includes("miracle") ||
       lowerQ.includes("gray hole")
     ) {
-      return `⚠️ **Kesalahan Fatal & "Dosa Besar" dalam Perancangan DFD:**\n\n1. **Koneksi Haram (Direct Connections):**\n   • Entitas TIDAK BOLEH langsung ke Entitas lain.\n   • Entitas TIDAK BOLEH langsung ke Data Store (database) tanpa proses.\n   • Data Store TIDAK BOLEH langsung terhubung ke Data Store lain.\n   *(Prinsip: Data tidak bisa bergerak sendiri, harus ada PROSES yang memindahkannya!)*\n\n2. **Black Hole (Lubang Hitam):**\n   • Proses hanya memiliki panah input masuk, tetapi TIDAK ADA panah output keluar. Data tertelan begitu saja tanpa hasil.\n\n3. **Miracle (Keajaiban / White Hole):**\n   • Proses menghasilkan panah output keluar, tetapi TIDAK ADA panah input masuk. Sangat tidak logis sistem menghasilkan laporan tanpa data mentah!\n\n4. **Gray Hole (Lubang Abu-abu):**\n   • Input yang masuk tidak relevan atau tidak cukup untuk menghasilkan output (contoh: input cuma 'Nama Pelanggan' tapi output keluar 'Rincian Nilai Gaji').`;
+      return `[Perhatian Khusus] **Kesalahan Fatal & Anti-Pattern dalam Perancangan DFD:**\n\n1. **Koneksi Terlarang (Direct Connections):**\n   • Entitas TIDAK BOLEH langsung ke Entitas lain.\n   • Entitas TIDAK BOLEH langsung ke Data Store (database) tanpa proses.\n   • Data Store TIDAK BOLEH langsung terhubung ke Data Store lain.\n   *(Prinsip: Data tidak bisa bergerak sendiri, harus ada PROSES yang memindahkannya!)*\n\n2. **Black Hole (Lubang Hitam):**\n   • Proses hanya memiliki panah input masuk, tetapi TIDAK ADA panah output keluar. Data tertelan begitu saja tanpa hasil.\n\n3. **Miracle (Keajaiban / White Hole):**\n   • Proses menghasilkan panah output keluar, tetapi TIDAK ADA panah input masuk. Sangat tidak logis sistem menghasilkan laporan tanpa data mentah!\n\n4. **Gray Hole (Lubang Abu-abu):**\n   • Input yang masuk tidak relevan atau tidak cukup untuk menghasilkan output (contoh: input cuma 'Nama Pelanggan' tapi output keluar 'Rincian Nilai Gaji').`;
     }
 
     if (
@@ -1456,7 +1456,7 @@ export function generateChatResponse(params: {
       lowerQ.includes("hierarki") ||
       lowerQ.includes("balancing")
     ) {
-      return `🗺️ **Hierarki Tingkatan DFD & Aturan Balancing:**\n\n1. **Diagram Konteks (DFD Level 0):**\n   • Pandangan global (Helicopter View).\n   • **Hanya ada 1 Proses utama** di tengah yang mewakili seluruh aplikasi.\n   • **DILARANG menggambar Data Store (Database)** di level ini karena database dianggap tersembunyi di dalam sistem.\n\n2. **DFD Level 1:**\n   • Dekomposisi dari proses sentral Level 0 menjadi beberapa modul proses utama.\n   • Di level inilah **Data Store (Tabel Database) baru mulai dimunculkan**.\n\n3. **Prinsip Balancing:**\n   • Jumlah aliran data yang masuk dan keluar antara Diagram Konteks dan DFD Level 1 **HARUS PERSIS SAMA**. Jika di Level 0 Entitas memberikan 2 panah, maka di Level 1 jumlah panah dari entitas tersebut juga harus 2.`;
+      return `[Hierarki Sistem] **Hierarki Tingkatan DFD & Aturan Balancing:**\n\n1. **Diagram Konteks (DFD Level 0):**\n   • Pandangan global (Helicopter View).\n   • **Hanya ada 1 Proses utama** di tengah yang mewakili seluruh aplikasi.\n   • **DILARANG menggambar Data Store (Database)** di level ini karena database dianggap tersembunyi di dalam sistem.\n\n2. **DFD Level 1:**\n   • Dekomposisi dari proses sentral Level 0 menjadi beberapa modul proses utama.\n   • Di level inilah **Data Store (Tabel Database) baru mulai dimunculkan**.\n\n3. **Prinsip Balancing:**\n   • Jumlah aliran data yang masuk dan keluar antara Diagram Konteks dan DFD Level 1 **HARUS PERSIS SAMA**. Jika di Level 0 Entitas memberikan 2 panah, maka di Level 1 jumlah panah dari entitas tersebut juga harus 2.`;
     }
 
     if (
@@ -1464,7 +1464,7 @@ export function generateChatResponse(params: {
       lowerQ.includes("studi kasus") ||
       lowerQ.includes("kasir")
     ) {
-      return `🛒 **Analisis Studi Kasus Toko Kelontong "Sinar Makmur":**\n\n• **Entitas Eksternal (Aktor):**\n  1. *Pelanggan* (Memberikan uang pembayaran, menerima struk belanja & status order).\n  2. *Pemilik Toko* (Menerima Laporan Pendapatan Harian di sore hari).\n  3. *Pemasok / Suplier* (Menyetorkan Daftar Barang Baru, menerima Faktur Terima Barang).\n\n• **Logika Diskon Flowchart:**\n  Gunakan simbol Decision (Belah Ketupat):\n  • Kondisi: *Apakah Total Belanja > Rp 50.000?*\n  • Jika 'Ya': Total Bayar = Total Belanja - (Total Belanja * 5%).\n  • Jika 'Tidak': Total Bayar = Total Belanja (harga normal).`;
+      return `[Studi Kasus] **Analisis Studi Kasus Toko Kelontong "Sinar Makmur":**\n\n• **Entitas Eksternal (Aktor):**\n  1. *Pelanggan* (Memberikan uang pembayaran, menerima struk belanja & status order).\n  2. *Pemilik Toko* (Menerima Laporan Pendapatan Harian di sore hari).\n  3. *Pemasok / Suplier* (Menyetorkan Daftar Barang Baru, menerima Faktur Terima Barang).\n\n• **Logika Diskon Flowchart:**\n  Gunakan simbol Decision (Belah Ketupat):\n  • Kondisi: *Apakah Total Belanja > Rp 50.000?*\n  • Jika 'Ya': Total Bayar = Total Belanja - (Total Belanja * 5%).\n  • Jika 'Tidak': Total Bayar = Total Belanja (harga normal).`;
     }
   }
 
@@ -1475,19 +1475,19 @@ export function generateChatResponse(params: {
       lowerTitle.includes("cari") ||
       lowerTitle.includes("biner")
     ) {
-      return `💡 **Analogi Kehidupan Nyata (Pencarian Biner):**\n\nBayangkan Anda sedang mencari nomor kamar hotel "450" di gedung dengan 1.000 kamar yang terurut dari 1 hingga 1.000:\n\n• **Cara Linear:** Anda mengecek dari kamar nomor 1, 2, 3, ... sampai 450. Sangat melelahkan!\n• **Cara Biner:** Anda langsung naik ke lantai tengah (kamar 500). Karena 450 < 500, Anda tahu pasti kamar itu ada di bagian bawah. Anda langsung mencoret kamar 501–1.000! Dengan cara membelah dua terus-menerus, Anda hanya butuh maksimal 10 kali langkah untuk menemukan kamar tersebut.`;
+      return `[Analogi Konseptual] **Analogi Kehidupan Nyata (Pencarian Biner):**\n\nBayangkan Anda sedang mencari nomor kamar hotel "450" di gedung dengan 1.000 kamar yang terurut dari 1 hingga 1.000:\n\n• **Cara Linear:** Anda mengecek dari kamar nomor 1, 2, 3, ... sampai 450. Sangat melelahkan!\n• **Cara Biner:** Anda langsung naik ke lantai tengah (kamar 500). Karena 450 < 500, Anda tahu pasti kamar itu ada di bagian bawah. Anda langsung mencoret kamar 501–1.000! Dengan cara membelah dua terus-menerus, Anda hanya butuh maksimal 10 kali langkah untuk menemukan kamar tersebut.`;
     }
     if (lowerTitle.includes("tree") || lowerTitle.includes("pohon")) {
-      return `💡 **Analogi Kehidupan Nyata (Struktur Tree):**\n\nPohon Biner itu persis seperti **Silsilah Keluarga** atau **Struktur Folder di Komputer**!\n\n• Ada **Root** (Folder Utama / C: Drive).\n• Di dalamnya ada sub-folder (Anak Kiri & Anak Kanan).\n• Folder paling ujung yang tidak punya sub-folder lagi disebut **Leaf (Daun)**.\n\nDengan struktur hierarkis ini, Anda tidak perlu mencari file di seluruh harddisk, cukup menelusuri cabang folder yang relevan!`;
+      return `[Analogi Konseptual] **Analogi Kehidupan Nyata (Struktur Tree):**\n\nPohon Biner itu persis seperti **Silsilah Keluarga** atau **Struktur Folder di Komputer**!\n\n• Ada **Root** (Folder Utama / C: Drive).\n• Di dalamnya ada sub-folder (Anak Kiri & Anak Kanan).\n• Folder paling ujung yang tidak punya sub-folder lagi disebut **Leaf (Daun)**.\n\nDengan struktur hierarkis ini, Anda tidak perlu mencari file di seluruh harddisk, cukup menelusuri cabang folder yang relevan!`;
     }
     if (
       lowerTitle.includes("flowchart") ||
       lowerTitle.includes("dfd") ||
       lowerTitle.includes("proses bisnis")
     ) {
-      return `💡 **Analogi Kehidupan Nyata (Flowchart vs DFD):**\n\nBayangkan Anda sedang mengelola sebuah **Pabrik Roti**:\n\n• **Flowchart adalah Buku Resep Koki:**\n  "Langkah 1: Masukkan tepung. Langkah 2: Tambahkan telur. Jika adonan kalis (Ya/Tidak), panggang selama 20 menit." Ada urutan langkah waktu dan keputusan berurutan.\n\n• **DFD adalah Denah Pipa dan Saluran Pabrik:**\n  "Pipa tepung dari truk pemasok mengalir ke wadah pengaduk, lalu roti yang sudah jadi mengalir ke rak gudang." DFD tidak peduli urutan menitnya, yang penting aliran bahannya jelas dan tidak ada pipa buntu!`;
+      return `[Analogi Konseptual] **Analogi Kehidupan Nyata (Flowchart vs DFD):**\n\nBayangkan Anda sedang mengelola sebuah **Pabrik Roti**:\n\n• **Flowchart adalah Buku Resep Koki:**\n  "Langkah 1: Masukkan tepung. Langkah 2: Tambahkan telur. Jika adonan kalis (Ya/Tidak), panggang selama 20 menit." Ada urutan langkah waktu dan keputusan berurutan.\n\n• **DFD adalah Denah Pipa dan Saluran Pabrik:**\n  "Pipa tepung dari truk pemasok mengalir ke wadah pengaduk, lalu roti yang sudah jadi mengalir ke rak gudang." DFD tidak peduli urutan menitnya, yang penting aliran bahannya jelas dan tidak ada pipa buntu!`;
     }
-    return `💡 **Analogi Kehidupan Nyata ("${moduleTitle}"):**\n\nKonsep ini ibarat **Sistem Kerja Pabrik Modern**:\n1. Bahan baku yang masuk adalah **Input Data**.\n2. Mesin pengolahan dan prosedur perakitan adalah **Proses Logika**.\n3. Gudang penyimpanan adalah **Database / Arsip**.\n4. Produk jadi yang diserahkan ke pelanggan adalah **Output / Laporan**.\nJika ada saluran yang tersumbat (Black Hole) atau tiba-tiba barang muncul tanpa bahan (Miracle), operasional pabrik akan kacau!`;
+    return `[Analogi Konseptual] **Analogi Kehidupan Nyata ("${moduleTitle}"):**\n\nKonsep ini ibarat **Sistem Kerja Pabrik Modern**:\n1. Bahan baku yang masuk adalah **Input Data**.\n2. Mesin pengolahan dan prosedur perakitan adalah **Proses Logika**.\n3. Gudang penyimpanan adalah **Database / Arsip**.\n4. Produk jadi yang diserahkan ke pelanggan adalah **Output / Laporan**.\nJika ada saluran yang tersumbat (Black Hole) atau tiba-tiba barang muncul tanpa bahan (Miracle), operasional pabrik akan kacau!`;
   }
 
   // 6. Permintaan EKSPLISIT untuk Contoh Kode / Sintaks
@@ -1505,7 +1505,7 @@ export function generateChatResponse(params: {
       lowerTitle.includes("cari") ||
       lowerTitle.includes("biner")
     ) {
-      return `💻 **Contoh Kode Python (Binary Search):**\n\n\`\`\`python\ndef binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n\n    while low <= high:\n        mid = low + (high - low) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\n# Pengujian (data wajib terurut)\ndata = [3, 7, 12, 19, 24, 38, 45, 60]\nprint("Posisi indeks:", binary_search(data, 24))  # Output: 4\n\`\`\``;
+      return `[Contoh Kode] **Contoh Kode Python (Binary Search):**\n\n\`\`\`python\ndef binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n\n    while low <= high:\n        mid = low + (high - low) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n\n# Pengujian (data wajib terurut)\ndata = [3, 7, 12, 19, 24, 38, 45, 60]\nprint("Posisi indeks:", binary_search(data, 24))  # Output: 4\n\`\`\``;
     }
 
     if (
@@ -1513,10 +1513,10 @@ export function generateChatResponse(params: {
       lowerTitle.includes("dfd") ||
       lowerTitle.includes("proses bisnis")
     ) {
-      return `💻 **Contoh Implementasi Logika Percabangan (Flowchart Kasir):**\n\n\`\`\`python\ndef hitung_diskon_kasir(total_belanja):\n    # Evaluasi Kondisi Decision\n    if total_belanja > 50000:\n        diskon = 0.05 * total_belanja\n        status = "Diskon 5% Terpasang"\n    else:\n        diskon = 0\n        status = "Harga Normal"\n    \n    total_bayar = total_belanja - diskon\n    return total_bayar, status\n\nprint(hitung_diskon_kasir(75000))  # Output: (71250, 'Diskon 5% Terpasang')\n\`\`\``;
+      return `[Contoh Kode] **Contoh Implementasi Logika Percabangan (Flowchart Kasir):**\n\n\`\`\`python\ndef hitung_diskon_kasir(total_belanja):\n    # Evaluasi Kondisi Decision\n    if total_belanja > 50000:\n        diskon = 0.05 * total_belanja\n        status = "Diskon 5% Terpasang"\n    else:\n        diskon = 0\n        status = "Harga Normal"\n    \n    total_bayar = total_belanja - diskon\n    return total_bayar, status\n\nprint(hitung_diskon_kasir(75000))  # Output: (71250, 'Diskon 5% Terpasang')\n\`\`\``;
     }
 
-    return `💻 **Contoh Struktur Kode ("${moduleTitle}"):**\n\n\`\`\`python\n# Implementasi logika dasar materi: ${moduleTitle}\ndef eksekusi_algoritma(data_input):\n    if not data_input:\n        return {"status": "error", "pesan": "Input kosong"}\n    return {"status": "sukses", "data": [item.upper() for item in data_input]}\n\nprint(eksekusi_algoritma(["data1", "data2"]))\n\`\`\``;
+    return `[Contoh Kode] **Contoh Struktur Kode ("${moduleTitle}"):**\n\n\`\`\`python\n# Implementasi logika dasar materi: ${moduleTitle}\ndef eksekusi_algoritma(data_input):\n    if not data_input:\n        return {"status": "error", "pesan": "Input kosong"}\n    return {"status": "sukses", "data": [item.upper() for item in data_input]}\n\nprint(eksekusi_algoritma(["data1", "data2"]))\n\`\`\``;
   }
 
   // 7. Default Respons Edukatif & Kontekstual

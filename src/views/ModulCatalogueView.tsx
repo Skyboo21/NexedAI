@@ -3,8 +3,20 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Search,
+  Trash2,
+  CheckCircle2,
+  Lock,
+  BookOpen,
+  Sparkles,
+  Layers,
+} from "lucide-react";
 import NexedAiModuleHub, { type AnalyzedModuleResult } from "../components/NexedAiModuleHub";
 import { LEARNING_TOPICS, type LearningTopic } from "../data/learningTopics";
+import { getCompletedTopicIds, onProgressUpdate } from "../lib/progressStorage";
 
 export default function ModulCatalogueView() {
   const [completedIds, setCompletedIds] = useState<number[]>([1, 2]);
@@ -45,13 +57,14 @@ export default function ModulCatalogueView() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("completed_topics");
-      if (saved) {
-        setCompletedIds(JSON.parse(saved));
-      }
+      setCompletedIds(getCompletedTopicIds());
     } catch {
       // safe fallback
     }
+    const cleanup = onProgressUpdate(() => {
+      setCompletedIds(getCompletedTopicIds());
+    });
+    return cleanup;
   }, []);
 
   const totalXp = LEARNING_TOPICS.reduce((acc, t) => acc + t.xp, 0);
@@ -96,9 +109,10 @@ export default function ModulCatalogueView() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black transition-colors border border-black/10 shadow-2xs"
+              className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black transition-colors border border-black/10 shadow-2xs flex items-center gap-1.5"
             >
-              &larr; Kembali ke Dashboard
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali ke Dashboard</span>
             </Link>
           </div>
         </div>
@@ -133,6 +147,7 @@ export default function ModulCatalogueView() {
                 className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[#F4F4F6] hover:bg-rose-50 hover:text-rose-600 text-neutral-600 text-xs font-medium transition-colors border border-black/10 hover:border-rose-200 flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 title="Hapus seluruh riwayat modul yang diunggah"
               >
+                <Trash2 className="w-3 h-3" />
                 <span>Bersihkan Riwayat Modul</span>
               </button>
             </div>
@@ -171,7 +186,8 @@ export default function ModulCatalogueView() {
                       }}
                       className="flex-1 py-2 px-4 bg-black hover:bg-neutral-800 text-white font-medium text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <span>Pelajari Sekarang &rarr;</span>
+                      <span>Pelajari Sekarang</span>
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                     <button
                       type="button"
@@ -183,7 +199,7 @@ export default function ModulCatalogueView() {
                       className="p-2 text-neutral-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer text-xs"
                       title="Hapus modul dari daftar"
                     >
-                      Hapus
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -205,7 +221,7 @@ export default function ModulCatalogueView() {
             </div>
 
             {/* Quick Completion Stats */}
-            <div className="text-xs font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-3.5 py-1.5 rounded-full shadow-2xs self-start sm:self-auto">
+            <div className="text-xs font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-3.5 py-1.5 rounded-full shadow-2xs self-start sm:self-auto flex items-center">
               <span>
                 {completedIds.length} dari {LEARNING_TOPICS.length} Modul Tuntas
               </span>
@@ -245,13 +261,14 @@ export default function ModulCatalogueView() {
             </div>
 
             {/* Search input */}
-            <div className="w-full sm:w-72">
+            <div className="w-full sm:w-72 relative">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Cari modul atau topik..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 bg-[#FAFAFA] border border-black/10 rounded-full text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all"
+                className="w-full pl-9 pr-4 py-2 bg-[#FAFAFA] border border-black/10 rounded-full text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all"
               />
             </div>
           </div>
@@ -276,16 +293,19 @@ export default function ModulCatalogueView() {
                       </span>
 
                       {isCompleted ? (
-                        <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
-                          Selesai
+                        <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Selesai</span>
                         </span>
                       ) : isRecommended ? (
-                        <span className="text-[10px] font-mono text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
-                          Rekomendasi
+                        <span className="text-[10px] font-mono text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-amber-600" />
+                          <span>Rekomendasi</span>
                         </span>
                       ) : (
-                        <span className="text-[10px] font-mono text-neutral-500 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
-                          Terkunci
+                        <span className="text-[10px] font-mono text-neutral-500 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-neutral-400" />
+                          <span>Terkunci</span>
                         </span>
                       )}
                     </div>
@@ -326,13 +346,22 @@ export default function ModulCatalogueView() {
                           : "bg-black hover:bg-neutral-800 text-white shadow-xs"
                     }`}
                   >
-                    <span>
-                      {isLocked
-                        ? "Topik Terkunci"
-                        : isCompleted
-                          ? "Pelajari Ulang"
-                          : "Mulai Belajar"}
-                    </span>
+                    {isLocked ? (
+                      <>
+                        <Lock className="w-3 h-3 text-neutral-400" />
+                        <span>Topik Terkunci</span>
+                      </>
+                    ) : isCompleted ? (
+                      <>
+                        <BookOpen className="w-3 h-3 text-neutral-600" />
+                        <span>Pelajari Ulang</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Mulai Belajar</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </>
+                    )}
                   </Link>
                 </div>
               );

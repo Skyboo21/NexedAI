@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
+import { GraduationCap, BookOpen, ShieldCheck, Check } from "lucide-react";
 import { type Role, useAuthStore } from "../store/authStore";
 
 export default function Login() {
@@ -85,11 +86,11 @@ export default function Login() {
                   : "bg-white hover:bg-indigo-50/70 border-slate-200/80 text-slate-700 hover:text-indigo-700"
               }`}
             >
-              <span className="text-lg">🎓</span>
+              <GraduationCap className="w-5 h-5 text-indigo-600 group-hover:text-indigo-700" />
               <span>Mahasiswa</span>
               {activeRole === "mahasiswa" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
-                  ✓ Masuk...
+                <span className="inline-flex items-center gap-0.5 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
+                  <Check className="w-2.5 h-2.5 inline" /> Masuk...
                 </span>
               )}
             </button>
@@ -104,11 +105,11 @@ export default function Login() {
                   : "bg-white hover:bg-indigo-50/70 border-slate-200/80 text-slate-700 hover:text-indigo-700"
               }`}
             >
-              <span className="text-lg">👨‍🏫</span>
+              <BookOpen className="w-5 h-5 text-indigo-600 group-hover:text-indigo-700" />
               <span>Dosen</span>
               {activeRole === "dosen" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
-                  ✓ Masuk...
+                <span className="inline-flex items-center gap-0.5 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
+                  <Check className="w-2.5 h-2.5 inline" /> Masuk...
                 </span>
               )}
             </button>
@@ -123,11 +124,11 @@ export default function Login() {
                   : "bg-white hover:bg-slate-100 border-slate-200/80 text-slate-700 hover:text-slate-900"
               }`}
             >
-              <span className="text-lg">🛡️</span>
+              <ShieldCheck className="w-5 h-5 text-slate-700 group-hover:text-slate-900" />
               <span>Admin</span>
               {activeRole === "admin" && (
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
-                  ✓ Masuk...
+                <span className="inline-flex items-center gap-0.5 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">
+                  <Check className="w-2.5 h-2.5 inline" /> Masuk...
                 </span>
               )}
             </button>

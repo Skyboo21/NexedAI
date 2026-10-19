@@ -17,9 +17,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         userStatusTitle="Super Administrator"
         userStatusSubtitle="Akses Penuh Konfigurasi & Audit"
         navItems={[
-          { label: "Kelola Pengguna", href: "/admin-dashboard", icon: "👥" },
-          { label: "Konfigurasi Sistem", href: "/admin-dashboard#config", icon: "⚙️" },
-          { label: "Profil Admin", href: "/profil", icon: "👤" },
+          { label: "Kelola Pengguna", href: "/admin-dashboard" },
+          { label: "Konfigurasi Sistem", href: "/admin-dashboard#config" },
+          { label: "Profil Admin", href: "/profil" },
         ]}
       />
 

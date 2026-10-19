@@ -1,6 +1,7 @@
 // app/page.tsx
 
 import Link from "next/link";
+import { School, BookOpen, GraduationCap, Globe, Check } from "lucide-react";
 import { InteractiveAiDemo } from "@/components/landing/InteractiveAiDemo";
 import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -70,19 +71,19 @@ export default function LandingPage() {
             {/* Clean Educational Level Badges */}
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F4F6] border border-black/8 text-[11px] font-medium text-black/75">
-                <span>🎒</span>
+                <School className="w-3.5 h-3.5 text-indigo-600" />
                 <span>SD &amp; SMP</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F4F6] border border-black/8 text-[11px] font-medium text-black/75">
-                <span>📚</span>
+                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
                 <span>SMA &amp; SMK</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F4F6] border border-black/8 text-[11px] font-medium text-black/75">
-                <span>🎓</span>
+                <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Perguruan Tinggi</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F4F6] border border-black/8 text-[11px] font-medium text-black/75">
-                <span>🌐</span>
+                <Globe className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Pembelajar Global</span>
               </span>
             </div>
@@ -254,15 +255,15 @@ export default function LandingPage() {
                 </p>
                 <div className="pt-2 space-y-1.5 text-xs text-black/70">
                   <div className="flex items-center gap-2">
-                    <span className="text-black font-bold">✓</span>
+                    <Check className="w-3.5 h-3.5 text-black shrink-0" />
                     <span>Pemetaan materi dan silabus terotomatisasi</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-black font-bold">✓</span>
+                    <Check className="w-3.5 h-3.5 text-black shrink-0" />
                     <span>Sinkronisasi kurikulum mata pelajaran/kuliah real-time</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-black font-bold">✓</span>
+                    <Check className="w-3.5 h-3.5 text-black shrink-0" />
                     <span>Validasi capaian belajar terstandar nasional & global</span>
                   </div>
                 </div>

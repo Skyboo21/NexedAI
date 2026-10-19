@@ -3,6 +3,22 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import {
+  FlaskConical,
+  Trash2,
+  FolderUp,
+  CheckCircle2,
+  UploadCloud,
+  FileText,
+  AlertCircle,
+  Zap,
+  Check,
+  Bot,
+  Search,
+  X,
+  Lightbulb,
+  ArrowRight,
+} from "lucide-react";
 import { smartApiFetch } from "../utils/apiConfig";
 
 export interface ModuleRagChatProps {
@@ -180,7 +196,7 @@ export default function ModuleRagChat({
         {
           id: `index-${Date.now()}`,
           sender: "ai",
-          text: `📄 Modul **"${newIndexedInfo.filename}"** berhasil diindeks!\n• **ID Modul:** \`${newIndexedInfo.moduleId}\`\n• **Jumlah Potongan Teks:** ${newIndexedInfo.chunkCount} chunk (~${newIndexedInfo.totalWords} kata)\n\nSekarang Anda dapat mengajukan pertanyaan apa pun seputar modul ini.`,
+          text: `Modul **"${newIndexedInfo.filename}"** berhasil diindeks!\n• **ID Modul:** \`${newIndexedInfo.moduleId}\`\n• **Jumlah Potongan Teks:** ${newIndexedInfo.chunkCount} chunk (~${newIndexedInfo.totalWords} kata)\n\nSekarang Anda dapat mengajukan pertanyaan apa pun seputar modul ini.`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
@@ -248,7 +264,7 @@ export default function ModuleRagChat({
         {
           id: `err-${Date.now()}`,
           sender: "ai",
-          text: `⚠️ Maaf, terjadi kesalahan: ${errorMessage}`,
+          text: `Maaf, terjadi kesalahan: ${errorMessage}`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
@@ -293,12 +309,12 @@ export default function ModuleRagChat({
             </span>
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-black tracking-tight flex items-center gap-2">
-            <span>🔬</span>
+            <FlaskConical className="w-5 h-5 text-indigo-600" />
             <span>RAG Document Q&A Hub</span>
           </h2>
           <p className="text-xs text-neutral-500 mt-1">
             Tanyakan materi kuliah{" "}
-            <strong className="text-black font-semibold">"{defaultModuleName}"</strong> dan dapatkan
+            <strong className="text-black font-semibold">&quot;{defaultModuleName}&quot;</strong> dan dapatkan
             jawaban faktual langsung dari kutipan dokumen tanpa halusinasi.
           </p>
         </div>
@@ -308,10 +324,10 @@ export default function ModuleRagChat({
           <button
             type="button"
             onClick={handleClearChat}
-            className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 transition-colors border border-black/10 flex items-center gap-1.5 cursor-pointer"
+            className="text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 transition-colors border border-black/10 flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title="Bersihkan riwayat percakapan"
           >
-            <span>🗑️</span>
+            <Trash2 className="w-3.5 h-3.5" />
             <span>Bersihkan Chat</span>
           </button>
         </div>
@@ -327,12 +343,13 @@ export default function ModuleRagChat({
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-black flex items-center gap-2">
-                  <span>📁</span>
+                  <FolderUp className="w-4 h-4 text-neutral-700" />
                   <span>Panel Unggah Modul</span>
                 </h3>
                 {indexedModule && (
-                  <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full">
-                    ✓ Terindeks
+                  <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>Terindeks</span>
                   </span>
                 )}
               </div>
@@ -385,8 +402,8 @@ export default function ModuleRagChat({
                   }`}
                 >
                   <div className="pointer-events-none flex flex-col items-center gap-2">
-                    <div className="w-10 h-10 rounded-2xl bg-[#F4F4F6] text-black flex items-center justify-center text-xl border border-black/10">
-                      ☁️
+                    <div className="w-10 h-10 rounded-2xl bg-[#F4F4F6] text-black flex items-center justify-center border border-black/10">
+                      <UploadCloud className="w-5 h-5 text-neutral-600" />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-black">
@@ -405,8 +422,8 @@ export default function ModuleRagChat({
                   className="relative overflow-hidden border-2 border-dashed rounded-3xl p-6 text-center transition-colors border-emerald-500/50 bg-emerald-50/20"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl border border-emerald-300">
-                      📄
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center border border-emerald-300">
+                      <FileText className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-black break-all">
@@ -429,7 +446,7 @@ export default function ModuleRagChat({
               {/* Upload Error Alert */}
               {uploadError && (
                 <div className="mt-3 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
-                  <span>⚠️</span>
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <div className="flex-1 font-medium">{uploadError}</div>
                 </div>
               )}
@@ -451,7 +468,7 @@ export default function ModuleRagChat({
                   </>
                 ) : (
                   <>
-                    <span>⚡</span>
+                    <Zap className="w-3.5 h-3.5" />
                     <span>Unggah & Indeks Modul</span>
                   </>
                 )}
@@ -461,8 +478,8 @@ export default function ModuleRagChat({
               {indexedModule && (
                 <div className="p-3.5 bg-white rounded-2xl border border-black/8 text-[11px] text-neutral-700 space-y-1">
                   <div className="flex items-center justify-between text-black font-semibold">
-                    <span className="flex items-center gap-1">
-                      <span>✓</span>
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Siap Ditanyakan</span>
                     </span>
                     <span className="text-neutral-400 font-mono text-[10px]">{indexedModule.indexedAt}</span>
@@ -489,7 +506,7 @@ export default function ModuleRagChat({
           <div className="px-5 py-4 bg-white border-b border-black/8 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center text-sm">
-                🤖
+                <Bot className="w-4 h-4 text-white" />
               </div>
               <div>
                 <div className="text-xs font-bold text-black flex items-center gap-1.5">
@@ -536,8 +553,8 @@ export default function ModuleRagChat({
                   <div className="whitespace-pre-wrap">{msg.text}</div>
 
                   {msg.usedChunks !== undefined && msg.usedChunks > 0 && (
-                    <div className="mt-2.5 pt-2 border-t border-black/8 flex items-center gap-1 text-[10px] font-mono text-neutral-600">
-                      <span>🔍</span>
+                    <div className="mt-2.5 pt-2 border-t border-black/8 flex items-center gap-1.5 text-[10px] font-mono text-neutral-600">
+                      <Search className="w-3 h-3 text-neutral-500" />
                       <span>Dijawab berdasarkan {msg.usedChunks} potongan teks relevan</span>
                     </div>
                   )}
@@ -560,13 +577,16 @@ export default function ModuleRagChat({
           {/* Chat Error Notice */}
           {chatError && (
             <div className="px-4 py-2 bg-rose-50 border-t border-rose-200 text-rose-700 text-xs flex items-center justify-between">
-              <span>⚠️ {chatError}</span>
+              <span className="flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>{chatError}</span>
+              </span>
               <button
                 type="button"
                 onClick={() => setChatError(null)}
-                className="text-neutral-500 hover:text-black text-xs font-bold cursor-pointer"
+                className="text-neutral-500 hover:text-black text-xs font-bold cursor-pointer p-0.5"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -580,9 +600,10 @@ export default function ModuleRagChat({
                   type="button"
                   onClick={() => handleSendMessage(prompt)}
                   disabled={isAiSearching}
-                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full shrink-0 transition-colors cursor-pointer disabled:opacity-50"
+                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full shrink-0 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  💡 {prompt}
+                  <Lightbulb className="w-3 h-3 text-amber-600 shrink-0" />
+                  <span>{prompt}</span>
                 </button>
               ))}
             </div>
@@ -616,7 +637,7 @@ export default function ModuleRagChat({
               className="px-5 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full transition-colors shadow-xs cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               <span>Kirim</span>
-              <span>&rarr;</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
         </div>

@@ -3,6 +3,28 @@
 
 import { useMemo, useState } from "react";
 import {
+  CheckCircle2,
+  X,
+  AlertTriangle,
+  Zap,
+  FileText,
+  Brain,
+  PenTool,
+  Search,
+  Clock,
+  AlertCircle,
+  Target,
+  Lightbulb,
+  Package,
+  BookOpen,
+  Calendar,
+  MessageSquare,
+  Send,
+  Printer,
+  Check,
+  ArrowRight,
+} from "lucide-react";
+import {
   initialStudentLogs,
   type StudentInterventionRecord,
   type StudentLogDetail,
@@ -160,7 +182,7 @@ export default function NexedStudentLogModal({
         {toastNotification && (
           <div className="bg-emerald-600 text-white text-xs font-bold px-6 py-2.5 flex items-center justify-between transition-all animate-in slide-in-from-top duration-300">
             <span className="flex items-center gap-2">
-              <span>✅</span>
+              <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
               <span>{toastNotification}</span>
             </span>
             <button
@@ -168,7 +190,7 @@ export default function NexedStudentLogModal({
               onClick={() => setToastNotification(null)}
               className="text-white/80 hover:text-white"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -195,16 +217,19 @@ export default function NexedStudentLogModal({
                   NIM: {studentData.nim}
                 </span>
                 {studentData.riskLevel === "Tinggi" ? (
-                  <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
-                    ⚠️ Risiko Tinggi
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    Risiko Tinggi
                   </span>
                 ) : studentData.riskLevel === "Sedang" ? (
-                  <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                    ⚡ Perlu Atensi
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                    <Zap className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    Perlu Atensi
                   </span>
                 ) : (
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                    ● Performa Aman
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    Performa Aman
                   </span>
                 )}
               </div>
@@ -250,7 +275,7 @@ export default function NexedStudentLogModal({
               aria-label="Tutup modal"
               className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -312,7 +337,7 @@ export default function NexedStudentLogModal({
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            <span>📜</span>
+            <FileText className="w-4 h-4 shrink-0 text-indigo-600" />
             <span>Audit Trail & Log Aktivitas ({filteredLogs.length})</span>
           </button>
 
@@ -325,7 +350,7 @@ export default function NexedStudentLogModal({
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            <span>🧠</span>
+            <Brain className="w-4 h-4 shrink-0 text-indigo-600" />
             <span>Diagnostik AI & Hambatan Konsep</span>
           </button>
 
@@ -338,7 +363,7 @@ export default function NexedStudentLogModal({
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            <span>✍️</span>
+            <PenTool className="w-4 h-4 shrink-0 text-indigo-600" />
             <span>Tindakan Intervensi Dosen ({studentData.interventions.length})</span>
           </button>
         </div>
@@ -379,7 +404,7 @@ export default function NexedStudentLogModal({
 
               {filteredLogs.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                  <span className="text-2xl block mb-1">🔍</span>
+                  <Search className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                   <span className="text-xs font-bold text-slate-600">
                     Tidak ada log untuk kategori terpilih.
                   </span>
@@ -431,7 +456,7 @@ export default function NexedStudentLogModal({
                             {log.telemetry && (
                               <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-slate-500">
                                 {log.telemetry.attempts && (
-                                  <span>Percobaan: {log.telemetry.attempts}x</span>
+                                   <span>Percobaan: {log.telemetry.attempts}x</span>
                                 )}
                                 {log.telemetry.codeErrorCount && (
                                   <span className="text-rose-600 font-semibold">
@@ -454,8 +479,9 @@ export default function NexedStudentLogModal({
                               Skor: <span className="text-indigo-600">{log.score}</span>
                             </div>
                           )}
-                          <div className="text-[11px] text-slate-400 font-medium">
-                            ⏱️ {log.duration}
+                          <div className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>{log.duration}</span>
                           </div>
                           <div className="text-[10px] text-slate-400 mt-0.5">{log.timestamp}</div>
                         </div>
@@ -473,7 +499,7 @@ export default function NexedStudentLogModal({
               {/* Root Cause Card */}
               <div className="p-5 bg-rose-50/70 border border-rose-200 rounded-2xl">
                 <div className="flex items-center gap-2 text-rose-800 font-black text-xs uppercase tracking-wider mb-2">
-                  <span>🚨</span>
+                  <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
                   <span>Akar Masalah Utama (Root Cause Analysis)</span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
@@ -484,8 +510,9 @@ export default function NexedStudentLogModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Profil Kognitif */}
                 <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-2">
-                    🎯 Profil Gaya Belajar
+                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5 text-indigo-600" />
+                    Profil Gaya Belajar
                   </span>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {studentData.aiDiagnosis.cognitiveProfile}
@@ -494,8 +521,9 @@ export default function NexedStudentLogModal({
 
                 {/* Rekomendasi Pedagogis */}
                 <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-2">
-                    💡 Strategi Bimbingan Dosen
+                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5 text-indigo-600" />
+                    Strategi Bimbingan Dosen
                   </span>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {studentData.aiDiagnosis.recommendedPedagogy}
@@ -505,8 +533,9 @@ export default function NexedStudentLogModal({
 
               {/* Konsep yang Masih Jadi Kendala */}
               <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-3">
-                  ⚠️ Konsep Kritis yang Belum Dikuasai
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-3 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  Konsep Kritis yang Belum Dikuasai
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {studentData.aiDiagnosis.strugglingConcepts.map((c) => (
@@ -514,7 +543,7 @@ export default function NexedStudentLogModal({
                       key={c}
                       className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 flex items-center gap-2"
                     >
-                      <span className="text-rose-500 font-bold">✕</span>
+                      <X className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                       <span>{c}</span>
                     </div>
                   ))}
@@ -524,8 +553,9 @@ export default function NexedStudentLogModal({
               {/* Usulan Remedial */}
               <div className="p-5 bg-indigo-50/60 border border-indigo-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-1">
-                    📦 Usulan Materi & Remedial Adaptif
+                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-indigo-600" />
+                    Usulan Materi & Remedial Adaptif
                   </span>
                   <p className="text-xs text-slate-800 font-medium">
                     {studentData.aiDiagnosis.suggestedRemedial}
@@ -540,9 +570,10 @@ export default function NexedStudentLogModal({
                       "Penugasan Remedial",
                     );
                   }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0 flex items-center gap-1.5"
                 >
-                  Gunakan untuk Intervensi &rarr;
+                  <span>Gunakan untuk Intervensi</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -579,9 +610,10 @@ export default function NexedStudentLogModal({
                           "Penugasan Remedial",
                         )
                       }
-                      className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+                      className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-colors flex items-center gap-1.5"
                     >
-                      📘 Modul Tracing Table
+                      <BookOpen className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>Modul Tracing Table</span>
                     </button>
                     <button
                       type="button"
@@ -591,9 +623,10 @@ export default function NexedStudentLogModal({
                           "Jadwal Asistensi Lab",
                         )
                       }
-                      className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+                      className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-colors flex items-center gap-1.5"
                     >
-                      📅 Jadwal Konsultasi Lab SV UNS
+                      <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>Jadwal Konsultasi Lab SV UNS</span>
                     </button>
                     <button
                       type="button"
@@ -603,9 +636,10 @@ export default function NexedStudentLogModal({
                           "Catatan Dosen",
                         )
                       }
-                      className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+                      className="px-3 py-1.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-colors flex items-center gap-1.5"
                     >
-                      💬 Catatan Motivasi Dosen
+                      <MessageSquare className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>Catatan Motivasi Dosen</span>
                     </button>
                   </div>
                 </div>
@@ -666,7 +700,7 @@ export default function NexedStudentLogModal({
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
                     }`}
                   >
-                    <span>🚀</span>
+                    <Send className="w-3.5 h-3.5 shrink-0" />
                     <span>Kirim Intervensi ke {studentData.name}</span>
                   </button>
                 </div>
@@ -675,7 +709,7 @@ export default function NexedStudentLogModal({
               {/* Riwayat Intervensi Sebelumnya */}
               <div className="space-y-3">
                 <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <span>📜</span>
+                  <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
                   <span>Riwayat Intervensi & Bimbingan Tercatat</span>
                 </h4>
 
@@ -706,8 +740,9 @@ export default function NexedStudentLogModal({
                             {inv.message}
                           </p>
                         </div>
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-center shrink-0">
-                          ✓ {inv.status}
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-center shrink-0 flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>{inv.status}</span>
                         </span>
                       </div>
                     ))}
@@ -726,7 +761,7 @@ export default function NexedStudentLogModal({
               onClick={() => window.print()}
               className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-2 transition-colors shadow-xs"
             >
-              <span>🖨️</span>
+              <Printer className="w-3.5 h-3.5 shrink-0 text-slate-600" />
               <span>Cetak / Ekspor Log Transkrip</span>
             </button>
           </div>
@@ -735,9 +770,10 @@ export default function NexedStudentLogModal({
             <button
               type="button"
               onClick={() => handleStatusUpdate("Selesai Ditinjau")}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
             >
-              ✓ Tandai Selesai Ditinjau
+              <Check className="w-3.5 h-3.5 text-white" />
+              <span>Tandai Selesai Ditinjau</span>
             </button>
             <button
               type="button"

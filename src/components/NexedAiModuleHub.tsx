@@ -3,9 +3,60 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ModuleRagChat from "./ModuleRagChat";
 
 import { smartApiFetch as apiFetch } from "../utils/apiConfig";
+
+import {
+  Lightbulb,
+  Layers,
+  Code2,
+  GraduationCap,
+  CheckCircle2,
+  Check,
+  Lock,
+  FileText,
+  Brain,
+  Sparkles,
+  RefreshCw,
+  Search,
+  GitBranch,
+  Database,
+  Boxes,
+  UploadCloud,
+  FolderOpen,
+  FileEdit,
+  Cpu,
+  AlertCircle,
+  Zap,
+  Target,
+  BookOpen,
+  Key,
+  Terminal,
+  HelpCircle,
+  MessageSquare,
+  Globe,
+  BarChart3,
+  AlertTriangle,
+  PlayCircle,
+  ChevronUp,
+  ChevronDown,
+  X,
+  Copy,
+  Award,
+  ArrowRight,
+  LayoutDashboard,
+  Bot,
+} from "lucide-react";
+
+import {
+  markModuleCompleted,
+  saveModuleProgress,
+  getModuleProgress,
+  type ModuleProgress,
+} from "../lib/progressStorage";
+import { useAuthStore } from "../store/authStore";
 
 export interface RecommendedVideo {
   title: string;
@@ -73,10 +124,10 @@ import { getAdaptiveRecommendations, type AdaptiveLearningResponse } from "../se
 import { resolveCuratedResources } from "../lib/curatedResources";
 
 const ANALYSIS_STEPS = [
-  { percent: 25, label: "Membaca dan mengekstraksi konten materi...", icon: "📄" },
-  { percent: 50, label: "Menganalisis konsep esensial & kesulitan materi...", icon: "🧠" },
-  { percent: 75, label: "Menyusun peta belajar adaptif bertahap...", icon: "🗺️" },
-  { percent: 100, label: "Menghasilkan ringkasan dan kuis latihan aktif...", icon: "✨" },
+  { percent: 25, label: "Membaca dan mengekstraksi konten materi...", icon: FileText },
+  { percent: 50, label: "Menganalisis konsep esensial & kesulitan materi...", icon: Brain },
+  { percent: 75, label: "Menyusun peta belajar adaptif bertahap...", icon: Layers },
+  { percent: 100, label: "Menghasilkan ringkasan dan kuis latihan aktif...", icon: Sparkles },
 ];
 
 const HUB_COURSERA_STAGES = [
@@ -85,28 +136,28 @@ const HUB_COURSERA_STAGES = [
     title: "Fondasi Konseptual",
     shortTitle: "Konseptual",
     description: "Ringkasan eksekutif, capaian pokok & istilah esensial materi.",
-    icon: "📖",
+    icon: Lightbulb,
   },
   {
     step: 2,
     title: "Komponen & Logika",
     shortTitle: "Peta Belajar",
     description: "Peta belajar adaptif bertahap, panduan terperinci & skenario implementasi.",
-    icon: "🗺️",
+    icon: Layers,
   },
   {
     step: 3,
     title: "Praktik & Pendampingan AI",
     shortTitle: "Praktik & AI",
     description: "Deep-link materi industri terverifikasi, uji diagnostik & tanya tutor AI.",
-    icon: "🚀",
+    icon: Code2,
   },
   {
     step: 4,
     title: "Kuis Active Recall",
     shortTitle: "Evaluasi",
     description: "Uji daya serap konsep esensial, evaluasi instan & skor penguasaan.",
-    icon: "📝",
+    icon: GraduationCap,
   },
 ];
 
@@ -131,16 +182,16 @@ function CodeBlockSnippet({ code, language }: { code: string; language: string }
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800/70 hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-white px-2.5 py-1 rounded bg-slate-800/70 hover:bg-slate-700 transition-colors cursor-pointer"
         >
           {copied ? (
             <>
-              <span className="text-emerald-400">✓</span>
+              <Check className="w-3 h-3 text-emerald-400 shrink-0" />
               <span className="text-emerald-400 font-bold">Tersalin!</span>
             </>
           ) : (
             <>
-              <span>📋</span>
+              <Copy className="w-3 h-3 text-slate-400 shrink-0" />
               <span>Salin Kode</span>
             </>
           )}
@@ -302,6 +353,7 @@ function ChatMessageContent({ text, isUser }: { text: string; isUser: boolean })
 }
 
 export default function NexedAiModuleHub() {
+  const router = useRouter();
   const [inputMode, setInputMode] = useState<"file" | "text" | "rag">("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [textInput, setTextInput] = useState("");
@@ -325,6 +377,33 @@ export default function NexedAiModuleHub() {
   });
   const [hubMobileSyllabusOpen, setHubMobileSyllabusOpen] = useState<boolean>(false);
   const hubStageContainerRef = useRef<HTMLDivElement>(null);
+
+  // Completion Modal & Persistence State
+  const [showCompletionModal, setShowCompletionModal] = useState<boolean>(false);
+  const [completionData, setCompletionData] = useState<{
+    score: number;
+    total: number;
+    xp: number;
+  } | null>(null);
+
+  // Restore saved module progress
+  useEffect(() => {
+    if (!analysisResult) return;
+    const modId = analysisResult.title
+      ? analysisResult.title.toLowerCase().replace(/[^a-z0-9-_]/g, "-")
+      : "modul-analisis";
+    const saved = getModuleProgress(modId);
+    if (saved) {
+      const restoredStages: Record<number, boolean> = { 1: false, 2: false, 3: false, 4: false };
+      saved.completedSteps.forEach((s) => {
+        if (s >= 1 && s <= 4) restoredStages[s] = true;
+      });
+      setHubStageProgress(restoredStages);
+      if (saved.quizScore !== undefined && saved.quizScore > 0) {
+        setIsQuizChecked(true);
+      }
+    }
+  }, [analysisResult]);
 
   // Active Video Modal for Direct Embedded Playback
   const [activeVideoModal, setActiveVideoModal] = useState<RecommendedVideo | null>(null);
@@ -943,14 +1022,53 @@ Silabus & Fokus Pembahasan:
     hubStageContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleCompleteModule = () => {
+    if (!analysisResult) return;
+    const modId =
+      analysisResult.title.toLowerCase().replace(/[^a-z0-9-_]/g, "-") || "modul-analisis";
+    const correctCount = Object.entries(userAnswers).filter(
+      ([qIdx, ansIdx]) => analysisResult.quiz[Number(qIdx)]?.correctIndex === ansIdx,
+    ).length;
+
+    const xp = analysisResult.xpReward || 150;
+    markModuleCompleted(modId, analysisResult.title, xp, correctCount);
+    useAuthStore.getState().addXp(xp);
+
+    const allCompleted = { 1: true, 2: true, 3: true, 4: true };
+    setHubStageProgress(allCompleted);
+    setCompletionData({
+      score: correctCount,
+      total: analysisResult.quiz.length,
+      xp,
+    });
+    setShowCompletionModal(true);
+    triggerConfetti();
+  };
+
   const handleHubMarkStageAndAdvance = (stageNum: number) => {
     const updated = { ...hubStageProgress, [stageNum]: true };
     setHubStageProgress(updated);
+
+    if (analysisResult) {
+      const modId =
+        analysisResult.title.toLowerCase().replace(/[^a-z0-9-_]/g, "-") || "modul-analisis";
+      const completedSteps = [1, 2, 3, 4].filter((s) => updated[s]);
+      saveModuleProgress({
+        moduleId: modId,
+        title: analysisResult.title,
+        completedSteps,
+        progressPercent: Math.round((completedSteps.length / 4) * 100),
+        isCompleted: completedSteps.length === 4,
+        xpEarned: completedSteps.length === 4 ? analysisResult.xpReward || 150 : 0,
+        lastUpdated: new Date().toISOString(),
+      });
+    }
+
     if (stageNum < 4) {
       setHubCurrentStage(stageNum + 1);
       hubStageContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      triggerConfetti();
+      handleCompleteModule();
     }
   };
 
@@ -1002,7 +1120,7 @@ Silabus & Fokus Pembahasan:
             }}
             className="self-start md:self-auto px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black text-xs font-medium transition-all border border-black/10 flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
-            <span>🔄</span>
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>Ganti / Unggah Modul Baru</span>
           </button>
         )}
@@ -1013,8 +1131,9 @@ Silabus & Fokus Pembahasan:
         <div className="space-y-6 animate-in fade-in">
           {/* Quick Preset Selector Chips */}
           <div className="space-y-2">
-            <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-wider block">
-              💡 Atau Pilih Modul Silabus Cepat untuk Pengujian:
+            <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Atau Pilih Modul Silabus Cepat untuk Pengujian:</span>
             </span>
             <div className="flex flex-wrap gap-2">
               <button
@@ -1022,7 +1141,7 @@ Silabus & Fokus Pembahasan:
                 onClick={() => handleStartAnalysis("binary_search")}
                 className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <span>🔍</span>
+                <Search className="w-3.5 h-3.5 text-neutral-600" />
                 <span>Pencarian Biner (O(log N))</span>
               </button>
               <button
@@ -1030,7 +1149,7 @@ Silabus & Fokus Pembahasan:
                 onClick={() => handleStartAnalysis("tree_traversal")}
                 className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <span>🌲</span>
+                <GitBranch className="w-3.5 h-3.5 text-neutral-600" />
                 <span>Pohon Biner & Traversal Rekursif</span>
               </button>
               <button
@@ -1038,7 +1157,7 @@ Silabus & Fokus Pembahasan:
                 onClick={() => handleStartAnalysis("database_sql")}
                 className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <span>🗄️</span>
+                <Database className="w-3.5 h-3.5 text-neutral-600" />
                 <span>Basis Data & Kueri SQL</span>
               </button>
               <button
@@ -1046,7 +1165,7 @@ Silabus & Fokus Pembahasan:
                 onClick={() => handleStartAnalysis("oop_clean")}
                 className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                <span>📦</span>
+                <Boxes className="w-3.5 h-3.5 text-neutral-600" />
                 <span>Pemrograman Berorientasi Objek (OOP)</span>
               </button>
             </div>
@@ -1057,35 +1176,38 @@ Silabus & Fokus Pembahasan:
             <button
               type="button"
               onClick={() => setInputMode("file")}
-              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer ${
+              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5 ${
                 inputMode === "file"
                   ? "border-black text-black"
                   : "border-transparent text-neutral-500 hover:text-black"
               }`}
             >
-              📁 Unggah File Dokumen (PDF, TXT, DOCX)
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Unggah File Dokumen (PDF, TXT, DOCX)</span>
             </button>
             <button
               type="button"
               onClick={() => setInputMode("text")}
-              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer ${
+              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5 ${
                 inputMode === "text"
                   ? "border-black text-black"
                   : "border-transparent text-neutral-500 hover:text-black"
               }`}
             >
-              📝 Tempel Teks Modul / Topik Cepat
+              <FileEdit className="w-3.5 h-3.5" />
+              <span>Tempel Teks Modul / Topik Cepat</span>
             </button>
             <button
               type="button"
               onClick={() => setInputMode("rag")}
-              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer ${
+              className={`pb-2.5 px-4 text-xs font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5 ${
                 inputMode === "rag"
                   ? "border-black text-black font-semibold"
                   : "border-transparent text-neutral-500 hover:text-black"
               }`}
             >
-              🔬 Strict RAG Engine (Groq Llama 3.3)
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Strict RAG Engine (Groq Llama 3.3)</span>
             </button>
           </div>
 
@@ -1121,15 +1243,15 @@ Silabus & Fokus Pembahasan:
                   }`}
                 >
                   <div className="w-full flex flex-col items-center justify-center space-y-3 py-4 pointer-events-none">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-[#F4F4F6] border border-black/10 text-black">
-                      ☁️
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs bg-[#F4F4F6] border border-black/10 text-neutral-600">
+                      <UploadCloud className="w-7 h-7" />
                     </div>
                     <div className="space-y-2">
                       <span className="text-sm font-medium text-black block">
                         Tarik & jatuhkan file modul di sini, atau
                       </span>
                       <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium shadow-xs transition-all">
-                        <span>📂</span>
+                        <FolderOpen className="w-3.5 h-3.5" />
                         <span>Pilih Dokumen dari Komputer</span>
                       </span>
                       <span className="text-xs text-neutral-400 font-mono block pt-1">
@@ -1164,13 +1286,17 @@ Silabus & Fokus Pembahasan:
                   ) : (
                     <div className="flex flex-col items-center justify-center space-y-3 py-4">
                       <div
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xs ${
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs ${
                           uploadDocError
                             ? "bg-rose-100 text-rose-600"
                             : "bg-emerald-100 text-emerald-600"
                         }`}
                       >
-                        {uploadDocError ? "⚠️" : "📄"}
+                        {uploadDocError ? (
+                          <AlertCircle className="w-7 h-7" />
+                        ) : (
+                          <FileText className="w-7 h-7" />
+                        )}
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-center gap-1.5">
@@ -1178,8 +1304,9 @@ Silabus & Fokus Pembahasan:
                             {selectedFile.name}
                           </span>
                           {uploadedDocMeta && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              ✓ Siap Dianalisis
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              <Check className="w-3 h-3 text-emerald-700" />
+                              <span>Siap Dianalisis</span>
                             </span>
                           )}
                         </div>
@@ -1201,7 +1328,7 @@ Silabus & Fokus Pembahasan:
                           onClick={() => handleStartAnalysis()}
                           className="text-xs bg-black hover:bg-neutral-800 text-white font-medium px-5 py-2.5 rounded-full shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                         >
-                          <span>🚀</span>
+                          <Zap className="w-3.5 h-3.5" />
                           <span>Buka & Pelajari Sekarang</span>
                         </button>
                         <label className="relative text-xs text-black hover:bg-neutral-200 font-medium px-4 py-2 rounded-full bg-[#F4F4F6] border border-black/10 transition-colors cursor-pointer inline-flex items-center overflow-hidden">
@@ -1240,7 +1367,7 @@ Silabus & Fokus Pembahasan:
               {/* Upload Error Message */}
               {uploadDocError && (
                 <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
-                  <span className="text-base leading-none">⚠️</span>
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <strong className="font-semibold">Gagal memproses dokumen: </strong>
                     {uploadDocError}
@@ -1302,7 +1429,7 @@ Silabus & Fokus Pembahasan:
                   </>
                 ) : (
                   <>
-                    <span>✨</span>
+                    <Sparkles className="w-3.5 h-3.5" />
                     <span>Analisis Modul dengan Nexed AI</span>
                   </>
                 )}
@@ -1316,8 +1443,11 @@ Silabus & Fokus Pembahasan:
       {isAnalyzing && (
         <div className="py-12 px-6 rounded-3xl bg-[#FAFAFA] border border-black/8 text-center space-y-6 animate-in fade-in">
           <div className="max-w-md mx-auto space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-black text-white flex items-center justify-center text-3xl mx-auto shadow-md">
-              {ANALYSIS_STEPS[currentStepIndex]?.icon || "🤖"}
+            <div className="w-16 h-16 rounded-2xl bg-black text-white flex items-center justify-center mx-auto shadow-md">
+              {(() => {
+                const StepIcon = ANALYSIS_STEPS[currentStepIndex]?.icon || Sparkles;
+                return <StepIcon className="w-7 h-7 text-white" />;
+              })()}
             </div>
 
             <div>
@@ -1355,8 +1485,9 @@ Silabus & Fokus Pembahasan:
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full">
-                    ✓ Berhasil Dianalisis AI
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full inline-flex items-center gap-1">
+                    <Check className="w-3 h-3 text-emerald-700" />
+                    <span>Berhasil Dianalisis AI</span>
                   </span>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full">
                     Tingkat: {analysisResult.difficulty}
@@ -1391,7 +1522,14 @@ Silabus & Fokus Pembahasan:
                     </span>
                   </span>
                   <span className="text-neutral-500 text-[11px]">
-                    {hubProgressPercent === 100 ? "✓ Tuntas" : "Aktif"}
+                    {hubProgressPercent === 100 ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                        <Check className="w-3 h-3" />
+                        <span>Tuntas</span>
+                      </span>
+                    ) : (
+                      "Aktif"
+                    )}
                   </span>
                 </div>
                 <div className="w-full bg-neutral-200 h-2 rounded-full overflow-hidden">
@@ -1408,7 +1546,7 @@ Silabus & Fokus Pembahasan:
                 className="min-h-[44px] px-5 py-2 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 <span>Lanjutkan Belajar</span>
-                <span className="text-xs">&rarr;</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -1433,7 +1571,7 @@ Silabus & Fokus Pembahasan:
               </div>
               <div className="flex items-center gap-2 text-neutral-500">
                 <span className="text-[11px] font-mono font-bold text-black">{hubProgressPercent}%</span>
-                <span className="text-xs">{hubMobileSyllabusOpen ? "▲" : "▼"}</span>
+                {hubMobileSyllabusOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
             </button>
             {hubMobileSyllabusOpen && (
@@ -1465,8 +1603,8 @@ Silabus & Fokus Pembahasan:
                         <span className="font-mono text-[11px]">{st.step}.</span>
                         <span>{st.title}</span>
                       </div>
-                      {isDone && <span className="text-emerald-500 font-bold">✓</span>}
-                      {!unlocked && <span>🔒</span>}
+                      {isDone && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                      {!unlocked && <Lock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />}
                     </button>
                   );
                 })}
@@ -1500,19 +1638,19 @@ Silabus & Fokus Pembahasan:
                       : "text-neutral-300 cursor-not-allowed"
                   }`}
                 >
-                  <span>{st.icon}</span>
+                  <st.icon className="w-3.5 h-3.5 shrink-0" />
                   <span className="hidden sm:inline">Tahap {st.step}:</span>
                   <span>{st.shortTitle}</span>
                   {isDone && (
                     <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold flex items-center justify-center ${
                         isCurrent ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                       }`}
                     >
-                      ✓
+                      <Check className="w-2.5 h-2.5" />
                     </span>
                   )}
-                  {!unlocked && <span className="text-[10px]">🔒</span>}
+                  {!unlocked && <Lock className="w-3 h-3 text-neutral-400 shrink-0" />}
                 </button>
               );
             })}
@@ -1528,7 +1666,7 @@ Silabus & Fokus Pembahasan:
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-black/8">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-black text-white text-xs font-black shadow-xs">
-                      📋
+                      <FileText className="w-3.5 h-3.5" />
                     </span>
                     <div>
                       <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
@@ -1559,7 +1697,7 @@ Silabus & Fokus Pembahasan:
                   analysisResult.summary.keyTakeaways.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-black/8 space-y-3">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs">🎯</span>
+                        <Target className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                         <span className="text-[11px] font-mono font-bold text-neutral-800 uppercase tracking-wider">
                           Pokok Bahasan & Capaian Pembelajaran:
                         </span>
@@ -1570,9 +1708,7 @@ Silabus & Fokus Pembahasan:
                             key={`takeaway-${tIdx}`}
                             className="p-3.5 bg-white rounded-2xl border border-black/8 shadow-2xs text-xs text-neutral-700 leading-snug flex items-start gap-2.5"
                           >
-                            <span className="text-black font-black text-sm shrink-0 mt-0.5">
-                              ✓
-                            </span>
+                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                             <span>{takeaway}</span>
                           </div>
                         ))}
@@ -1585,7 +1721,7 @@ Silabus & Fokus Pembahasan:
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs">📚</span>
+                    <BookOpen className="w-3.5 h-3.5 text-neutral-600" />
                     <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-700">
                       Istilah & Konsep Esensial
                     </h4>
@@ -1622,7 +1758,7 @@ Silabus & Fokus Pembahasan:
 
               {/* Pro Tips Callout */}
               <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFAFA] border border-black/8 text-neutral-800 text-xs leading-relaxed flex items-start gap-3 shadow-2xs">
-                <span className="text-base shrink-0 mt-0.5">💡</span>
+                <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold block mb-0.5 text-black">
                     Tips Belajar & Insight AI Tutor:
@@ -1664,8 +1800,18 @@ Silabus & Fokus Pembahasan:
                   onClick={() => handleHubMarkStageAndAdvance(1)}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>{hubStageProgress[1] ? "Lanjut ke Tahap 2: Komponen & Logika" : "✓ Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  {hubStageProgress[1] ? (
+                    <>
+                      <span>Lanjut ke Tahap 2: Komponen & Logika</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Tandai Paham & Lanjut</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1721,8 +1867,9 @@ Silabus & Fokus Pembahasan:
                               {stepItem.stage}
                             </span>
                             {isUnderstood && (
-                              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                                <span>✓</span> <span>Dikuasai</span>
+                              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                <span>Dikuasai</span>
                               </span>
                             )}
                           </div>
@@ -1735,7 +1882,7 @@ Silabus & Fokus Pembahasan:
                           </p>
 
                           <div className="text-[10px] font-mono text-neutral-800 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full w-fit flex items-center gap-1.5">
-                            <span>🎯</span>
+                            <Target className="w-3.5 h-3.5 text-neutral-600" />
                             <span>Aksi Mandiri: {stepItem.actionItem}</span>
                           </div>
                         </div>
@@ -1751,7 +1898,11 @@ Silabus & Fokus Pembahasan:
                                 : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border border-black/10"
                             }`}
                           >
-                            <span>{isExpanded ? "▲ Tutup Materi" : "📖 Buka Materi"}</span>
+                            {isExpanded ? (
+                              <span className="inline-flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /><span>Tutup Materi</span></span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /><span>Buka Materi</span></span>
+                            )}
                           </button>
 
                           <button
@@ -1763,7 +1914,11 @@ Silabus & Fokus Pembahasan:
                                 : "bg-black hover:bg-neutral-800 text-white shadow-xs"
                             }`}
                           >
-                            <span>{isUnderstood ? "Batal Tandai" : "✓ Tandai Paham"}</span>
+                            {isUnderstood ? (
+                              "Batal Tandai"
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /><span>Tandai Paham</span></span>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1775,7 +1930,7 @@ Silabus & Fokus Pembahasan:
                           <div className="bg-white rounded-2xl p-5 border border-black/8 shadow-2xs space-y-2">
                             <div className="flex items-center gap-2">
                               <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-xs font-black">
-                                📘
+                                <BookOpen className="w-3.5 h-3.5" />
                               </span>
                               <h6 className="text-xs font-mono font-bold text-black uppercase tracking-wider">
                                 Uraian Materi & Panduan Belajar Tahap Ini
@@ -1792,8 +1947,9 @@ Silabus & Fokus Pembahasan:
                           {/* 2. Konsep Kunci yang Dipelajari */}
                           {stepItem.keyConcepts && stepItem.keyConcepts.length > 0 && (
                             <div className="space-y-1.5">
-                              <span className="text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1">
-                                <span>🔑</span> <span>Konsep Kunci yang Dipelajari:</span>
+                              <span className="text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1.5">
+                                <Key className="w-3.5 h-3.5 text-amber-500" />
+                                <span>Konsep Kunci yang Dipelajari:</span>
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {stepItem.keyConcepts.map((concept, cIdx) => (
@@ -1812,7 +1968,7 @@ Silabus & Fokus Pembahasan:
                           {stepItem.practiceScenario && (
                             <div className="bg-[#F4F4F6] rounded-2xl p-4 border border-black/8 text-xs space-y-1">
                               <div className="font-bold text-black flex items-center gap-1.5">
-                                <span>💻</span>
+                                <Terminal className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>Skenario Praktik Mandiri:</span>
                               </div>
                               <p className="text-neutral-700 leading-relaxed pl-5">
@@ -1825,7 +1981,7 @@ Silabus & Fokus Pembahasan:
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-black/8">
                             {stepItem.checkQuestion ? (
                               <div className="text-[11px] text-neutral-600 flex items-start gap-1.5 flex-1">
-                                <span className="font-bold">❓</span>
+                                <HelpCircle className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
                                 <span>
                                   <strong>Uji Pemahaman:</strong> {stepItem.checkQuestion}
                                 </span>
@@ -1839,7 +1995,7 @@ Silabus & Fokus Pembahasan:
                               onClick={() => handleAskAboutStep(stepItem)}
                               className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                             >
-                              <span>💬</span>
+                              <MessageSquare className="w-3.5 h-3.5" />
                               <span>Tanya AI Tutor tentang Tahap Ini</span>
                             </button>
                           </div>
@@ -1864,8 +2020,18 @@ Silabus & Fokus Pembahasan:
                   onClick={() => handleHubMarkStageAndAdvance(2)}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>{hubStageProgress[2] ? "Lanjut ke Tahap 3: Praktik & AI" : "✓ Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  {hubStageProgress[2] ? (
+                    <>
+                      <span>Lanjut ke Tahap 3: Praktik & AI</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Tandai Paham & Lanjut</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1883,7 +2049,7 @@ Silabus & Fokus Pembahasan:
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-[11px] font-black">
-                        🌐
+                        <Globe className="w-3.5 h-3.5" />
                       </span>
                       <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
                         Rekomendasi Referensi Terverifikasi (Direct Deep-Link)
@@ -1905,7 +2071,7 @@ Silabus & Fokus Pembahasan:
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-rose-600 font-bold text-sm">▶</span>
+                      <PlayCircle className="w-4 h-4 text-rose-600 shrink-0" />
                       <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
                         Video Tutorial & Panduan Praktik Terverifikasi
                       </h5>
@@ -1944,7 +2110,7 @@ Silabus & Fokus Pembahasan:
                           {/* Hover Play Button Overlay */}
                           <div className="absolute inset-0 bg-black/35 group-hover:bg-black/15 transition-colors flex items-center justify-center">
                             <div className="w-11 h-11 rounded-full bg-black/80 group-hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-md group-hover:scale-110">
-                              <span className="text-sm font-bold ml-0.5">▶</span>
+                              <PlayCircle className="w-5 h-5 ml-0.5" />
                             </div>
                           </div>
                           {/* Badges */}
@@ -1965,7 +2131,9 @@ Silabus & Fokus Pembahasan:
                           <div className="space-y-1.5">
                             <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-neutral-500">
                               <span className="truncate">{video.channel}</span>
-                              <span className="text-emerald-600 font-bold shrink-0" title="Kreator Terverifikasi">✓</span>
+                              <span title="Kreator Terverifikasi" className="inline-flex items-center">
+                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                              </span>
                             </div>
                             <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
                               {video.title}
@@ -1982,7 +2150,8 @@ Silabus & Fokus Pembahasan:
                               onClick={() => setActiveVideoModal(video)}
                               className="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
                             >
-                              <span>▶ Tonton di Sini</span>
+                              <PlayCircle className="w-3.5 h-3.5" />
+                              <span>Tonton di Sini</span>
                             </button>
                             <a
                               href={video.videoUrl}
@@ -2005,7 +2174,7 @@ Silabus & Fokus Pembahasan:
                 <div className="space-y-3.5 pt-4 border-t border-black/8">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-indigo-600 font-bold text-sm">📖</span>
+                      <BookOpen className="w-4 h-4 text-indigo-600 shrink-0" />
                       <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
                         Dokumentasi Resmi & Panduan Teknis (Direct Sub-Chapter)
                       </h5>
@@ -2062,7 +2231,7 @@ Silabus & Fokus Pembahasan:
                 {adaptiveRecs?.diagnostic_questions && adaptiveRecs.diagnostic_questions.length > 0 && (
                   <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-2.5 mt-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs">⚡</span>
+                      <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <h5 className="text-[11px] font-mono font-bold uppercase tracking-wider text-black">
                         Pertanyaan Diagnostik Pengujian Pemahaman:
                       </h5>
@@ -2085,7 +2254,7 @@ Silabus & Fokus Pembahasan:
                 <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-black flex items-center gap-1.5">
-                      <span>🤖</span>
+                      <Bot className="w-4 h-4 text-indigo-600 shrink-0" />
                       <span>Tanya Nexed AI - Modul "{analysisResult.title}"</span>
                     </h4>
                     <p className="text-[11px] text-neutral-500">
@@ -2134,18 +2303,20 @@ Silabus & Fokus Pembahasan:
                         "Berikan analogi sederhana kehidupan sehari-hari tentang materi ini!",
                       )
                     }
-                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    💡 Minta Analogi Nyata
+                    <Lightbulb className="w-3 h-3 text-amber-500" />
+                    <span>Minta Analogi Nyata</span>
                   </button>
                   <button
                     type="button"
                     onClick={() =>
                       handleSendChat("Berikan contoh kode implementasi dan sintaks dasarnya!")
                     }
-                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    💻 Contoh Kode & Sintaks
+                    <Code2 className="w-3 h-3 text-emerald-600" />
+                    <span>Contoh Kode & Sintaks</span>
                   </button>
                   <button
                     type="button"
@@ -2154,9 +2325,10 @@ Silabus & Fokus Pembahasan:
                         "Apa perbedaan utama metode ini dibanding pendekatan konvensional?",
                       )
                     }
-                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    📊 Perbandingan Efisiensi
+                    <BarChart3 className="w-3 h-3 text-indigo-600" />
+                    <span>Perbandingan Efisiensi</span>
                   </button>
                   <button
                     type="button"
@@ -2165,9 +2337,10 @@ Silabus & Fokus Pembahasan:
                         "Apa saja kesalahan umum (common pitfalls) saat mengimplementasikan materi ini?",
                       )
                     }
-                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    ⚠️ Kesalahan Umum & Debugging
+                    <AlertTriangle className="w-3 h-3 text-rose-500" />
+                    <span>Kesalahan Umum & Debugging</span>
                   </button>
                 </div>
 
@@ -2210,8 +2383,18 @@ Silabus & Fokus Pembahasan:
                   onClick={() => handleHubMarkStageAndAdvance(3)}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>{hubStageProgress[3] ? "Lanjut ke Tahap 4: Kuis Evaluasi" : "✓ Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  {hubStageProgress[3] ? (
+                    <>
+                      <span>Lanjut ke Tahap 4: Kuis Evaluasi</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Tandai Paham & Lanjut</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -2232,8 +2415,9 @@ Silabus & Fokus Pembahasan:
                   </p>
                 </div>
                 {hubStageProgress[4] && (
-                  <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full font-semibold">
-                    ✓ Modul Telah Tuntas
+                  <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full font-semibold inline-flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Modul Telah Tuntas</span>
                   </span>
                 )}
               </div>
@@ -2288,10 +2472,16 @@ Silabus & Fokus Pembahasan:
                             >
                               <span>{opt}</span>
                               {isQuizChecked && optIndex === q.correctIndex && (
-                                <span className="text-emerald-700 font-bold shrink-0 ml-2">✓ Kunci Jawaban</span>
+                                <span className="text-emerald-700 font-bold shrink-0 ml-2 inline-flex items-center gap-1">
+                                  <Check className="w-3 h-3" />
+                                  <span>Kunci Jawaban</span>
+                                </span>
                               )}
                               {isQuizChecked && isOptionSelected && optIndex !== q.correctIndex && (
-                                <span className="text-rose-600 font-bold shrink-0 ml-2">✕ Pilihan Anda</span>
+                                <span className="text-rose-600 font-bold shrink-0 ml-2 inline-flex items-center gap-1">
+                                  <X className="w-3 h-3" />
+                                  <span>Pilihan Anda</span>
+                                </span>
                               )}
                             </button>
                           );
@@ -2307,9 +2497,17 @@ Silabus & Fokus Pembahasan:
                               : "bg-rose-50 border border-rose-200 text-rose-900"
                           }`}
                         >
-                          <span className="font-bold block mb-1">
-                            {isCorrect ? "✅ Jawaban Anda Tepat!" : "⚠️ Belum Tepat:"}
-                          </span>
+                          {isCorrect ? (
+                            <span className="font-bold flex items-center gap-1.5 text-emerald-800 mb-1">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Jawaban Anda Tepat!</span>
+                            </span>
+                          ) : (
+                            <span className="font-bold flex items-center gap-1.5 text-rose-800 mb-1">
+                              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                              <span>Belum Tepat:</span>
+                            </span>
+                          )}
                           <span>{q.explanation}</span>
                         </div>
                       )}
@@ -2370,10 +2568,10 @@ Silabus & Fokus Pembahasan:
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleHubMarkStageAndAdvance(4)}
-                      className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      onClick={handleCompleteModule}
+                      className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                     >
-                      <span>✓</span>
+                      <Check className="w-4 h-4 text-emerald-400" />
                       <span>Selesaikan Modul & Simpan</span>
                     </button>
                   </div>
@@ -2404,7 +2602,7 @@ Silabus & Fokus Pembahasan:
                   className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>{hubStageProgress[hubCurrentStage] ? "Lanjut Tahap" : "Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button
@@ -2420,14 +2618,86 @@ Silabus & Fokus Pembahasan:
                         triggerConfetti();
                       }
                     } else {
-                      handleHubMarkStageAndAdvance(4);
+                      handleCompleteModule();
                     }
                   }}
                   className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>{isQuizChecked ? "✓ Selesaikan Modul" : "Periksa Kuis"}</span>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{isQuizChecked ? "Selesaikan Modul & Simpan" : "Periksa Kuis"}</span>
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CELEBRATION & PERSISTENCE COMPLETION MODAL */}
+      {showCompletionModal && completionData && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="completion-modal-title"
+        >
+          <div className="bg-white rounded-3xl border border-black/10 shadow-2xl max-w-md w-full p-6 sm:p-8 text-center space-y-5 animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 mx-auto flex items-center justify-center">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-0.5 rounded-full inline-block font-semibold">
+                Modul 100% Dituntaskan
+              </div>
+              <h3 id="completion-modal-title" className="text-xl font-light text-black tracking-tight">
+                Selamat! Pembelajaran Berhasil Disimpan
+              </h3>
+              <p className="text-xs text-neutral-600 max-w-sm mx-auto">
+                Anda telah menyelesaikan seluruh 4 tahap materi dan evaluasi kuis untuk modul{" "}
+                <strong className="text-black font-semibold">"{analysisResult?.title}"</strong>.
+              </p>
+            </div>
+
+            {/* Metric cards */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="p-3.5 bg-[#FAFAFA] rounded-2xl border border-black/8 text-center">
+                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-semibold">
+                  Skor Kuis
+                </span>
+                <span className="text-base font-bold font-mono text-black mt-0.5 block">
+                  {completionData.score} / {completionData.total}
+                </span>
+                <span className="text-[10px] text-emerald-600 font-medium">Jawaban Tepat</span>
+              </div>
+              <div className="p-3.5 bg-[#FAFAFA] rounded-2xl border border-black/8 text-center">
+                <span className="text-[10px] font-mono text-neutral-400 uppercase block font-semibold">
+                  Reward Perolehan
+                </span>
+                <span className="text-base font-bold font-mono text-black mt-0.5 flex items-center justify-center gap-1">
+                  <Award className="w-4 h-4 text-amber-500" />
+                  <span>+{completionData.xp} XP</span>
+                </span>
+                <span className="text-[10px] text-neutral-500 font-medium">Tersimpan ke Profil</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="w-full min-h-[44px] py-2.5 px-4 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Kembali ke Dashboard</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCompletionModal(false)}
+                className="w-full min-h-[44px] py-2.5 px-4 bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 font-medium text-xs rounded-full border border-black/8 transition-colors cursor-pointer"
+              >
+                Tetap Tinjau Ringkasan Modul
+              </button>
             </div>
           </div>
         </div>
@@ -2470,7 +2740,7 @@ Silabus & Fokus Pembahasan:
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer shrink-0 font-bold"
                 aria-label="Tutup pemutar video"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

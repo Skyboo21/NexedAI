@@ -20,19 +20,17 @@ export default function DosenLayout({ children }: { children: React.ReactNode })
           {
             label: "Analitik Kelas",
             href: "/dosen-dashboard",
-            icon: "📊",
             badge: "Live",
             badgeColor: "emerald",
           },
           {
             label: "Alert Mahasiswa",
             href: "/dosen-dashboard#alerts",
-            icon: "⚠️",
             badge: "2 Alert",
             badgeColor: "rose",
           },
-          { label: "Distribusi Nilai", href: "/dosen-dashboard#distribusi", icon: "📈" },
-          { label: "Profil Dosen", href: "/profil", icon: "👤" },
+          { label: "Distribusi Nilai", href: "/dosen-dashboard#distribusi" },
+          { label: "Profil Dosen", href: "/profil" },
         ]}
       />
 

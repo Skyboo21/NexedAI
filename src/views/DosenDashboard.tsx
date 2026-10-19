@@ -3,6 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Check, ArrowRight } from "lucide-react";
 import NexedMasteryTableModule from "../components/NexedMasteryTableModule";
 import NexedStudentLogModal from "../components/NexedStudentLogModal";
 import { useAuthStore } from "../store/authStore";
@@ -151,8 +152,9 @@ export default function DosenDashboard() {
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401048</span>
                 </div>
                 {studentStatuses["Budi Santoso"] === "Selesai Ditinjau" ? (
-                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
-                    ✓ Selesai Ditinjau
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                    <Check className="w-3 h-3 text-emerald-600" />
+                    Selesai Ditinjau
                   </span>
                 ) : studentStatuses["Budi Santoso"] === "Dalam Penanganan" ? (
                   <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full">
@@ -178,7 +180,7 @@ export default function DosenDashboard() {
                   className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
                 >
                   <span>Tinjau Log</span>
-                  <span>&rarr;</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -190,8 +192,9 @@ export default function DosenDashboard() {
                   <span className="text-xs text-slate-500 font-mono">NIM: 202401092</span>
                 </div>
                 {studentStatuses["Siti Aminah"] === "Selesai Ditinjau" ? (
-                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
-                    ✓ Selesai Ditinjau
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                    <Check className="w-3 h-3 text-emerald-600" />
+                    Selesai Ditinjau
                   </span>
                 ) : studentStatuses["Siti Aminah"] === "Dalam Penanganan" ? (
                   <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full">
@@ -217,7 +220,7 @@ export default function DosenDashboard() {
                   className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
                 >
                   <span>Tinjau Log</span>
-                  <span>&rarr;</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

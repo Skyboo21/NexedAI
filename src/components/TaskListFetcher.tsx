@@ -1,3 +1,4 @@
+import { BookOpen } from "lucide-react";
 import { fetchLearningNodesApi } from "../services/apiService";
 
 export default async function TaskListFetcher() {
@@ -8,7 +9,7 @@ export default async function TaskListFetcher() {
     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
       <div className="flex justify-between items-center border-b border-slate-100 pb-3">
         <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-          <span>📑</span> Daftar Modul Belajar (Dirender Langsung dari Server RSC)
+          <BookOpen className="w-4 h-4 text-purple-600" /> Daftar Modul Belajar (Dirender Langsung dari Server RSC)
         </h3>
         <span className="text-xs bg-purple-100 text-purple-800 font-bold px-2.5 py-0.5 rounded-md">
           Zero-KB JS Component

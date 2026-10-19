@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Zap, Trophy, Star, GraduationCap, BookOpen, AlertTriangle, ArrowRight } from "lucide-react";
 import { useAuthStore } from "../../../src/store/authStore";
 
 export default function LoginPage() {
@@ -79,8 +80,9 @@ export default function LoginPage() {
           {/* Card 1: XP Simulation & Streak */}
           <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-xs hover:border-black/20 transition-all duration-300 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="bg-[#F4F4F6] text-black/80 border border-black/8 font-mono text-xs px-3 py-1 rounded-full">
-                ⚡ Progres Belajar Aktif
+              <span className="bg-[#F4F4F6] text-black/80 border border-black/8 font-mono text-xs px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>Progres Belajar Aktif</span>
               </span>
               <span className="text-xs font-mono text-black/50">Semester 2</span>
             </div>
@@ -106,8 +108,8 @@ export default function LoginPage() {
 
           {/* Card 2: Gamification Badge Preview */}
           <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-xs hover:border-black/20 transition-all duration-300 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#F4F4F6] border border-black/8 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
-              🏆
+            <div className="w-14 h-14 rounded-2xl bg-[#F4F4F6] border border-black/8 flex items-center justify-center shrink-0 shadow-2xs">
+              <Trophy className="w-7 h-7 text-amber-500" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -123,7 +125,9 @@ export default function LoginPage() {
           {/* Card 3: Student Testimonial */}
           <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-xs hover:border-black/20 transition-all duration-300 space-y-3">
             <div className="flex items-center gap-1 text-black text-sm">
-              <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              ))}
             </div>
             <p className="text-black/70 text-xs leading-relaxed italic">
               &ldquo;NexedAI membantu saya memahami konsep algoritma praktikum dalam 2 hari tanpa merasa stuck. Roadmap belajarnya sangat adaptif!&rdquo;
@@ -188,15 +192,21 @@ export default function LoginPage() {
                   href="/api/auth/quick-role?role=mahasiswa"
                   className="py-2.5 px-3 bg-white hover:bg-[#F4F4F6] border border-black/8 text-black font-medium text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 text-center no-underline cursor-pointer group"
                 >
-                  <span className="text-base group-hover:scale-110 transition-transform">🎓</span>
-                  <span>Masuk Instan Mahasiswa &rarr;</span>
+                  <GraduationCap className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="flex items-center gap-1">
+                    <span>Masuk Instan Mahasiswa</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
                 </a>
                 <a
                   href="/api/auth/quick-role?role=dosen"
                   className="py-2.5 px-3 bg-white hover:bg-[#F4F4F6] border border-black/8 text-black font-medium text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 text-center no-underline cursor-pointer group"
                 >
-                  <span className="text-base group-hover:scale-110 transition-transform">👨‍🏫</span>
-                  <span>Masuk Instan Dosen &rarr;</span>
+                  <BookOpen className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="flex items-center gap-1">
+                    <span>Masuk Instan Dosen</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
                 </a>
               </div>
             </div>
@@ -208,7 +218,7 @@ export default function LoginPage() {
                 className="p-3.5 bg-neutral-100 border border-black/15 rounded-2xl text-black text-xs font-medium space-y-1.5"
               >
                 <div className="flex items-center gap-2 font-semibold">
-                  <span>⚠️</span>
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{loginError}</span>
                 </div>
                 <a

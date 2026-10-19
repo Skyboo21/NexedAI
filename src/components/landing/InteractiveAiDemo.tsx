@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, X, ArrowRight, Lightbulb } from "lucide-react";
 
 interface SampleTopic {
   id: string;
@@ -59,7 +60,7 @@ const SAMPLE_TOPICS: SampleTopic[] = [
         "Tepat! WHILE loop ideal untuk kondisi di mana akhir perulangan tidak dapat diprediksi secara statis (seperti membaca stream input atau menunggu sinyal berhenti).",
     },
     aiAdvice:
-      "💡 Tips Nexed AI: Jika kamu sering mendapati program 'hang', selalu periksa baris update variabel pengontrol (seperti i++) sebelum kurung kurawal penutup loop!",
+      "Tips Nexed AI: Jika kamu sering mendapati program 'hang', selalu periksa baris update variabel pengontrol (seperti i++) sebelum kurung kurawal penutup loop!",
   },
   {
     id: "tree",
@@ -101,7 +102,7 @@ const SAMPLE_TOPICS: SampleTopic[] = [
         "Benar sekali! In-Order traversal mengunjungi [Kiri -> Induk -> Kanan], sehingga pada BST nilainya otomatis terurut dari terkecil ke terbesar.",
     },
     aiAdvice:
-      "💡 Tips Nexed AI: Bayangkan BST seperti menyortir buku di rak perpustakaan. Selalu mulai dari node tengah (root) untuk membelah pencarian menjadi dua bagian!",
+      "Tips Nexed AI: Bayangkan BST seperti menyortir buku di rak perpustakaan. Selalu mulai dari node tengah (root) untuk membelah pencarian menjadi dua bagian!",
   },
   {
     id: "recursion",
@@ -142,7 +143,7 @@ const SAMPLE_TOPICS: SampleTopic[] = [
         "Tepat! Tanpa base case, call stack akan terus bertambah hingga batas memori alokasi stack terlampaui (Stack Overflow).",
     },
     aiAdvice:
-      "💡 Tips Nexed AI: Selalu tulis Base Case pada baris paling pertama di dalam fungsi rekursifmu sebelum logika lainnya!",
+      "Tips Nexed AI: Selalu tulis Base Case pada baris paling pertama di dalam fungsi rekursifmu sebelum logika lainnya!",
   },
 ];
 
@@ -310,8 +311,8 @@ export function InteractiveAiDemo() {
                   <ul className="space-y-2">
                     {currentTopic.keyPoints.map((point) => (
                       <li key={point} className="flex items-start gap-2.5 text-xs text-slate-700">
-                        <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                          ✓
+                        <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="w-2.5 h-2.5" />
                         </span>
                         <span className="leading-relaxed">{point}</span>
                       </li>
@@ -347,7 +348,10 @@ export function InteractiveAiDemo() {
                       </div>
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-medium text-blue-700">
                         <span>Status: Rekomendasi</span>
-                        <span>Siap Uji &rarr;</span>
+                        <span className="inline-flex items-center gap-1">
+                          <span>Siap Uji</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -396,12 +400,16 @@ export function InteractiveAiDemo() {
                       >
                         <span className="leading-relaxed">{option}</span>
                         {quizSubmitted && isCorrect && (
-                          <span className="text-emerald-700 font-bold text-xs shrink-0">
-                            ✓ Benar
+                          <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs shrink-0">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Benar</span>
                           </span>
                         )}
                         {quizSubmitted && isSelected && !isCorrect && (
-                          <span className="text-rose-700 font-bold text-xs shrink-0">✕ Salah</span>
+                          <span className="inline-flex items-center gap-1 text-rose-700 font-bold text-xs shrink-0">
+                            <X className="w-3.5 h-3.5" />
+                            <span>Salah</span>
+                          </span>
                         )}
                       </button>
                     );
@@ -431,7 +439,10 @@ export function InteractiveAiDemo() {
                         Online
                       </span>
                     </div>
-                    <p className="text-slate-700 leading-relaxed">{currentTopic.aiAdvice}</p>
+                    <p className="text-slate-700 leading-relaxed flex items-start gap-1.5 pt-1">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <span>{currentTopic.aiAdvice}</span>
+                    </p>
                   </div>
                 </div>
 
@@ -441,9 +452,10 @@ export function InteractiveAiDemo() {
                   </span>
                   <a
                     href="/register"
-                    className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shrink-0"
+                    className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shrink-0 inline-flex items-center gap-1"
                   >
-                    Buka Asisten Penuh di Akun Anda &rarr;
+                    <span>Buka Asisten Penuh di Akun Anda</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>

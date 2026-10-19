@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Map, Bot, ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { type RegisterInput, RegisterInputSchema } from "../../../src/lib/validations/authSchema";
 import { useAuthStore } from "../../../src/store/authStore";
 
@@ -77,8 +78,9 @@ export default function RegisterPage() {
           {/* Card 1: Modular Roadmap Perkuliahan */}
           <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-xs hover:border-black/20 transition-all duration-300 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="bg-[#F4F4F6] text-black/80 border border-black/8 font-mono text-xs px-2.5 py-1 rounded-full">
-                🗺️ Kurikulum Berbasis AI
+              <span className="bg-[#F4F4F6] text-black/80 border border-black/8 font-mono text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
+                <Map className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Kurikulum Berbasis AI</span>
               </span>
               <span className="text-xs font-mono text-black/50">D3 TI UNS</span>
             </div>
@@ -92,8 +94,8 @@ export default function RegisterPage() {
 
           {/* Card 2: AI Retrieval Speed & Tutor */}
           <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-xs hover:border-black/20 transition-all duration-300 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#F4F4F6] border border-black/8 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
-              🤖
+            <div className="w-14 h-14 rounded-2xl bg-[#F4F4F6] border border-black/8 flex items-center justify-center shrink-0 shadow-2xs">
+              <Bot className="w-7 h-7 text-indigo-600" />
             </div>
             <div className="space-y-1">
               <span className="bg-black text-white text-[11px] font-mono px-2 py-0.5 rounded-full">
@@ -107,7 +109,7 @@ export default function RegisterPage() {
           {/* Card 3: Keamanan & Integritas Kampus */}
           <div className="bg-white border border-black/8 rounded-3xl p-6 shadow-xs hover:border-black/20 transition-all duration-300 space-y-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-black text-sm">🔒</span>
+              <ShieldCheck className="w-4 h-4 text-black shrink-0" />
               <span className="text-black font-medium text-xs uppercase tracking-wider font-mono">
                 Keamanan Terverifikasi
               </span>
@@ -159,7 +161,7 @@ export default function RegisterPage() {
                 role="alert"
                 className="p-3.5 bg-neutral-100 border border-black/15 rounded-2xl text-black text-xs font-medium flex items-center gap-2"
               >
-                <span>⚠️</span>
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{registerError}</span>
               </div>
             )}
@@ -169,7 +171,7 @@ export default function RegisterPage() {
                 role="status"
                 className="p-3.5 bg-neutral-100 border border-black/15 rounded-2xl text-black text-xs font-medium flex items-center gap-2"
               >
-                <span>✅</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{successMessage}</span>
               </div>
             )}
@@ -196,8 +198,8 @@ export default function RegisterPage() {
                   {...register("name")}
                 />
                 {errors.name && (
-                  <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1">
-                    <span>⚠️</span>
+                  <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                     <span>{errors.name.message}</span>
                   </p>
                 )}
@@ -223,8 +225,8 @@ export default function RegisterPage() {
                   {...register("email")}
                 />
                 {errors.email && (
-                  <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1">
-                    <span>⚠️</span>
+                  <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                     <span>{errors.email.message}</span>
                   </p>
                 )}
@@ -270,8 +272,8 @@ export default function RegisterPage() {
                     {...register("nimOrNip")}
                   />
                   {errors.nimOrNip && (
-                    <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1">
-                      <span>⚠️</span>
+                    <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                       <span>{errors.nimOrNip.message}</span>
                     </p>
                   )}
@@ -300,8 +302,8 @@ export default function RegisterPage() {
                     {...register("password")}
                   />
                   {errors.password && (
-                    <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1">
-                      <span>⚠️</span>
+                    <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                       <span>{errors.password.message}</span>
                     </p>
                   )}
@@ -327,8 +329,8 @@ export default function RegisterPage() {
                     {...register("confirmPassword")}
                   />
                   {errors.confirmPassword && (
-                    <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1">
-                      <span>⚠️</span>
+                    <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                       <span>{errors.confirmPassword.message}</span>
                     </p>
                   )}
@@ -348,8 +350,8 @@ export default function RegisterPage() {
                   </span>
                 </label>
                 {errors.terms && (
-                  <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1">
-                    <span>⚠️</span>
+                  <p role="alert" className="text-[11px] font-medium text-neutral-800 mt-1 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                     <span>{errors.terms.message}</span>
                   </p>
                 )}

@@ -3,6 +3,7 @@
 
 import type React from "react";
 import { useState } from "react";
+import { AlertTriangle, Plus, Check } from "lucide-react";
 import { z } from "zod";
 
 const FormTaskSchema = z.object({
@@ -111,8 +112,9 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
               }`}
             />
             {errors.title && (
-              <p className="text-rose-600 text-[11px] font-medium mt-1 flex items-center gap-1">
-                <span>⚠️</span> {errors.title}
+              <p className="text-rose-600 text-[11px] font-medium mt-1 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>{errors.title}</span>
               </p>
             )}
           </div>
@@ -166,13 +168,14 @@ export default function NexedFormEntryModule({ onTaskCreated }: NexedFormEntryPr
             type="submit"
             className="w-full py-2.5 px-4 bg-black hover:bg-neutral-800 text-white font-medium text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>+</span>
+            <Plus className="w-3.5 h-3.5" />
             <span>Tambah Target Belajar</span>
           </button>
 
           {successMessage && (
             <div className="mt-3 bg-emerald-50 border border-emerald-200/80 text-emerald-800 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5">
-              <span>✓</span> {successMessage}
+              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>{successMessage}</span>
             </div>
           )}
         </div>

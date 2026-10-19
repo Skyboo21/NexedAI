@@ -13,6 +13,7 @@ export const UserSchema = z.object({
   nimOrNip: z.string().optional(),
   semester: z.number().optional(),
   prodi: z.string().optional(),
+  xp: z.number().optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;

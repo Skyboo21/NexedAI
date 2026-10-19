@@ -4,6 +4,7 @@
 
 import type React from "react";
 import { useState } from "react";
+import { Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { type CreateTaskInput, CreateTaskSchema } from "../schemas/taskSchema";
 
 export default function TaskFormClient() {
@@ -31,7 +32,7 @@ export default function TaskFormClient() {
     }
 
     setSuccess(
-      `✅ [Klien Validated] Tugas "${result.data.title}" divalidasi oleh Zod & siap dikirim ke Server Action!`,
+      `[Klien Validated] Tugas "${result.data.title}" divalidasi oleh Zod & siap dikirim ke Server Action!`,
     );
     setFormData({
       title: "",
@@ -48,7 +49,7 @@ export default function TaskFormClient() {
     >
       <div className="flex justify-between items-center border-b border-slate-100 pb-3">
         <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-          <span>➕</span> Tambah Tugas Baru (Client Component Boundary)
+          <Plus className="w-4 h-4 text-purple-600" /> Tambah Tugas Baru (Client Component Boundary)
         </h3>
         <span className="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-md">
           "use client" Isolated Leaf
@@ -56,13 +57,15 @@ export default function TaskFormClient() {
       </div>
 
       {errors && (
-        <div className="p-3 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-200">
-          ⚠️ {errors}
+        <div className="p-3 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-200 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
+          <span>{errors}</span>
         </div>
       )}
       {success && (
-        <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200">
-          {success}
+        <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+          <span>{success}</span>
         </div>
       )}
 
@@ -83,9 +86,9 @@ export default function TaskFormClient() {
         />
         <button
           type="submit"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors shadow-sm"
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors shadow-sm inline-flex items-center justify-center gap-2"
         >
-          ➕ Simpan Tugas (Zod Validated)
+          <Plus className="w-4 h-4" /> Simpan Tugas (Zod Validated)
         </button>
       </div>
     </form>

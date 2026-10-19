@@ -4,6 +4,28 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import {
+  Lightbulb,
+  Layers,
+  Code2,
+  GraduationCap,
+  Check,
+  Lock,
+  CheckCircle2,
+  Target,
+  Globe,
+  Search,
+  Bot,
+  Video,
+  BookOpen,
+  HelpCircle,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  Award,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import ModuleRagChat from "../../../../src/components/ModuleRagChat";
 import { LEARNING_TOPICS, type LearningTopic } from "../../../../src/data/learningTopics";
 import {
@@ -11,6 +33,13 @@ import {
   getAdaptiveRecommendations,
   type AdaptiveLearningResponse,
 } from "../../../../src/services/apiService";
+import {
+  getCompletedTopicIds,
+  markModuleCompleted,
+  saveModuleProgress,
+  getModuleProgress,
+} from "../../../../src/lib/progressStorage";
+import { useAuthStore } from "../../../../src/store/authStore";
 
 interface ChatMessage {
   id: string;
@@ -25,28 +54,28 @@ const COURSERA_STAGES = [
     title: "Fondasi Konseptual",
     shortTitle: "Konseptual",
     description: "Silabus, capaian pembelajaran khusus & landasan teori topik.",
-    icon: "📖",
+    icon: Lightbulb,
   },
   {
     step: 2,
     title: "Komponen & Logika",
     shortTitle: "Logika & Kode",
     description: "Konsep esensial, struktur kode Python/C++ & simulasi eksekusi.",
-    icon: "💻",
+    icon: Layers,
   },
   {
     step: 3,
     title: "Implementasi & Pengayaan",
     shortTitle: "Praktik & AI",
     description: "Deep-link materi industri terverifikasi, uji diagnostik & AI Tutor.",
-    icon: "🚀",
+    icon: Code2,
   },
   {
     step: 4,
     title: "Kuis Active Recall",
     shortTitle: "Evaluasi",
     description: "Uji pemahaman komprehensif, evaluasi instan & klaim XP.",
-    icon: "📝",
+    icon: GraduationCap,
   },
 ];
 
@@ -106,14 +135,8 @@ export default function DynamicModulReaderPage() {
   // Load completed topics
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("completed_topics");
-      if (saved) {
-        setCompletedTopicIds(JSON.parse(saved));
-      } else {
-        const defaultCompleted = [1, 2];
-        localStorage.setItem("completed_topics", JSON.stringify(defaultCompleted));
-        setCompletedTopicIds(defaultCompleted);
-      }
+      const ids = getCompletedTopicIds();
+      setCompletedTopicIds(ids);
     } catch {
       // safe fallback
     }
@@ -122,10 +145,25 @@ export default function DynamicModulReaderPage() {
   // Load per-stage progress for this topic
   useEffect(() => {
     try {
+      const savedProgress = getModuleProgress(String(currentTopic.id));
       const savedStages = localStorage.getItem(`stage_progress_${currentTopic.id}`);
       const isTopicDone = completedTopicIds.includes(currentTopic.id);
 
-      if (savedStages) {
+      if (savedProgress && savedProgress.completedSteps.length > 0) {
+        const stageMap: Record<number, boolean> = { 1: false, 2: false, 3: false, 4: false };
+        savedProgress.completedSteps.forEach((s) => {
+          stageMap[s] = true;
+        });
+        setStageProgress(stageMap);
+        let firstIncomplete = 1;
+        for (let s = 1; s <= 4; s++) {
+          if (!stageMap[s]) {
+            firstIncomplete = s;
+            break;
+          }
+        }
+        setCurrentStage(firstIncomplete);
+      } else if (savedStages) {
         const parsed = JSON.parse(savedStages) as Record<number, boolean>;
         setStageProgress(parsed);
         // Default to first incomplete stage or stage 1
@@ -227,11 +265,11 @@ export default function DynamicModulReaderPage() {
       const lower = textToSend.toLowerCase();
       if (lower.includes("analogi") || lower.includes("sehari-hari")) {
         if (currentTopic.id === 3) {
-          responseText = `💡 **Analogi Kehidupan Nyata (Looping):**\n\n• **FOR Loop** seperti menekan tombol dispenser air untuk mengisi 5 botol minum secara berurutan. Kamu sudah tahu persis jumlah botolnya (5).\n• **WHILE Loop** seperti mengisi bak mandi hingga pelampung batas air naik. Kamu tidak menghitung berapa liter air mengalir, yang penting berhenti saat bak sudah penuh!`;
+          responseText = `**Analogi Kehidupan Nyata (Looping):**\n\n• **FOR Loop** seperti menekan tombol dispenser air untuk mengisi 5 botol minum secara berurutan. Kamu sudah tahu persis jumlah botolnya (5).\n• **WHILE Loop** seperti mengisi bak mandi hingga pelampung batas air naik. Kamu tidak menghitung berapa liter air mengalir, yang penting berhenti saat bak sudah penuh!`;
         } else if (currentTopic.id === 2) {
-          responseText = `💡 **Analogi Kehidupan Nyata (Kondisional):**\n\nKondisional itu seperti lampu lalu lintas! JIKA lampu berwarna HIJAU, mobil melaju. JIKA KUNING, hati-hati. SELAIN ITU (MERAH), mobil harus berhenti total.`;
+          responseText = `**Analogi Kehidupan Nyata (Kondisional):**\n\nKondisional itu seperti lampu lalu lintas! JIKA lampu berwarna HIJAU, mobil melaju. JIKA KUNING, hati-hati. SELAIN ITU (MERAH), mobil harus berhenti total.`;
         } else {
-          responseText = `💡 **Analogi Konseptual:**\nKonsep "${currentTopic.title}" ibarat resep memasak langkah-demi-langkah. Setiap instruksi harus jelas, runut, dan memiliki hasil akhir yang terukur.`;
+          responseText = `**Analogi Konseptual:**\nKonsep "${currentTopic.title}" ibarat resep memasak langkah-demi-langkah. Setiap instruksi harus jelas, runut, dan memiliki hasil akhir yang terukur.`;
         }
       }
 
@@ -263,20 +301,32 @@ export default function DynamicModulReaderPage() {
       localStorage.setItem(`stage_progress_${currentTopic.id}`, JSON.stringify(updatedStages));
     } catch {}
 
-    if (!completedTopicIds.includes(currentTopic.id)) {
+    const alreadyDone = completedTopicIds.includes(currentTopic.id);
+    const xpReward = alreadyDone ? 0 : currentTopic.xp;
+
+    const correctAnswersCount = Object.entries(selectedAnswers).filter(
+      ([idx, ans]) => ans === currentTopic.quiz[Number(idx)]?.correctIndex,
+    ).length;
+    const score =
+      currentTopic.quiz.length > 0
+        ? Math.round((correctAnswersCount / currentTopic.quiz.length) * 100)
+        : 100;
+
+    markModuleCompleted(String(currentTopic.id), currentTopic.title, xpReward, score);
+
+    if (xpReward > 0) {
+      useAuthStore.getState().addXp(xpReward);
+    }
+
+    if (!alreadyDone) {
       const updated = [...completedTopicIds, currentTopic.id];
       setCompletedTopicIds(updated);
-      try {
-        localStorage.setItem("completed_topics", JSON.stringify(updated));
-      } catch {
-        // safe
-      }
-      setAwardedXp(currentTopic.xp);
-      setShowCompletionModal(true);
+      setAwardedXp(xpReward);
     } else {
-      setShowCompletionModal(true);
       setAwardedXp(0);
     }
+
+    setShowCompletionModal(true);
   };
 
   const handleNextTopic = () => {
@@ -314,6 +364,17 @@ export default function DynamicModulReaderPage() {
       localStorage.setItem(`stage_progress_${currentTopic.id}`, JSON.stringify(updated));
     } catch {}
 
+    const completedSteps = [1, 2, 3, 4].filter((s) => updated[s]);
+    saveModuleProgress({
+      moduleId: String(currentTopic.id),
+      title: currentTopic.title,
+      completedSteps,
+      progressPercent: Math.round((completedSteps.length / 4) * 100),
+      isCompleted: completedSteps.length === 4,
+      xpEarned: completedSteps.length === 4 ? currentTopic.xp : 0,
+      lastUpdated: new Date().toISOString(),
+    });
+
     if (stageNum < 4) {
       setCurrentStage(stageNum + 1);
       contentAreaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -345,7 +406,8 @@ export default function DynamicModulReaderPage() {
               href="/modul"
               className="min-h-[44px] flex items-center text-xs font-medium px-4 py-2 rounded-full bg-[#F4F4F6] hover:bg-neutral-200 text-black transition-colors border border-black/8 cursor-pointer"
             >
-              &larr; Katalog Modul
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+              <span>Katalog Modul</span>
             </Link>
             <div>
               <div className="flex items-center gap-2 text-[11px] text-neutral-500 font-medium">
@@ -382,7 +444,13 @@ export default function DynamicModulReaderPage() {
                   </span>
                 </span>
                 <span className="text-neutral-500 text-[11px]">
-                  {progressPercent === 100 ? "✓ Tuntas" : "Aktif"}
+                  {progressPercent === 100 ? (
+                    <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                      <Check className="w-3 h-3" /> Tuntas
+                    </span>
+                  ) : (
+                    "Aktif"
+                  )}
                 </span>
               </div>
               <div className="w-full bg-neutral-200 h-2 rounded-full overflow-hidden">
@@ -400,7 +468,7 @@ export default function DynamicModulReaderPage() {
             className="min-h-[44px] px-5 py-2 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <span>Lanjutkan Belajar</span>
-            <span className="text-xs">&rarr;</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>
@@ -432,7 +500,7 @@ export default function DynamicModulReaderPage() {
               </div>
               <div className="flex items-center gap-2 text-neutral-500">
                 <span className="text-[11px] font-mono font-bold text-black">{progressPercent}%</span>
-                <span className="text-xs">{mobileSyllabusOpen ? "▲" : "▼"}</span>
+                {mobileSyllabusOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
             </button>
           </div>
@@ -502,7 +570,13 @@ export default function DynamicModulReaderPage() {
                           : "bg-neutral-200 text-neutral-400 border-neutral-300"
                       }`}
                     >
-                      {isDone ? "✓" : unlocked ? st.step : "🔒"}
+                      {isDone ? (
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      ) : unlocked ? (
+                        st.step
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 text-neutral-400" />
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -516,13 +590,13 @@ export default function DynamicModulReaderPage() {
                         </span>
                         {isDone && (
                           <span
-                            className={`text-[9px] font-mono px-2 py-0.5 rounded-full border ${
+                            className={`text-[9px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${
                               isCurrent
                                 ? "bg-neutral-800 text-emerald-400 border-neutral-700"
                                 : "bg-emerald-100 text-emerald-800 border-emerald-300"
                             }`}
                           >
-                            ✓ Selesai
+                            <Check className="w-2.5 h-2.5" /> Selesai
                           </span>
                         )}
                         {!unlocked && (
@@ -571,7 +645,7 @@ export default function DynamicModulReaderPage() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="truncate">{topic.title}</span>
-                        {done && <span className="text-[10px] text-emerald-600 font-bold">✓</span>}
+                        {done && <Check className="w-3 h-3 text-emerald-600 shrink-0" />}
                       </div>
                     </Link>
                   );
@@ -592,6 +666,7 @@ export default function DynamicModulReaderPage() {
               const isCurrent = currentStage === st.step;
               const isDone = !!stageProgress[st.step];
               const unlocked = isStageUnlocked(st.step);
+              const StageIcon = st.icon;
 
               return (
                 <button
@@ -609,16 +684,16 @@ export default function DynamicModulReaderPage() {
                       : "text-neutral-300 cursor-not-allowed"
                   }`}
                 >
-                  <span>{st.icon}</span>
+                  <StageIcon className="w-4 h-4 shrink-0" />
                   <span className="hidden sm:inline">Tahap {st.step}:</span>
                   <span>{st.shortTitle}</span>
                   {isDone && (
                     <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                      className={`p-0.5 rounded-full ${
                         isCurrent ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                       }`}
                     >
-                      ✓
+                      <Check className="w-3 h-3" />
                     </span>
                   )}
                 </button>
@@ -643,8 +718,9 @@ export default function DynamicModulReaderPage() {
                     </span>
                   </div>
                   {stageProgress[1] && (
-                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
-                      <span>✓</span> <span>Tahap Selesai</span>
+                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Tahap Selesai</span>
                     </span>
                   )}
                 </div>
@@ -664,7 +740,7 @@ export default function DynamicModulReaderPage() {
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="w-7 h-7 rounded-xl bg-black text-white text-xs flex items-center justify-center font-bold">
-                    🎯
+                    <Target className="w-4 h-4 text-white" />
                   </span>
                   <h3 className="text-sm sm:text-base font-semibold text-black">
                     Capaian Pembelajaran Khusus (Course Learning Outcomes)
@@ -687,7 +763,7 @@ export default function DynamicModulReaderPage() {
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="w-7 h-7 rounded-xl bg-[#F4F4F6] text-black text-xs flex items-center justify-center font-bold border border-black/10">
-                    💡
+                    <Lightbulb className="w-4 h-4 text-amber-600" />
                   </span>
                   <h3 className="text-sm sm:text-base font-semibold text-black">
                     Intuisi Konsep & Cara Berpikir Komputasional
@@ -712,8 +788,17 @@ export default function DynamicModulReaderPage() {
                   onClick={() => handleMarkStageAndAdvance(1)}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>{stageProgress[1] ? "Lanjut ke Tahap 2: Komponen & Logika" : "✓ Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  <span className="flex items-center gap-1.5">
+                    {stageProgress[1] ? (
+                      "Lanjut ke Tahap 2: Komponen & Logika"
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Tandai Paham & Lanjut
+                      </>
+                    )}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -736,8 +821,9 @@ export default function DynamicModulReaderPage() {
                     </span>
                   </div>
                   {stageProgress[2] && (
-                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
-                      <span>✓</span> <span>Tahap Selesai</span>
+                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Tahap Selesai</span>
                     </span>
                   )}
                 </div>
@@ -779,7 +865,13 @@ export default function DynamicModulReaderPage() {
                             onClick={() => handleCopyCode(concept.codeSnippet || "", idx)}
                             className="min-h-[32px] px-3 py-1 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] transition-colors cursor-pointer"
                           >
-                            {copiedCodeIndex === idx ? "✓ Tersalin" : "Salin Kode"}
+                            {copiedCodeIndex === idx ? (
+                              <span className="flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-400" /> Tersalin
+                              </span>
+                            ) : (
+                              "Salin Kode"
+                            )}
                           </button>
                           <button
                             type="button"
@@ -813,17 +905,27 @@ export default function DynamicModulReaderPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStage(1)}
-                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer"
+                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  &larr; Kembali ke Tahap 1
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Kembali ke Tahap 1</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMarkStageAndAdvance(2)}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>{stageProgress[2] ? "Lanjut ke Tahap 3: Praktik & AI" : "✓ Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  <span className="flex items-center gap-1.5">
+                    {stageProgress[2] ? (
+                      "Lanjut ke Tahap 3: Praktik & AI"
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Tandai Paham & Lanjut
+                      </>
+                    )}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -846,8 +948,9 @@ export default function DynamicModulReaderPage() {
                     </span>
                   </div>
                   {stageProgress[3] && (
-                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
-                      <span>✓</span> <span>Tahap Selesai</span>
+                    <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Tahap Selesai</span>
                     </span>
                   )}
                 </div>
@@ -871,7 +974,7 @@ export default function DynamicModulReaderPage() {
                         : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10"
                     }`}
                   >
-                    <span>🌐</span>
+                    <Globe className="w-3.5 h-3.5" />
                     <span>Materi Pengayaan (Deep-Link)</span>
                   </button>
                   <button
@@ -883,7 +986,7 @@ export default function DynamicModulReaderPage() {
                         : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10"
                     }`}
                   >
-                    <span>🔍</span>
+                    <Search className="w-3.5 h-3.5" />
                     <span>Asisten RAG Modul</span>
                   </button>
                   <button
@@ -895,7 +998,7 @@ export default function DynamicModulReaderPage() {
                         : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10"
                     }`}
                   >
-                    <span>🤖</span>
+                    <Bot className="w-3.5 h-3.5" />
                     <span>Asisten Tutor AI</span>
                   </button>
                 </div>
@@ -916,7 +1019,7 @@ export default function DynamicModulReaderPage() {
                         </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-bold text-black flex items-center gap-2">
-                        <span>🌐</span>
+                        <Globe className="w-4 h-4 text-indigo-600" />
                         <span>Rekomendasi Materi Pengayaan (AI Curated)</span>
                       </h3>
                       <p className="text-xs text-neutral-500">
@@ -960,10 +1063,21 @@ export default function DynamicModulReaderPage() {
                                       : "bg-[#F4F4F6] text-black border-black/10"
                                   }`}
                                 >
-                                  <span>{isVideo ? "▶ YouTube" : "📖 Dokumentasi"}</span>
+                                  {isVideo ? (
+                                    <>
+                                      <Video className="w-3.5 h-3.5 text-rose-600" />
+                                      <span>YouTube</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <BookOpen className="w-3.5 h-3.5 text-slate-700" />
+                                      <span>Dokumentasi</span>
+                                    </>
+                                  )}
                                 </span>
-                                <span className="text-[10px] font-mono text-neutral-500">
-                                  ⏱ {item.duration}
+                                <span className="flex items-center gap-1 text-[10px] font-mono text-neutral-500">
+                                  <Clock className="w-3 h-3 text-neutral-400" />
+                                  <span>{item.duration}</span>
                                 </span>
                               </div>
                               <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
@@ -998,7 +1112,7 @@ export default function DynamicModulReaderPage() {
                   {adaptiveRecs?.diagnostic_questions && adaptiveRecs.diagnostic_questions.length > 0 && (
                     <div className="p-4 sm:p-5 rounded-2xl bg-[#F4F4F6] border border-black/8 space-y-2">
                       <span className="text-[11px] font-mono font-bold text-black flex items-center gap-1.5">
-                        <span>❓</span>
+                        <HelpCircle className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                         <span>Uji Diagnostik Refleksi Pemahaman:</span>
                       </span>
                       <ul className="space-y-1.5 text-xs text-neutral-700 pl-1">
@@ -1115,17 +1229,27 @@ export default function DynamicModulReaderPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStage(2)}
-                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer"
+                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  &larr; Kembali ke Tahap 2
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Kembali ke Tahap 2</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMarkStageAndAdvance(3)}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>{stageProgress[3] ? "Lanjut ke Tahap 4: Kuis Evaluasi" : "✓ Tandai Paham & Lanjut"}</span>
-                  <span>&rarr;</span>
+                  <span className="flex items-center gap-1.5">
+                    {stageProgress[3] ? (
+                      "Lanjut ke Tahap 4: Kuis Evaluasi"
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Tandai Paham & Lanjut
+                      </>
+                    )}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -1154,8 +1278,9 @@ export default function DynamicModulReaderPage() {
                   </p>
                 </div>
                 {isCompleted && (
-                  <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full font-semibold">
-                    ✓ Modul Telah Tuntas
+                  <span className="flex items-center gap-1.5 text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Modul Telah Tuntas</span>
                   </span>
                 )}
               </div>
@@ -1205,10 +1330,15 @@ export default function DynamicModulReaderPage() {
                             >
                               <span>{opt}</span>
                               {quizSubmitted && optIndex === q.correctIndex && (
-                                <span className="text-white font-mono text-[10px] bg-neutral-800 px-2 py-0.5 rounded-full shrink-0 ml-2">✓ Benar</span>
+                                <span className="text-white font-mono text-[10px] bg-neutral-800 px-2 py-0.5 rounded-full shrink-0 ml-2 flex items-center gap-1">
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span>Benar</span>
+                                </span>
                               )}
                               {quizSubmitted && isOptionSelected && optIndex !== q.correctIndex && (
-                                <span className="text-black font-mono text-[10px] bg-neutral-300 px-2 py-0.5 rounded-full shrink-0 ml-2">✕ Salah</span>
+                                <span className="text-black font-mono text-[10px] bg-neutral-300 px-2 py-0.5 rounded-full shrink-0 ml-2">
+                                  Salah
+                                </span>
                               )}
                             </button>
                           );
@@ -1233,9 +1363,10 @@ export default function DynamicModulReaderPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStage(3)}
-                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer text-center"
+                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5"
                 >
-                  &larr; Kembali ke Tahap 3
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Kembali ke Tahap 3</span>
                 </button>
 
                 {!quizSubmitted ? (
@@ -1262,9 +1393,9 @@ export default function DynamicModulReaderPage() {
                     <button
                       type="button"
                       onClick={handleCompleteTopic}
-                      className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-xs cursor-pointer flex items-center gap-1.5"
+                      className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-xs cursor-pointer flex items-center gap-2"
                     >
-                      <span>✓</span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                       <span>{isCompleted ? "Topik Tuntas • Buka Rekap" : "Selesaikan Modul & Klaim XP"}</span>
                     </button>
                   </div>
@@ -1297,7 +1428,7 @@ export default function DynamicModulReaderPage() {
               className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <span>{stageProgress[currentStage] ? "Lanjut Tahap" : "Tandai Paham & Lanjut"}</span>
-              <span>&rarr;</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           ) : (
             <button
@@ -1311,7 +1442,14 @@ export default function DynamicModulReaderPage() {
               }}
               className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <span>{quizSubmitted ? "✓ Klaim +" + currentTopic.xp + " XP" : "Kirim Jawaban Kuis"}</span>
+              {quizSubmitted ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Klaim +{currentTopic.xp} XP</span>
+                </>
+              ) : (
+                <span>Kirim Jawaban Kuis</span>
+              )}
             </button>
           )}
         </div>
@@ -1321,8 +1459,8 @@ export default function DynamicModulReaderPage() {
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-xl text-center space-y-4 border border-black/10 animate-in fade-in">
-            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-xl mx-auto font-bold shadow-xs">
-              ✓
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs border border-emerald-200">
+              <Award className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-light text-black">Selamat! Topik Tuntas</h3>
             <p className="text-xs text-neutral-600 leading-relaxed">
@@ -1331,8 +1469,9 @@ export default function DynamicModulReaderPage() {
             </p>
 
             {awardedXp > 0 && (
-              <div className="py-2 px-4 rounded-full bg-[#F4F4F6] border border-black/10 text-black font-mono font-medium text-xs inline-block">
-                +{awardedXp} XP Berhasil Ditambahkan
+              <div className="py-2 px-4 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-medium text-xs inline-flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>+{awardedXp} XP Berhasil Ditambahkan</span>
               </div>
             )}
 
@@ -1340,9 +1479,10 @@ export default function DynamicModulReaderPage() {
               <button
                 type="button"
                 onClick={handleNextTopic}
-                className="w-full min-h-[44px] py-2.5 rounded-full bg-black hover:bg-neutral-800 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer"
+                className="w-full min-h-[44px] py-2.5 rounded-full bg-black hover:bg-neutral-800 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Lanjut ke Topik Berikutnya &rarr;
+                <span>Lanjut ke Topik Berikutnya</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"

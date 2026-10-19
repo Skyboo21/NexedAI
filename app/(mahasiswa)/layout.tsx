@@ -17,17 +17,16 @@ export default function MahasiswaLayout({ children }: { children: React.ReactNod
         userStatusTitle="Mahasiswa Aktif"
         userStatusSubtitle="Semester 4 • Algoritma & Pemrograman"
         navItems={[
-          { label: "Beranda", href: "/dashboard", icon: "🏠" },
+          { label: "Beranda", href: "/dashboard" },
           {
             label: "Modul Adaptif",
             href: "/modul",
-            icon: "📚",
             badge: "5 Bab",
             badgeColor: "indigo",
           },
-          { label: "Peta Belajar", href: "/dashboard#peta", icon: "🗺️" },
-          { label: "Riwayat Aktivitas", href: "/dashboard#riwayat", icon: "📝" },
-          { label: "Profil Saya", href: "/profil", icon: "👤" },
+          { label: "Peta Belajar", href: "/dashboard#peta" },
+          { label: "Riwayat Aktivitas", href: "/dashboard#riwayat" },
+          { label: "Profil Saya", href: "/profil" },
         ]}
       />
 

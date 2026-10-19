@@ -3,6 +3,7 @@
 
 import type React from "react";
 import { useState } from "react";
+import { X } from "lucide-react";
 
 export interface TaskItem {
   id: number;
@@ -162,7 +163,7 @@ export default function TaskTodoList() {
                 aria-label={`Hapus tugas ${task.title}`}
                 className="text-neutral-400 hover:text-rose-600 text-xs p-1 rounded-lg transition-colors shrink-0 cursor-pointer"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             </li>
           ))

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { RotateCw, Search, AlertTriangle, ArrowRight } from "lucide-react";
 import { useStudentMastery } from "../services/queries";
 
 interface NexedMasteryTableModuleProps {
@@ -53,7 +54,7 @@ export default function NexedMasteryTableModule({
               : "bg-white text-slate-700 border-slate-200/80 hover:bg-slate-50 hover:text-indigo-700 shadow-xs"
           }`}
         >
-          <span className={isFetching ? "animate-spin" : ""}>🔄</span>
+          <RotateCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
           <span>{isFetching ? "Menyinkronkan..." : "Segarkan Data"}</span>
         </button>
       </div>
@@ -61,7 +62,7 @@ export default function NexedMasteryTableModule({
       <div className="flex flex-col md:flex-row gap-3 mb-6">
         <div className="relative flex-1 min-w-[240px]">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-            🔍
+            <Search className="w-3.5 h-3.5 text-slate-400" />
           </span>
           <input
             type="text"
@@ -107,7 +108,7 @@ export default function NexedMasteryTableModule({
       {!isLoading && isError && (
         <div className="p-5 bg-rose-50 border border-rose-200/80 rounded-2xl text-rose-800 space-y-3">
           <div className="font-bold text-sm flex items-center gap-2">
-            <span>⚠️</span>
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>Gagal Memuat Data Server</span>
           </div>
           <p className="text-xs text-rose-600">
@@ -205,7 +206,7 @@ export default function NexedMasteryTableModule({
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 text-xs font-semibold transition-all cursor-pointer"
                             >
                               <span>Tinjau Log</span>
-                              <span>&rarr;</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           </td>
                         )}
