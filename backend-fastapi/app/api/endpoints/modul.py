@@ -57,9 +57,20 @@ async def upload_modul(moduleId: str = Form(...), file: UploadFile = File(...)):
 @router.post("/modul/chat", response_model=AiChatResponse)
 def chat_modul(payload: ChatPromptRequest):
     user_query = payload.prompt or payload.message or "Pertanyaan materi"
+    lower_query = user_query.lower()
+
+    if "infinite loop" in lower_query:
+        msg = "Infinite Loop terjadi bila batas kondisi (seperti i < 10) tidak pernah tercapai, biasanya karena kamu lupa menambahkan increment (i++). Program akan terus berjalan sampai kehabisan memori. Harus sangat berhati-hati!"
+    elif "for loop" in lower_query:
+        msg = "FOR Loop ibarat kamu disuruh berlari keliling lapangan sebanyak 5 putaran. Kamu sudah tahu persis jumlah akhirnya (5) sebelum mulai."
+    elif "while loop" in lower_query:
+        msg = "WHILE Loop ibarat kamu disuruh berlari keliling lapangan sampai kamu capek. Kamu tidak tahu berapa putaran pastinya, tapi tahu persis kapan harus berhenti (saat capek)."
+    else:
+        msg = f"NEXED AI Tutor (FastAPI Engine): Penjelasan interaktif terkait '{user_query}' berhasil dirangkum berdasarkan materi modul."
+
     return {
         "status": "success",
-        "message": f"NEXED AI Tutor (FastAPI Engine): Penjelasan interaktif terkait '{user_query}' berhasil dirangkum berdasarkan materi modul.",
+        "message": msg,
         "timestamp": datetime.now().isoformat(),
     }
 

@@ -60,6 +60,37 @@ const ANALYSIS_STEPS = [
   { percent: 100, label: "Menghasilkan ringkasan dan kuis latihan aktif...", icon: "✨" },
 ];
 
+const HUB_COURSERA_STAGES = [
+  {
+    step: 1,
+    title: "Fondasi Konseptual",
+    shortTitle: "Konseptual",
+    description: "Ringkasan eksekutif, capaian pokok & istilah esensial materi.",
+    icon: "📖",
+  },
+  {
+    step: 2,
+    title: "Komponen & Logika",
+    shortTitle: "Peta Belajar",
+    description: "Peta belajar adaptif bertahap, panduan terperinci & skenario implementasi.",
+    icon: "🗺️",
+  },
+  {
+    step: 3,
+    title: "Praktik & Pendampingan AI",
+    shortTitle: "Praktik & AI",
+    description: "Deep-link materi industri terverifikasi, uji diagnostik & tanya tutor AI.",
+    icon: "🚀",
+  },
+  {
+    step: 4,
+    title: "Kuis Active Recall",
+    shortTitle: "Evaluasi",
+    description: "Uji daya serap konsep esensial, evaluasi instan & skor penguasaan.",
+    icon: "📝",
+  },
+];
+
 function CodeBlockSnippet({ code, language }: { code: string; language: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -262,10 +293,19 @@ export default function NexedAiModuleHub() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [analysisResult, setAnalyzedResult] = useState<AnalyzedModuleResult | null>(null);
 
-  // Result Tabs
+  // Result Tabs & Coursera Stages (1..4)
   const [activeResultTab, setActiveResultTab] = useState<"summary" | "roadmap" | "quiz" | "chat">(
     "summary",
   );
+  const [hubCurrentStage, setHubCurrentStage] = useState<number>(1);
+  const [hubStageProgress, setHubStageProgress] = useState<Record<number, boolean>>({
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+  });
+  const [hubMobileSyllabusOpen, setHubMobileSyllabusOpen] = useState<boolean>(false);
+  const hubStageContainerRef = useRef<HTMLDivElement>(null);
 
   // Adaptive Learning & External Recommendations
   const [adaptiveRecs, setAdaptiveRecs] = useState<AdaptiveLearningResponse | null>(null);
@@ -617,6 +657,8 @@ Silabus & Fokus Pembahasan:
               });
 
             setAnalyzedResult(chosenData);
+            setHubCurrentStage(1);
+            setHubStageProgress({ 1: false, 2: false, 3: false, 4: false });
             const initialRoadmap: Record<number, boolean> = {};
             for (const stepItem of chosenData.roadmap) {
               initialRoadmap[stepItem.step] = false;
@@ -821,17 +863,54 @@ Silabus & Fokus Pembahasan:
   };
 
   useEffect(() => {
-    if (activeResultTab === "chat" && chatContainerRef.current) {
+    if ((activeResultTab === "chat" || hubCurrentStage === 3) && chatContainerRef.current) {
       chatContainerRef.current.scrollTo({
         top: chatContainerRef.current.scrollHeight,
         behavior: "smooth",
       });
     }
-  }, [chatMessages, isAiReplying, activeResultTab]);
+  }, [chatMessages, isAiReplying, activeResultTab, hubCurrentStage]);
 
   const roadmapCompletedCount = Object.values(roadmapStatus).filter(Boolean).length;
   const roadmapTotal = analysisResult?.roadmap.length || 3;
   const roadmapPercent = Math.round((roadmapCompletedCount / roadmapTotal) * 100);
+
+  // Coursera Progress calculations for Hub
+  const hubCompletedStagesCount = [1, 2, 3, 4].filter((s) => hubStageProgress[s]).length;
+  const hubProgressPercent = Math.round((hubCompletedStagesCount / 4) * 100);
+
+  const getHubFirstIncompleteStage = (): number => {
+    for (let s = 1; s <= 4; s++) {
+      if (!hubStageProgress[s]) return s;
+    }
+    return 4;
+  };
+
+  const handleHubContinueLearning = () => {
+    const nextIncomplete = getHubFirstIncompleteStage();
+    setHubCurrentStage(nextIncomplete);
+    hubStageContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleHubMarkStageAndAdvance = (stageNum: number) => {
+    const updated = { ...hubStageProgress, [stageNum]: true };
+    setHubStageProgress(updated);
+    if (stageNum < 4) {
+      setHubCurrentStage(stageNum + 1);
+      hubStageContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      triggerConfetti();
+    }
+  };
+
+  const isHubStageUnlocked = (stageNum: number): boolean => {
+    if (stageNum === 1) return true;
+    if (hubStageProgress[stageNum] || hubStageProgress[stageNum - 1]) return true;
+    for (let s = 1; s < stageNum; s++) {
+      if (!hubStageProgress[s]) return false;
+    }
+    return true;
+  };
 
   return (
     <section
@@ -1217,114 +1296,181 @@ Silabus & Fokus Pembahasan:
         </div>
       )}
 
-      {/* VIEW C: INSTANT ASSISTANT VIEW (4 TABS) */}
+      {/* VIEW C: COURSERA STRUCTURED LEARNING FLOW (4 STAGES) */}
       {analysisResult && !isAnalyzing && (
-        <div className="space-y-6 animate-in fade-in">
+        <div ref={hubStageContainerRef} className="space-y-6 animate-in fade-in pb-28 md:pb-8">
           {/* Header of analyzed module */}
-          <div className="p-6 rounded-2xl bg-[#FAFAFA] border border-black/8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1.5">
+          <div className="p-6 rounded-3xl bg-[#FAFAFA] border border-black/8 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full">
+                    ✓ Berhasil Dianalisis AI
+                  </span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full">
+                    Tingkat: {analysisResult.difficulty}
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-light text-black tracking-tight">
+                  {analysisResult.title}
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  Estimasi Waktu Belajar: <strong className="text-black">{analysisResult.estimatedTime}</strong> • Potensi
+                  Reward: <strong className="text-black font-mono">+{analysisResult.xpReward} XP</strong>
+                </p>
+              </div>
+
+              {/* Quick action badges */}
+              <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+                <div className="p-3 bg-white border border-black/8 rounded-2xl text-center min-w-[96px] shadow-2xs">
+                  <div className="text-[10px] text-neutral-400 font-mono uppercase">Penguasaan</div>
+                  <div className="text-base font-light text-black font-mono">{roadmapPercent}%</div>
+                </div>
+              </div>
+            </div>
+
+            {/* COURSERA REACTIVE PROGRESS BAR & AUTO-SCROLL CTA */}
+            <div className="pt-3 border-t border-black/8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex-1 max-w-md">
+                <div className="flex justify-between items-center text-xs mb-1 font-mono">
+                  <span className="font-bold text-black flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>
+                      {hubCompletedStagesCount} dari 4 Tahap Selesai • {hubProgressPercent}%
+                    </span>
+                  </span>
+                  <span className="text-neutral-500 text-[11px]">
+                    {hubProgressPercent === 100 ? "✓ Tuntas" : "Aktif"}
+                  </span>
+                </div>
+                <div className="w-full bg-neutral-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-black h-full rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${hubProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleHubContinueLearning}
+                className="min-h-[44px] px-5 py-2 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <span>Lanjutkan Belajar</span>
+                <span className="text-xs">&rarr;</span>
+              </button>
+            </div>
+          </div>
+
+          {/* MOBILE COLLAPSIBLE SYLLABUS ACCORDION */}
+          <div className="lg:hidden bg-white border border-black/8 rounded-2xl p-3 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setHubMobileSyllabusOpen(!hubMobileSyllabusOpen)}
+              className="w-full flex items-center justify-between min-h-[44px] text-xs font-medium text-black px-1 cursor-pointer"
+            >
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full">
-                  ✓ Berhasil Dianalisis AI
+                <span className="w-6 h-6 rounded-full bg-black text-white text-[11px] font-mono flex items-center justify-center">
+                  {hubCurrentStage}
                 </span>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full">
-                  Tingkat: {analysisResult.difficulty}
-                </span>
+                <div className="text-left">
+                  <div className="text-[10px] text-neutral-500 font-mono">Silabus Belajar</div>
+                  <div className="font-semibold text-xs">
+                    Tahap {hubCurrentStage}: {HUB_COURSERA_STAGES[hubCurrentStage - 1]?.title}
+                  </div>
+                </div>
               </div>
-              <h3 className="text-base sm:text-lg font-light text-black tracking-tight">
-                {analysisResult.title}
-              </h3>
-              <p className="text-xs text-neutral-500">
-                Estimasi Waktu Belajar: <strong className="text-black">{analysisResult.estimatedTime}</strong> • Potensi
-                Reward: <strong className="text-black font-mono">+{analysisResult.xpReward} XP</strong>
-              </p>
-            </div>
-
-            {/* Quick action badges */}
-            <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-              <div className="p-3 bg-white border border-black/8 rounded-2xl text-center min-w-[96px] shadow-2xs">
-                <div className="text-[10px] text-neutral-400 font-mono uppercase">Penguasaan</div>
-                <div className="text-base font-light text-black font-mono">{roadmapPercent}%</div>
+              <div className="flex items-center gap-2 text-neutral-500">
+                <span className="text-[11px] font-mono font-bold text-black">{hubProgressPercent}%</span>
+                <span className="text-xs">{hubMobileSyllabusOpen ? "▲" : "▼"}</span>
               </div>
-            </div>
+            </button>
+            {hubMobileSyllabusOpen && (
+              <div className="pt-3 border-t border-black/8 mt-2 space-y-2">
+                {HUB_COURSERA_STAGES.map((st) => {
+                  const isCurrent = hubCurrentStage === st.step;
+                  const isDone = !!hubStageProgress[st.step];
+                  const unlocked = isHubStageUnlocked(st.step);
+                  return (
+                    <button
+                      key={`mob-step-${st.step}`}
+                      type="button"
+                      disabled={!unlocked}
+                      onClick={() => {
+                        if (unlocked) {
+                          setHubCurrentStage(st.step);
+                          setHubMobileSyllabusOpen(false);
+                        }
+                      }}
+                      className={`w-full text-left p-3 rounded-xl min-h-[44px] text-xs transition-all flex items-center justify-between ${
+                        isCurrent
+                          ? "bg-black text-white font-semibold"
+                          : unlocked
+                          ? "bg-[#FAFAFA] text-neutral-700 hover:bg-neutral-100"
+                          : "bg-neutral-100/50 text-neutral-400 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px]">{st.step}.</span>
+                        <span>{st.title}</span>
+                      </div>
+                      {isDone && <span className="text-emerald-500 font-bold">✓</span>}
+                      {!unlocked && <span>🔒</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Navigation for the 4 Assistant Tabs */}
-          <div className="flex gap-2 border-b border-black/8 overflow-x-auto pb-2" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeResultTab === "summary"}
-              onClick={() => setActiveResultTab("summary")}
-              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
-                activeResultTab === "summary"
-                  ? "bg-black text-white shadow-xs"
-                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
-              }`}
-            >
-              <span>📖</span>
-              <span>1. Ringkasan Inti AI</span>
-            </button>
+          {/* COURSERA STEPPER TABS (DESKTOP & TABLET) */}
+          <div
+            className="bg-white p-1.5 rounded-full border border-black/8 shadow-xs flex gap-1.5 overflow-x-auto"
+            role="tablist"
+          >
+            {HUB_COURSERA_STAGES.map((st) => {
+              const isCurrent = hubCurrentStage === st.step;
+              const isDone = !!hubStageProgress[st.step];
+              const unlocked = isHubStageUnlocked(st.step);
 
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeResultTab === "roadmap"}
-              onClick={() => setActiveResultTab("roadmap")}
-              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
-                activeResultTab === "roadmap"
-                  ? "bg-black text-white shadow-xs"
-                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
-              }`}
-            >
-              <span>🗺️</span>
-              <span>2. Peta Belajar Adaptif</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
-                activeResultTab === "roadmap" ? "bg-neutral-800 text-white" : "bg-neutral-200 text-neutral-800"
-              }`}>
-                {roadmapCompletedCount}/{roadmapTotal}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeResultTab === "quiz"}
-              onClick={() => setActiveResultTab("quiz")}
-              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
-                activeResultTab === "quiz"
-                  ? "bg-black text-white shadow-xs"
-                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
-              }`}
-            >
-              <span>📝</span>
-              <span>3. Kuis Active Recall</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
-                activeResultTab === "quiz" ? "bg-neutral-800 text-white" : "bg-neutral-200 text-neutral-800"
-              }`}>
-                {analysisResult.quiz.length} Soal
-              </span>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeResultTab === "chat"}
-              onClick={() => setActiveResultTab("chat")}
-              className={`px-4 py-2 text-xs font-medium whitespace-nowrap transition-all rounded-full cursor-pointer flex items-center gap-2 ${
-                activeResultTab === "chat"
-                  ? "bg-black text-white shadow-xs"
-                  : "bg-[#F4F4F6] text-neutral-600 hover:text-black border border-black/10 hover:bg-neutral-200"
-              }`}
-            >
-              <span>💬</span>
-              <span>4. Tanya Nexed AI</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            </button>
+              return (
+                <button
+                  key={`hub-tab-${st.step}`}
+                  type="button"
+                  role="tab"
+                  disabled={!unlocked}
+                  aria-selected={isCurrent}
+                  onClick={() => unlocked && setHubCurrentStage(st.step)}
+                  className={`flex-1 min-h-[44px] py-2 px-3 rounded-full text-xs font-medium transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isCurrent
+                      ? "bg-black text-white shadow-xs font-semibold"
+                      : unlocked
+                      ? "text-neutral-600 hover:bg-[#F4F4F6] hover:text-black"
+                      : "text-neutral-300 cursor-not-allowed"
+                  }`}
+                >
+                  <span>{st.icon}</span>
+                  <span className="hidden sm:inline">Tahap {st.step}:</span>
+                  <span>{st.shortTitle}</span>
+                  {isDone && (
+                    <span
+                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isCurrent ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      ✓
+                    </span>
+                  )}
+                  {!unlocked && <span className="text-[10px]">🔒</span>}
+                </button>
+              );
+            })}
           </div>
 
-          {/* TAB PANEL 1: RINGKASAN INTI (AI SUMMARY) */}
-          {activeResultTab === "summary" && (
+          {/* ======================================================== */}
+          {/* TAHAP 1: FONDASI KONSEPTUAL (AI SUMMARY & TERMS) */}
+          {/* ======================================================== */}
+          {hubCurrentStage === 1 && (
             <div className="space-y-6 animate-in fade-in">
               {/* Executive Summary Card */}
               <div className="bg-[#FAFAFA] rounded-3xl p-6 sm:p-8 border border-black/8 shadow-xs space-y-4">
@@ -1460,139 +1606,24 @@ Silabus & Fokus Pembahasan:
                 </div>
               </div>
 
-              {/* REKOMENDASI MATERI PENGAYAAN (AI CURATED) - SECTION ADAPTIVE LEARNING */}
-              <div className="space-y-4 pt-4 border-t border-black/8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-[11px] font-black">
-                        🌐
-                      </span>
-                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
-                        Rekomendasi Materi Pengayaan (AI Curated)
-                      </h4>
-                    </div>
-                    <p className="text-[11px] text-neutral-500 mt-1">
-                      Materi pendukung interaktif dan referensi industri pilihan AI untuk memperkaya pemahaman topik.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>{adaptiveRecs?.external_resources ? `${adaptiveRecs.external_resources.length} Sumber` : "Live AI"}</span>
-                    </span>
-                  </div>
-                </div>
-
-                {loadingAdaptiveRecs ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map((idx) => (
-                      <div
-                        key={`loading-rec-${idx}`}
-                        className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3"
-                      >
-                        <div className="h-4 w-24 bg-neutral-200 rounded-full" />
-                        <div className="h-5 w-3/4 bg-neutral-200 rounded-md" />
-                        <div className="h-10 w-full bg-neutral-200 rounded-md" />
-                        <div className="h-8 w-28 bg-neutral-200 rounded-full pt-2" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(adaptiveRecs?.external_resources && adaptiveRecs.external_resources.length > 0
-                      ? adaptiveRecs.external_resources
-                      : [
-                          {
-                            title: `Video Panduan Praktik: ${analysisResult.title}`,
-                            type: "youtube" as const,
-                            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(analysisResult.title + " tutorial")}`,
-                            duration: "15-20 min",
-                            description: "Visualisasi konsep mendalam dan panduan langkah demi langkah dari praktisi industri.",
-                          },
-                          {
-                            title: `Dokumentasi Resmi & Panduan: ${analysisResult.title}`,
-                            type: "documentation" as const,
-                            url: "https://developer.mozilla.org",
-                            duration: "10-15 min baca",
-                            description: "Spesifikasi standar, best practices, dan studi kasus arsitektur teknis.",
-                          },
-                        ]
-                    ).map((item, idx) => {
-                      const isVideo = item.type.toLowerCase().includes("youtube") || item.type.toLowerCase().includes("video");
-                      return (
-                        <div
-                          key={`ext-rec-${idx}`}
-                          className="p-5 rounded-2xl border border-black/8 bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-4"
-                        >
-                          <div className="space-y-2.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span
-                                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
-                                  isVideo
-                                    ? "bg-rose-50 text-rose-700 border-rose-200"
-                                    : "bg-[#F4F4F6] text-black border-black/10"
-                                }`}
-                              >
-                                <span>{isVideo ? "▶ YouTube" : "📖 Dokumentasi"}</span>
-                              </span>
-                              <span className="text-[10px] font-mono text-neutral-500">
-                                ⏱ {item.duration}
-                              </span>
-                            </div>
-                            <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
-                              {item.title}
-                            </h5>
-                            <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">
-                              {item.description}
-                            </p>
-                          </div>
-
-                          <div className="pt-3 border-t border-black/8 flex items-center justify-between">
-                            <span className="text-[11px] font-mono text-neutral-400">
-                              {isVideo ? "Media Video Interaktif" : "Dokumentasi Terverifikasi"}
-                            </span>
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black hover:bg-neutral-800 text-white text-[11px] font-medium transition-all shadow-2xs hover:shadow-xs"
-                            >
-                              <span>Buka Materi</span>
-                              <span className="text-[10px]">↗</span>
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Diagnostic Active Recall Questions if provided by Adaptive Learning */}
-                {adaptiveRecs?.diagnostic_questions && adaptiveRecs.diagnostic_questions.length > 0 && (
-                  <div className="p-4 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-2.5 mt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs">⚡</span>
-                      <h5 className="text-[11px] font-mono font-bold uppercase tracking-wider text-black">
-                        Pertanyaan Diagnostik Pengujian Pemahaman:
-                      </h5>
-                    </div>
-                    <ul className="space-y-1.5 pl-1">
-                      {adaptiveRecs.diagnostic_questions.map((q, qIdx) => (
-                        <li key={`dq-${qIdx}`} className="text-xs text-neutral-700 flex items-start gap-2">
-                          <span className="text-[10px] font-mono text-neutral-500 mt-0.5">•</span>
-                          <span>{q}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              {/* STAGE 1 BOTTOM ACTION */}
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleHubMarkStageAndAdvance(1)}
+                  className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>{hubStageProgress[1] ? "Lanjut ke Tahap 2: Komponen & Logika" : "✓ Tandai Paham & Lanjut"}</span>
+                  <span>&rarr;</span>
+                </button>
               </div>
             </div>
           )}
 
-          {/* TAB PANEL 2: PETA BELAJAR ADAPTIF (ROADMAP) */}
-          {activeResultTab === "roadmap" && (
+          {/* ======================================================== */}
+          {/* TAHAP 2: STRUKTUR KOMPONEN & LOGIKA (PETA BELAJAR) */}
+          {/* ======================================================== */}
+          {hubCurrentStage === 2 && (
             <div className="space-y-6 animate-in fade-in">
               <div className="flex items-center justify-between p-5 bg-[#FAFAFA] rounded-3xl border border-black/8">
                 <div>
@@ -1663,7 +1694,7 @@ Silabus & Fokus Pembahasan:
                           <button
                             type="button"
                             onClick={() => toggleExpandRoadmapStep(stepItem.step)}
-                            className={`px-3.5 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                            className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                               isExpanded
                                 ? "bg-black text-white"
                                 : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border border-black/10"
@@ -1675,7 +1706,7 @@ Silabus & Fokus Pembahasan:
                           <button
                             type="button"
                             onClick={() => toggleRoadmapStep(stepItem.step)}
-                            className={`px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                            className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                               isUnderstood
                                 ? "bg-white hover:bg-neutral-100 text-black border border-black/15 shadow-2xs"
                                 : "bg-black hover:bg-neutral-800 text-white shadow-xs"
@@ -1686,7 +1717,7 @@ Silabus & Fokus Pembahasan:
                         </div>
                       </div>
 
-                      {/* Expandable Learning Material Drawer (Tahap Isi Materi Lengkap) */}
+                      {/* Expandable Learning Material Drawer */}
                       {isExpanded && (
                         <div className="border-t border-black/8 bg-[#FAFAFA] p-5 sm:p-6 space-y-4 animate-in fade-in">
                           {/* 1. Panduan & Uraian Materi Tahap Ini */}
@@ -1755,7 +1786,7 @@ Silabus & Fokus Pembahasan:
                             <button
                               type="button"
                               onClick={() => handleAskAboutStep(stepItem)}
-                              className="px-4 py-1.5 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                              className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                             >
                               <span>💬</span>
                               <span>Tanya AI Tutor tentang Tahap Ini</span>
@@ -1767,21 +1798,319 @@ Silabus & Fokus Pembahasan:
                   );
                 })}
               </div>
+
+              {/* STAGE 2 BOTTOM ACTION */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setHubCurrentStage(1)}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  &larr; Kembali ke Tahap 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleHubMarkStageAndAdvance(2)}
+                  className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>{hubStageProgress[2] ? "Lanjut ke Tahap 3: Praktik & AI" : "✓ Tandai Paham & Lanjut"}</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
             </div>
           )}
 
-          {/* TAB PANEL 3: KUIS INTERAKTIF ACTIVE RECALL */}
-          {activeResultTab === "quiz" && (
+          {/* ======================================================== */}
+          {/* TAHAP 3: PRAKTIK, IMPLEMENTASI & PENDAMPINGAN AI */}
+          {/* ======================================================== */}
+          {hubCurrentStage === 3 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="flex items-center justify-between">
+              {/* REKOMENDASI MATERI PENGAYAAN (AI CURATED) - SECTION ADAPTIVE LEARNING */}
+              <div className="space-y-4 bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/8">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-[11px] font-black">
+                        🌐
+                      </span>
+                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                        Rekomendasi Materi Pengayaan (AI Curated)
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 mt-1">
+                      Materi pendukung interaktif dan referensi industri pilihan AI dengan verified direct deep-links.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>{adaptiveRecs?.external_resources ? `${adaptiveRecs.external_resources.length} Sumber` : "Live AI"}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {loadingAdaptiveRecs ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2].map((idx) => (
+                      <div
+                        key={`loading-rec-${idx}`}
+                        className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3"
+                      >
+                        <div className="h-4 w-24 bg-neutral-200 rounded-full" />
+                        <div className="h-5 w-3/4 bg-neutral-200 rounded-md" />
+                        <div className="h-10 w-full bg-neutral-200 rounded-md" />
+                        <div className="h-8 w-28 bg-neutral-200 rounded-full pt-2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(adaptiveRecs?.external_resources && adaptiveRecs.external_resources.length > 0
+                      ? adaptiveRecs.external_resources
+                      : [
+                          {
+                            title: `Video Panduan Praktik: ${analysisResult.title}`,
+                            type: "youtube" as const,
+                            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(analysisResult.title + " tutorial")}`,
+                            duration: "15-20 min",
+                            description: "Visualisasi konsep mendalam dan panduan langkah demi langkah dari praktisi industri.",
+                          },
+                          {
+                            title: `Dokumentasi Resmi & Panduan: ${analysisResult.title}`,
+                            type: "documentation" as const,
+                            url: "https://developer.mozilla.org",
+                            duration: "10-15 min baca",
+                            description: "Spesifikasi standar, best practices, dan studi kasus arsitektur teknis.",
+                          },
+                        ]
+                    ).map((item, idx) => {
+                      const isVideo = item.type.toLowerCase().includes("youtube") || item.type.toLowerCase().includes("video");
+                      return (
+                        <div
+                          key={`ext-rec-${idx}`}
+                          className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-4"
+                        >
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
+                                  isVideo
+                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    : "bg-[#F4F4F6] text-black border-black/10"
+                                }`}
+                              >
+                                <span>{isVideo ? "▶ YouTube" : "📖 Dokumentasi"}</span>
+                              </span>
+                              <span className="text-[10px] font-mono text-neutral-500">
+                                ⏱ {item.duration}
+                              </span>
+                            </div>
+                            <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
+                              {item.title}
+                            </h5>
+                            <p className="text-xs text-neutral-600 leading-relaxed line-clamp-3">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 border-t border-black/8 flex items-center justify-between">
+                            <span className="text-[11px] font-mono text-neutral-400">
+                              {isVideo ? "Media Video Interaktif" : "Dokumentasi Terverifikasi"}
+                            </span>
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium transition-all shadow-2xs hover:shadow-xs"
+                            >
+                              <span>Buka Materi</span>
+                              <span className="text-[10px]">↗</span>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Diagnostic Active Recall Questions if provided by Adaptive Learning */}
+                {adaptiveRecs?.diagnostic_questions && adaptiveRecs.diagnostic_questions.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-2.5 mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">⚡</span>
+                      <h5 className="text-[11px] font-mono font-bold uppercase tracking-wider text-black">
+                        Pertanyaan Diagnostik Pengujian Pemahaman:
+                      </h5>
+                    </div>
+                    <ul className="space-y-1.5 pl-1">
+                      {adaptiveRecs.diagnostic_questions.map((q, qIdx) => (
+                        <li key={`dq-${qIdx}`} className="text-xs text-neutral-700 flex items-start gap-2">
+                          <span className="text-[10px] font-mono text-neutral-500 mt-0.5">•</span>
+                          <span>{q}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* TANYA NEXED AI TUTOR DRAWER */}
+              <div className="bg-[#FAFAFA] rounded-3xl border border-black/8 overflow-hidden flex flex-col h-[540px] shadow-xs">
+                {/* Chat Header */}
+                <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-black flex items-center gap-1.5">
+                      <span>🤖</span>
+                      <span>Tanya Nexed AI - Modul "{analysisResult.title}"</span>
+                    </h4>
+                    <p className="text-[11px] text-neutral-500">
+                      Bebas tanyakan keraguan materi, minta analogi, atau perjelas baris kode.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-700 bg-[#F4F4F6] border border-black/8 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>Live Assistant</span>
+                  </span>
+                </div>
+
+                {/* Chat Stream */}
+                <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto space-y-3.5">
+                  {chatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
+                    >
+                      <div
+                        className={`max-w-[90%] sm:max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                          msg.sender === "user"
+                            ? "bg-black text-white rounded-br-none shadow-xs"
+                            : "bg-white text-neutral-800 border border-black/8 rounded-bl-none shadow-2xs"
+                        }`}
+                      >
+                        <ChatMessageContent text={msg.text} isUser={msg.sender === "user"} />
+                      </div>
+                    </div>
+                  ))}
+
+                  {isAiReplying && (
+                    <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white border border-black/8 rounded-full px-3.5 py-2 w-fit">
+                      <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
+                      <span>Nexed AI sedang merangkai penjelasan...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Prompt Suggestions */}
+                <div className="p-3 bg-white border-t border-black/8 flex gap-2 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSendChat(
+                        "Berikan analogi sederhana kehidupan sehari-hari tentang materi ini!",
+                      )
+                    }
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                  >
+                    💡 Minta Analogi Nyata
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSendChat("Berikan contoh kode implementasi dan sintaks dasarnya!")
+                    }
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                  >
+                    💻 Contoh Kode & Sintaks
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSendChat(
+                        "Apa perbedaan utama metode ini dibanding pendekatan konvensional?",
+                      )
+                    }
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                  >
+                    📊 Perbandingan Efisiensi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSendChat(
+                        "Apa saja kesalahan umum (common pitfalls) saat mengimplementasikan materi ini?",
+                      )
+                    }
+                    className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
+                  >
+                    ⚠️ Kesalahan Umum & Debugging
+                  </button>
+                </div>
+
+                {/* Chat Input Bar */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendChat();
+                  }}
+                  className="p-3.5 bg-white border-t border-black/8 flex gap-2"
+                >
+                  <input
+                    type="text"
+                    placeholder="Ketik pertanyaan terkait materi ini..."
+                    value={chatPrompt}
+                    onChange={(e) => setChatPrompt(e.target.value)}
+                    className="flex-1 px-4 py-2.5 bg-[#FAFAFA] border border-black/10 rounded-full text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-black transition-all"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatPrompt.trim() || isAiReplying}
+                    className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all cursor-pointer"
+                  >
+                    Kirim
+                  </button>
+                </form>
+              </div>
+
+              {/* STAGE 3 BOTTOM ACTION */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setHubCurrentStage(2)}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  &larr; Kembali ke Tahap 2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleHubMarkStageAndAdvance(3)}
+                  className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>{hubStageProgress[3] ? "Lanjut ke Tahap 4: Kuis Evaluasi" : "✓ Tandai Paham & Lanjut"}</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAHAP 4: PENGUJIAN & KUIS EVALUASI (ACTIVE RECALL) */}
+          {/* ======================================================== */}
+          {hubCurrentStage === 4 && (
+            <div className="space-y-6 animate-in fade-in bg-white rounded-3xl border border-black/8 p-6 sm:p-8 shadow-xs hover:border-black/20 transition-all">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/8">
                 <div>
-                  <h4 className="text-sm font-bold text-black">
+                  <h4 className="text-sm sm:text-base font-bold text-black">
                     Kuis Evaluasi Pemahaman Modul
                   </h4>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-neutral-500 mt-0.5">
                     Uji daya serap konsep esensial yang diekstrak langsung oleh AI dari materi Anda.
                   </p>
                 </div>
+                {hubStageProgress[4] && (
+                  <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full font-semibold">
+                    ✓ Modul Telah Tuntas
+                  </span>
+                )}
               </div>
 
               {/* Questions list */}
@@ -1830,14 +2159,14 @@ Silabus & Fokus Pembahasan:
                               onClick={() =>
                                 setUserAnswers((prev) => ({ ...prev, [qIndex]: optIndex }))
                               }
-                              className={`w-full text-left p-3.5 rounded-2xl border text-xs transition-all flex items-center justify-between cursor-pointer ${btnStyle}`}
+                              className={`w-full text-left p-3.5 min-h-[44px] rounded-2xl border text-xs sm:text-sm transition-all flex items-center justify-between cursor-pointer ${btnStyle}`}
                             >
                               <span>{opt}</span>
                               {isQuizChecked && optIndex === q.correctIndex && (
-                                <span className="text-emerald-700 font-bold">✓ Kunci Jawaban</span>
+                                <span className="text-emerald-700 font-bold shrink-0 ml-2">✓ Kunci Jawaban</span>
                               )}
                               {isQuizChecked && isOptionSelected && optIndex !== q.correctIndex && (
-                                <span className="text-rose-600 font-bold">✕ Pilihan Anda</span>
+                                <span className="text-rose-600 font-bold shrink-0 ml-2">✕ Pilihan Anda</span>
                               )}
                             </button>
                           );
@@ -1865,7 +2194,15 @@ Silabus & Fokus Pembahasan:
               </div>
 
               {/* Quiz Submit & Reset Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-black/8">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-black/8">
+                <button
+                  type="button"
+                  onClick={() => setHubCurrentStage(3)}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium transition-colors cursor-pointer text-center"
+                >
+                  &larr; Kembali ke Tahap 3
+                </button>
+
                 {!isQuizChecked ? (
                   <button
                     type="button"
@@ -1879,19 +2216,20 @@ Silabus & Fokus Pembahasan:
                         triggerConfetti();
                       }
                     }}
-                    className="px-6 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all cursor-pointer"
+                    disabled={Object.keys(userAnswers).length < analysisResult.quiz.length}
+                    className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all cursor-pointer"
                   >
                     Periksa Jawaban Kuis
                   </button>
                 ) : (
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
                       onClick={() => {
                         setIsQuizChecked(false);
                         setUserAnswers({});
                       }}
-                      className="px-4 py-2 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 text-xs font-medium rounded-full transition-colors cursor-pointer"
+                      className="min-h-[44px] px-4 py-2 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 text-xs font-medium rounded-full transition-colors cursor-pointer"
                     >
                       Ulangi Kuis
                     </button>
@@ -1905,130 +2243,68 @@ Silabus & Fokus Pembahasan:
                       }{" "}
                       / {analysisResult.quiz.length} Benar
                     </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB PANEL 4: AI TUTOR CHAT DRAWER */}
-          {activeResultTab === "chat" && (
-            <div className="bg-[#FAFAFA] rounded-3xl border border-black/8 overflow-hidden flex flex-col h-[540px] animate-in fade-in">
-              {/* Chat Header */}
-              <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-black flex items-center gap-1.5">
-                    <span>🤖</span>
-                    <span>Tanya Nexed AI - Modul "{analysisResult.title}"</span>
-                  </h4>
-                  <p className="text-[11px] text-neutral-500">
-                    Bebas tanyakan keraguan materi, minta analogi, atau perjelas baris kode.
-                  </p>
-                </div>
-                <span className="text-[10px] font-mono text-neutral-700 bg-[#F4F4F6] border border-black/8 px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Live Assistant</span>
-                </span>
-              </div>
-
-              {/* Chat Stream */}
-              <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto space-y-3.5">
-                {chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
-                  >
-                    <div
-                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
-                        msg.sender === "user"
-                          ? "bg-black text-white rounded-br-none shadow-xs"
-                          : "bg-white text-neutral-800 border border-black/8 rounded-bl-none shadow-2xs"
-                      }`}
+                    <button
+                      type="button"
+                      onClick={() => handleHubMarkStageAndAdvance(4)}
+                      className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
                     >
-                      <ChatMessageContent text={msg.text} isUser={msg.sender === "user"} />
-                    </div>
-                  </div>
-                ))}
-
-                {isAiReplying && (
-                  <div className="flex items-center gap-2 text-xs text-neutral-500 bg-white border border-black/8 rounded-full px-3.5 py-2 w-fit">
-                    <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
-                    <span>Nexed AI sedang merangkai penjelasan...</span>
+                      <span>✓</span>
+                      <span>Selesaikan Modul & Simpan</span>
+                    </button>
                   </div>
                 )}
               </div>
-
-              {/* Quick Prompt Suggestions */}
-              <div className="p-3 bg-white border-t border-black/8 flex gap-2 overflow-x-auto">
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSendChat(
-                      "Berikan analogi sederhana kehidupan sehari-hari tentang materi ini!",
-                    )
-                  }
-                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
-                >
-                  💡 Minta Analogi Nyata
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSendChat("Berikan contoh kode implementasi dan sintaks dasarnya!")
-                  }
-                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
-                >
-                  💻 Contoh Kode & Sintaks
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSendChat(
-                      "Apa perbedaan utama metode ini dibanding pendekatan konvensional?",
-                    )
-                  }
-                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
-                >
-                  📊 Perbandingan Efisiensi
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSendChat(
-                      "Apa saja kesalahan umum (common pitfalls) saat mengimplementasikan materi ini?",
-                    )
-                  }
-                  className="text-[11px] font-medium text-neutral-700 hover:text-black bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer"
-                >
-                  ⚠️ Kesalahan Umum & Debugging
-                </button>
-              </div>
-
-              {/* Chat Input Bar */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendChat();
-                }}
-                className="p-3.5 bg-white border-t border-black/8 flex gap-2"
-              >
-                <input
-                  type="text"
-                  placeholder="Ketik pertanyaan terkait materi ini..."
-                  value={chatPrompt}
-                  onChange={(e) => setChatPrompt(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-[#FAFAFA] border border-black/10 rounded-full text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-black transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={!chatPrompt.trim() || isAiReplying}
-                  className="px-5 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all cursor-pointer"
-                >
-                  Kirim
-                </button>
-              </form>
             </div>
           )}
+
+          {/* MOBILE STICKY ACTION BAR FOR HUB */}
+          <div className="md:hidden fixed bottom-0 inset-x-0 p-3 bg-white/95 backdrop-blur-md border-t border-black/10 z-40 shadow-lg">
+            <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <span className="text-[11px] font-mono text-neutral-500">
+                  Tahap {hubCurrentStage}/4 • {hubProgressPercent}%
+                </span>
+                <div className="w-24 bg-neutral-200 h-1.5 rounded-full overflow-hidden mt-0.5">
+                  <div
+                    className="bg-black h-full transition-all duration-300"
+                    style={{ width: `${hubProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {hubCurrentStage < 4 ? (
+                <button
+                  type="button"
+                  onClick={() => handleHubMarkStageAndAdvance(hubCurrentStage)}
+                  className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>{hubStageProgress[hubCurrentStage] ? "Lanjut Tahap" : "Tandai Paham & Lanjut"}</span>
+                  <span>&rarr;</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isQuizChecked) {
+                      setIsQuizChecked(true);
+                      const correctCount = Object.entries(userAnswers).filter(
+                        ([qIdx, ansIdx]) =>
+                          analysisResult.quiz[Number(qIdx)]?.correctIndex === ansIdx,
+                      ).length;
+                      if (correctCount >= Math.ceil(analysisResult.quiz.length * 0.6)) {
+                        triggerConfetti();
+                      }
+                    } else {
+                      handleHubMarkStageAndAdvance(4);
+                    }
+                  }}
+                  className="min-h-[44px] px-5 py-2.5 bg-black hover:bg-neutral-800 text-white rounded-full text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>{isQuizChecked ? "✓ Selesaikan Modul" : "Periksa Kuis"}</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </section>
