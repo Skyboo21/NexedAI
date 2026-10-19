@@ -17,6 +17,8 @@ export interface ServerUserRecord {
   salt: string;
   semester?: number;
   prodi?: string;
+  totalXp?: number;
+  level?: string;
   createdAt: string;
 }
 
@@ -78,6 +80,56 @@ export async function initServerUserRegistry() {
       nimOrNip: "M3124001",
       semester: 4,
       prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 2180,
+      level: "Lvl 7 • Scholar",
+      rawKey: defaultKey,
+    },
+    {
+      id: "usr_mhs_002",
+      name: "Ucik Dika Maharani",
+      email: "ucik.dika@student.uns.ac.id",
+      role: "mahasiswa" as const,
+      nimOrNip: "202401012",
+      semester: 4,
+      prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 2450,
+      level: "Lvl 7 • Scholar",
+      rawKey: defaultKey,
+    },
+    {
+      id: "usr_mhs_003",
+      name: "Zam Zam Zahrina",
+      email: "zam.zam@student.uns.ac.id",
+      role: "mahasiswa" as const,
+      nimOrNip: "202401015",
+      semester: 4,
+      prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 1950,
+      level: "Lvl 5 • Apprentice",
+      rawKey: defaultKey,
+    },
+    {
+      id: "usr_mhs_004",
+      name: "Siti Aminah",
+      email: "siti.aminah@student.uns.ac.id",
+      role: "mahasiswa" as const,
+      nimOrNip: "202401092",
+      semester: 4,
+      prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 1420,
+      level: "Lvl 3 • Praktikan Terampil",
+      rawKey: defaultKey,
+    },
+    {
+      id: "usr_mhs_005",
+      name: "Budi Santoso",
+      email: "budi.santoso@student.uns.ac.id",
+      role: "mahasiswa" as const,
+      nimOrNip: "202401048",
+      semester: 4,
+      prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 980,
+      level: "Lvl 2 • Learner",
       rawKey: defaultKey,
     },
     {
@@ -87,6 +139,8 @@ export async function initServerUserRegistry() {
       role: "dosen" as const,
       nimOrNip: "198504122010121003",
       prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 0,
+      level: "Pengajar Utama",
       rawKey: defaultKey,
     },
     {
@@ -96,6 +150,8 @@ export async function initServerUserRegistry() {
       role: "admin" as const,
       nimOrNip: "ADM-001",
       prodi: "D3 Teknik Informatika SV UNS",
+      totalXp: 0,
+      level: "System Root",
       rawKey: defaultKey,
     },
   ];
@@ -113,6 +169,8 @@ export async function initServerUserRegistry() {
       salt,
       semester: u.semester,
       prodi: u.prodi,
+      totalXp: u.totalXp,
+      level: u.level,
       createdAt: new Date().toISOString(),
     };
     SERVER_USERS.set(userRecord.email, userRecord);
@@ -122,7 +180,10 @@ export async function initServerUserRegistry() {
       try {
         await prisma.user.upsert({
           where: { email: userRecord.email },
-          update: {},
+          update: {
+            totalXp: userRecord.totalXp,
+            level: userRecord.level,
+          },
           create: {
             id: userRecord.id,
             name: userRecord.name,
@@ -133,6 +194,8 @@ export async function initServerUserRegistry() {
             salt: userRecord.salt,
             semester: userRecord.semester,
             prodi: userRecord.prodi,
+            totalXp: userRecord.totalXp ?? 0,
+            level: userRecord.level ?? "Lvl 1 • Novice",
           },
         });
       } catch (err) {

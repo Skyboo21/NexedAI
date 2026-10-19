@@ -258,6 +258,22 @@ export default function DynamicModulReaderPage() {
     if (!customPrompt) setChatInput("");
     setIsAiTyping(true);
 
+    // Catat log interaksi tanya AI Tutor ke database telemetri
+    fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "ai_tutor_chat",
+        title: `Tanya AI Tutor: ${currentTopic.title}`,
+        description: `Konsultasi materi: "${textToSend.slice(0, 75)}${textToSend.length > 75 ? "..." : ""}"`,
+        xpEarned: 15,
+        metadata: {
+          moduleId: String(currentTopic.id),
+          topicTitle: currentTopic.title,
+        },
+      }),
+    }).catch(() => {});
+
     try {
       const apiResponse = await fetchAIExplanationApi(textToSend);
       let responseText = apiResponse.message;
@@ -318,6 +334,24 @@ export default function DynamicModulReaderPage() {
       useAuthStore.getState().addXp(xpReward);
     }
 
+    // Catat log aktivitas persisten ke database
+    fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "quiz_completed",
+        title: `Kuis Tuntas: ${currentTopic.title}`,
+        description: `Menuntaskan kuis evaluasi mandiri topik "${currentTopic.title}" dengan skor ${score}% (+${xpReward} XP).`,
+        xpEarned: xpReward,
+        score,
+        metadata: {
+          moduleId: String(currentTopic.id),
+          topicTitle: currentTopic.title,
+          meeting: currentTopic.meeting,
+        },
+      }),
+    }).catch(() => {});
+
     if (!alreadyDone) {
       const updated = [...completedTopicIds, currentTopic.id];
       setCompletedTopicIds(updated);
@@ -374,6 +408,22 @@ export default function DynamicModulReaderPage() {
       xpEarned: completedSteps.length === 4 ? currentTopic.xp : 0,
       lastUpdated: new Date().toISOString(),
     });
+
+    // Catat log progres tahap belajar ke database
+    fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "module_step",
+        title: `Tahap ${stageNum} Selesai: ${COURSERA_STAGES[stageNum - 1]?.title || currentTopic.title}`,
+        description: `Menyelesaikan tahapan pembelajaran "${COURSERA_STAGES[stageNum - 1]?.shortTitle || `Tahap ${stageNum}`}" pada materi ${currentTopic.title}.`,
+        xpEarned: 25,
+        metadata: {
+          moduleId: String(currentTopic.id),
+          stage: stageNum,
+        },
+      }),
+    }).catch(() => {});
 
     if (stageNum < 4) {
       setCurrentStage(stageNum + 1);

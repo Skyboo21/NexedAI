@@ -34,6 +34,24 @@ export default function TaskFormClient() {
     setSuccess(
       `[Klien Validated] Tugas "${result.data.title}" divalidasi oleh Zod & siap dikirim ke Server Action!`,
     );
+
+    // Catat log aktivitas task mandiri ke database
+    fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "task_created",
+        title: `Rencana Tugas: ${result.data.title}`,
+        description: `Menambahkan target tugas "${result.data.title}" pada mata kuliah ${result.data.courseName || "Umum"}.`,
+        xpEarned: 25,
+        metadata: {
+          courseName: result.data.courseName,
+          priority: result.data.priority,
+          dueDate: result.data.dueDate,
+        },
+      }),
+    }).catch(() => {});
+
     setFormData({
       title: "",
       courseName: "",

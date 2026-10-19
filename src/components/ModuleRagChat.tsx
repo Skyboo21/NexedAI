@@ -241,6 +241,24 @@ export default function ModuleRagChat({
         }),
       });
 
+      if (res.ok) {
+        // Catat log interaksi RAG chat ke database saat berhasil
+        fetch("/api/activities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "ai_tutor_chat",
+            title: `Tanya Modul RAG: ${indexedModule.filename}`,
+            description: `Pertanyaan cerdas: "${textToSend.slice(0, 75)}${textToSend.length > 75 ? "..." : ""}"`,
+            xpEarned: 15,
+            metadata: {
+              moduleId: indexedModule.moduleId,
+              filename: indexedModule.filename,
+            },
+          }),
+        }).catch(() => {});
+      }
+
       const data = await res.json();
 
       if (!res.ok) {

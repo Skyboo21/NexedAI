@@ -4,7 +4,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Target, Flame, Award, ArrowRight, BookOpen } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Target,
+  Flame,
+  Award,
+  ArrowRight,
+  BookOpen,
+  History,
+  Zap,
+} from "lucide-react";
 import NexedDashboardModule from "../components/NexedDashboardModule";
 import NexedFormEntryModule from "../components/NexedFormEntryModule";
 import NexedLeaderboard from "../components/NexedLeaderboard";
@@ -16,21 +25,70 @@ import {
   onProgressUpdate,
 } from "../lib/progressStorage";
 
+interface TopBadge {
+  title: string;
+  tier: string;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
 
   const [totalXp, setTotalXp] = useState<number>(225);
   const [completedCount, setCompletedCount] = useState<number>(2);
+  const [streakDays, setStreakDays] = useState<number>(12);
+  const [weeklyXp, setWeeklyXp] = useState<number>(35);
+  const [userLevel, setUserLevel] = useState<string>("Level 3 • Praktikan Terampil");
+  const [topBadge, setTopBadge] = useState<TopBadge>({
+    title: "Algo Master",
+    tier: "Gold Tier",
+  });
 
-  // Sync with persistent progress storage
+  const fetchLiveGamificationStats = async () => {
+    try {
+      const [statsRes, badgesRes] = await Promise.all([
+        fetch("/api/activities/stats"),
+        fetch("/api/gamification/badges"),
+      ]);
+
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        if (statsData.stats) {
+          if (statsData.stats.streakDays) setStreakDays(statsData.stats.streakDays);
+          if (statsData.stats.weeklyXp) setWeeklyXp(statsData.stats.weeklyXp);
+          if (statsData.stats.level) setUserLevel(statsData.stats.level);
+          if (statsData.stats.totalXp) setTotalXp(statsData.stats.totalXp);
+        }
+      }
+
+      if (badgesRes.ok) {
+        const badgesData = await badgesRes.json();
+        if (Array.isArray(badgesData.data)) {
+          const unlocked = badgesData.data.filter((b: { unlocked: boolean }) => b.unlocked);
+          if (unlocked.length > 0) {
+            const first = unlocked[0];
+            setTopBadge({
+              title: first.title,
+              tier: `${first.tier} Tier`,
+            });
+          }
+        }
+      }
+    } catch {
+      // safe fallback
+    }
+  };
+
+  // Sync with persistent progress storage & backend database
   useEffect(() => {
     setTotalXp(getTotalUserXp());
     setCompletedCount(getCompletedModulesCount());
+    fetchLiveGamificationStats();
 
     const unsubscribe = onProgressUpdate(() => {
       setTotalXp(getTotalUserXp());
       setCompletedCount(getCompletedModulesCount());
+      fetchLiveGamificationStats();
     });
 
     return unsubscribe;
@@ -72,7 +130,14 @@ export default function StudentDashboard() {
             </h1>
           </div>
 
-          <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+            <Link
+              href="/riwayat"
+              className="inline-flex items-center space-x-1.5 text-xs font-medium bg-[#F4F4F6] hover:bg-neutral-200 text-black px-4 py-2.5 rounded-full border border-black/10 transition-all cursor-pointer"
+            >
+              <History className="w-3.5 h-3.5 text-black" />
+              <span>Riwayat Aktivitas</span>
+            </Link>
             <Link
               href="/modul"
               className="inline-flex items-center space-x-2 text-xs sm:text-sm font-medium bg-black hover:bg-neutral-800 text-white px-5 py-2.5 rounded-full transition-all cursor-pointer shadow-xs"
@@ -89,14 +154,19 @@ export default function StudentDashboard() {
         {/* Bento Grid 4-Kolom Responsif */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* CARD 1 (Span 2x1 - Welcome Hero): Sapaan, level, target semester, CTA */}
-          <div className="md:col-span-2 lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:col-span-2 lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col justify-between"
+          >
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="bg-[#F4F4F6] text-black border border-black/10 font-mono text-xs px-3 py-1 rounded-full">
-                  Level 3 • Praktikan Terampil
+                  {userLevel}
                 </span>
                 <span className="bg-[#F4F4F6] text-black/70 border border-black/10 font-mono text-xs px-3 py-1 rounded-full">
-                  Semester 2 • TI SV UNS
+                  Semester 4 • TI SV UNS
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-light text-black tracking-tight">
@@ -114,18 +184,32 @@ export default function StudentDashboard() {
                 <span>Target Berjalan:</span>
                 <span className="text-black font-semibold">{completedCount} dari 5 Modul Tuntas</span>
               </div>
-              <Link
-                href="/modul"
-                className="inline-flex items-center justify-center space-x-2 text-xs font-medium bg-black hover:bg-neutral-800 text-white px-5 py-2.5 rounded-full transition-all cursor-pointer shadow-xs"
-              >
-                <span>Buka Modul Belajar</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/riwayat"
+                  className="inline-flex items-center justify-center space-x-1.5 text-xs font-medium bg-[#F4F4F6] hover:bg-neutral-200 text-black px-4 py-2 rounded-full border border-black/10 transition-colors"
+                >
+                  <History className="w-3 h-3" />
+                  <span>Lihat Log Telemetri</span>
+                </Link>
+                <Link
+                  href="/modul"
+                  className="inline-flex items-center justify-center space-x-2 text-xs font-medium bg-black hover:bg-neutral-800 text-white px-5 py-2.5 rounded-full transition-all cursor-pointer shadow-xs"
+                >
+                  <span>Buka Modul Belajar</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* CARD 2 (Span 1x1 - XP & Streak): Total akumulasi XP, badge aktif, streak */}
-          <div className="bg-white rounded-3xl p-6 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+            className="bg-white rounded-3xl p-6 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-neutral-500 font-mono text-xs uppercase tracking-wider">
@@ -133,13 +217,13 @@ export default function StudentDashboard() {
                 </span>
                 <span className="bg-[#F4F4F6] text-black border border-black/10 font-medium text-[11px] px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>12 Hari Streak</span>
+                  <span>{streakDays} Hari Streak</span>
                 </span>
               </div>
               <div className="text-3xl font-light tracking-tight text-black mt-1 font-mono">
                 {totalXp} XP
               </div>
-              <p className="text-xs text-neutral-500 mt-1 font-medium">+35 XP minggu ini</p>
+              <p className="text-xs text-neutral-500 mt-1 font-medium">+{weeklyXp} XP minggu ini</p>
             </div>
 
             <div className="pt-4 border-t border-black/5 mt-4 space-y-1.5">
@@ -149,15 +233,22 @@ export default function StudentDashboard() {
                   <Award className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-black truncate">Pakar Struktur Kontrol</p>
-                  <span className="text-[10px] text-neutral-500 font-mono">Tingkat Lanjut (Gold Tier)</span>
+                  <p className="text-xs font-medium text-black truncate">{topBadge.title}</p>
+                  <span className="text-[10px] text-neutral-500 font-mono">
+                    Tingkat Lanjut ({topBadge.tier})
+                  </span>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* CARD 3 (Span 1x1 - Prioritas Penguatan Materi): Rekomendasi materi terfokus */}
-          <div className="bg-white rounded-3xl p-6 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="bg-white rounded-3xl p-6 border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-neutral-500 font-mono text-xs uppercase tracking-wider">
@@ -184,7 +275,7 @@ export default function StudentDashboard() {
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
           {/* CARD 4 (Span 2x2 - Peta Belajar Adaptif Interaktif) */}
           <div className="md:col-span-2 lg:col-span-2 lg:row-span-2">

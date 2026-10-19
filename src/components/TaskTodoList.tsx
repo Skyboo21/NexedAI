@@ -34,12 +34,26 @@ export default function TaskTodoList() {
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
+    const title = newTaskTitle.trim();
+    if (!title) return;
+
     setTasks([
       ...tasks,
-      { id: Date.now(), title: newTaskTitle.trim(), category: "Umum", completed: false },
+      { id: Date.now(), title, category: "Umum", completed: false },
     ]);
     setNewTaskTitle("");
+
+    // Catat log aktivitas mandiri ke database
+    fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "task_created",
+        title: `Aktivitas Mandiri: ${title}`,
+        description: `Menambahkan checklist aktivitas mandiri "${title}".`,
+        xpEarned: 20,
+      }),
+    }).catch(() => {});
   };
 
   const toggleTask = (id: number) => {

@@ -9,17 +9,79 @@ generator client {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  role         String   @default("mahasiswa")
-  nimOrNip     String?  @map("nim_or_nip")
-  passwordHash String   @map("password_hash")
-  salt         String
-  semester     Int?     @default(1)
-  prodi        String?  @default("D3 Teknik Informatika SV UNS")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String             @id @default(uuid())
+  name           String
+  email          String             @unique
+  role           String             @default("mahasiswa") // mahasiswa | dosen | admin
+  nimOrNip       String?            @map("nim_or_nip")
+  passwordHash   String             @map("password_hash")
+  salt           String
+  semester       Int                @default(4)
+  prodi          String             @default("D3 Teknik Informatika")
+  totalXp        Int                @default(0) @map("total_xp")
+  level          String             @default("Lvl 1 • Novice")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @default(now()) @updatedAt @map("updated_at")
+  activities     LearningActivity[]
+  userBadges     UserBadge[]
+  moduleProgress ModuleProgress[]
 
   @@map("users")
+}
+
+model LearningActivity {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "quiz_completed" | "module_step" | "ai_tutor_chat" | "task_created"
+  title       String
+  description String
+  xpEarned    Int      @default(0) @map("xp_earned")
+  score       Float?
+  metadata    String?  // JSON stringified detail (misal: moduleId, subject)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("learning_activities")
+}
+
+model Badge {
+  id              String      @id
+  code            String      @unique
+  title           String
+  description     String
+  tier            String      // "Gold" | "Silver" | "Bronze"
+  iconName        String      @map("icon_name") // Nama ikon Lucide
+  requirementType String      @map("requirement_type") // "quiz_perfect" | "streak_quiz" | "ai_chat_count" | "modules_completed"
+  targetValue     Int         @map("target_value")
+  userBadges      UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId    String   @map("badge_id")
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model ModuleProgress {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId        String   @map("module_id")
+  moduleTitle     String   @map("module_title")
+  completedSteps  String   @map("completed_steps") // JSON array string: "[1,2,3,4]"
+  progressPercent Int      @default(0) @map("progress_percent")
+  isCompleted     Boolean  @default(false) @map("is_completed")
+  quizScore       Float?   @map("quiz_score")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, moduleId])
+  @@map("module_progress")
 }

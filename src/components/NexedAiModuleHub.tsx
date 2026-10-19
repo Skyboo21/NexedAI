@@ -54,7 +54,6 @@ import {
   markModuleCompleted,
   saveModuleProgress,
   getModuleProgress,
-  type ModuleProgress,
 } from "../lib/progressStorage";
 import { useAuthStore } from "../store/authStore";
 
@@ -395,7 +394,7 @@ export default function NexedAiModuleHub() {
     const saved = getModuleProgress(modId);
     if (saved) {
       const restoredStages: Record<number, boolean> = { 1: false, 2: false, 3: false, 4: false };
-      saved.completedSteps.forEach((s) => {
+      saved.completedSteps.forEach((s: number) => {
         if (s >= 1 && s <= 4) restoredStages[s] = true;
       });
       setHubStageProgress(restoredStages);
@@ -1034,6 +1033,23 @@ Silabus & Fokus Pembahasan:
     markModuleCompleted(modId, analysisResult.title, xp, correctCount);
     useAuthStore.getState().addXp(xp);
 
+    // Catat log kuis modul teranalisis ke database persisten
+    fetch("/api/activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "quiz_completed",
+        title: `Kuis Tuntas: ${analysisResult.title}`,
+        description: `Menyelesaikan kuis modul "${analysisResult.title}" (${correctCount}/${analysisResult.quiz.length} benar) (+${xp} XP).`,
+        xpEarned: xp,
+        score: Math.round((correctCount / Math.max(1, analysisResult.quiz.length)) * 100),
+        metadata: {
+          moduleId: modId,
+          title: analysisResult.title,
+        },
+      }),
+    }).catch(() => {});
+
     const allCompleted = { 1: true, 2: true, 3: true, 4: true };
     setHubStageProgress(allCompleted);
     setCompletionData({
@@ -1062,6 +1078,22 @@ Silabus & Fokus Pembahasan:
         xpEarned: completedSteps.length === 4 ? analysisResult.xpReward || 150 : 0,
         lastUpdated: new Date().toISOString(),
       });
+
+      // Catat log progres tahap belajar ke database
+      fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "module_step",
+          title: `Tahap ${stageNum} Selesai: ${analysisResult.title}`,
+          description: `Menyelesaikan tahap ${stageNum} pada modul interaktif "${analysisResult.title}".`,
+          xpEarned: 25,
+          metadata: {
+            moduleId: modId,
+            stage: stageNum,
+          },
+        }),
+      }).catch(() => {});
     }
 
     if (stageNum < 4) {
