@@ -14,11 +14,10 @@ export interface RegisteredUserRecord {
   prodi?: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { smartApiFetch } from "../utils/apiConfig";
 
 const authFetch = (endpoint: string, init?: RequestInit): Promise<Response> => {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-  return fetch(url, { ...init, credentials: "include" }).catch(() => fetch(endpoint, init));
+  return smartApiFetch(endpoint, { ...init, credentials: "include" });
 };
 
 export interface AuthState {

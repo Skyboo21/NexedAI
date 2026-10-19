@@ -1,5 +1,5 @@
 // src/lib/server/gamificationDb.ts
-import { prisma, isDatabaseConfigured } from "./db";
+import { isDatabaseConfigured, prisma } from "./db";
 
 export interface StandardBadgeDefinition {
   id: string;
@@ -8,7 +8,12 @@ export interface StandardBadgeDefinition {
   description: string;
   tier: "Gold" | "Silver" | "Bronze";
   iconName: string;
-  requirementType: "quiz_perfect" | "streak_quiz" | "ai_chat_count" | "modules_completed" | "quiz_completed";
+  requirementType:
+    | "quiz_perfect"
+    | "streak_quiz"
+    | "ai_chat_count"
+    | "modules_completed"
+    | "quiz_completed";
   targetValue: number;
 }
 
@@ -90,7 +95,7 @@ export function calculateLevelFromXp(xp: number): string {
  * Inisialisasi seed badges dan default user activities jika database terkonfigurasi
  */
 export async function ensureGamificationSeed(): Promise<void> {
-  if (!prisma || !isDatabaseConfigured()) return;
+  if (!isDatabaseConfigured()) return;
 
   try {
     // 1. Upsert all badges
@@ -135,7 +140,8 @@ export async function ensureGamificationSeed(): Promise<void> {
             userId: mahasiswa.id,
             type: "quiz_completed",
             title: "Kuis Active Recall: Struktur Kontrol & Perulangan",
-            description: "Menuntaskan evaluasi mandiri materi For vs While dengan pemahaman logika mendalam.",
+            description:
+              "Menuntaskan evaluasi mandiri materi For vs While dengan pemahaman logika mendalam.",
             xpEarned: 100,
             score: 100,
             metadata: JSON.stringify({ moduleId: "3", subject: "Algoritma & Pemrograman" }),
@@ -155,7 +161,8 @@ export async function ensureGamificationSeed(): Promise<void> {
             userId: mahasiswa.id,
             type: "ai_tutor_chat",
             title: "Konsultasi Analogi DFD vs Flowchart",
-            description: "Diskusi interaktif bersama Nexed AI Tutor mengenai pemodelan sistem toko kelontong.",
+            description:
+              "Diskusi interaktif bersama Nexed AI Tutor mengenai pemodelan sistem toko kelontong.",
             xpEarned: 25,
             score: null,
             metadata: JSON.stringify({ topic: "Analisis & Perancangan Sistem" }),
@@ -241,7 +248,7 @@ export async function logLearningActivity(params: {
   score?: number | null;
   metadata?: Record<string, unknown>;
 }) {
-  if (!prisma || !isDatabaseConfigured()) {
+  if (!isDatabaseConfigured()) {
     return {
       success: true,
       persisted: false,
@@ -304,7 +311,11 @@ export async function logLearningActivity(params: {
 
     let shouldUnlock = false;
 
-    if (badge.requirementType === "quiz_perfect" && params.type === "quiz_completed" && params.score === 100) {
+    if (
+      badge.requirementType === "quiz_perfect" &&
+      params.type === "quiz_completed" &&
+      params.score === 100
+    ) {
       shouldUnlock = true;
     } else if (badge.requirementType === "ai_chat_count") {
       const aiCount = await prisma.learningActivity.count({
@@ -348,7 +359,7 @@ export async function logLearningActivity(params: {
  * Membaca daftar lencana lengkap dengan status pembukaan untuk user tertentu
  */
 export async function getBadgesWithStatus(userId?: string) {
-  if (!prisma || !isDatabaseConfigured()) {
+  if (!isDatabaseConfigured()) {
     return INITIAL_BADGES.map((b, idx) => ({
       ...b,
       unlocked: idx < 3,
@@ -397,7 +408,7 @@ export async function getUserActivities(params: {
   type?: string;
   search?: string;
 }) {
-  if (!prisma || !isDatabaseConfigured()) {
+  if (!isDatabaseConfigured()) {
     return [];
   }
 
@@ -413,7 +424,7 @@ export async function getUserActivities(params: {
     whereClause.type = params.type;
   }
 
-  if (params.search && params.search.trim()) {
+  if (params.search?.trim()) {
     whereClause.title = {
       contains: params.search.trim(),
       mode: "insensitive",
@@ -453,11 +464,12 @@ export function calculateStreakDays(activityDates: Date[]): number {
   const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
 
   // Cek apakah aktivitas paling akhir adalah hari ini atau kemarin
-  if (sortedDates[0] !== todayStr && sortedDates[0] !== yesterdayStr) {
+  const latestDate = sortedDates[0];
+  if (!latestDate || (latestDate !== todayStr && latestDate !== yesterdayStr)) {
     return 1; // Minimal 1 hari aktif tercatat jika ada riwayat
   }
 
-  let expectedDate = sortedDates[0] === todayStr ? today : yesterday;
+  const expectedDate = new Date(latestDate === todayStr ? today : yesterday);
 
   for (const dateStr of sortedDates) {
     const curStr = `${expectedDate.getFullYear()}-${String(expectedDate.getMonth() + 1).padStart(2, "0")}-${String(expectedDate.getDate()).padStart(2, "0")}`;
@@ -476,7 +488,7 @@ export function calculateStreakDays(activityDates: Date[]): number {
  * Mengambil ringkasan statistik gamifikasi & aktivitas belajar
  */
 export async function getUserGamificationStats(userId: string) {
-  if (!prisma || !isDatabaseConfigured()) {
+  if (!isDatabaseConfigured()) {
     return {
       totalXp: 225,
       level: "Lvl 3 • Praktikan Terampil",
@@ -548,13 +560,58 @@ export async function getUserGamificationStats(userId: string) {
  * Mengambil papan peringkat real-time berdasarkan total XP mahasiswa
  */
 export async function getLiveLeaderboard(currentUserId?: string) {
-  if (!prisma || !isDatabaseConfigured()) {
+  if (!isDatabaseConfigured()) {
     return [
-      { rank: 1, name: "Ucik Dika Maharani", nim: "202401012", xp: 2450, badgesCount: 6, level: "Lvl 7 • Scholar", isCurrentUser: false },
-      { rank: 2, name: "Muhammad Hariz Lazuardi", nim: "M3124001", xp: 2180, badgesCount: 5, level: "Lvl 7 • Scholar", isCurrentUser: true },
-      { rank: 3, name: "Zam Zam Zahrina", nim: "202401015", xp: 1950, badgesCount: 4, level: "Lvl 5 • Apprentice", isCurrentUser: false },
-      { rank: 4, name: "Siti Aminah", nim: "202401092", xp: 1420, badgesCount: 3, level: "Lvl 3 • Praktikan Terampil", isCurrentUser: false },
-      { rank: 5, name: "Budi Santoso", nim: "202401048", xp: 980, badgesCount: 2, level: "Lvl 2 • Learner", isCurrentUser: false },
+      {
+        rank: 1,
+        name: "Ucik Dika Maharani",
+        nim: "202401012",
+        email: "ucik.dika@student.uns.ac.id",
+        xp: 2450,
+        badgesCount: 6,
+        level: "Lvl 7 • Scholar",
+        isCurrentUser: false,
+      },
+      {
+        rank: 2,
+        name: "Muhammad Hariz Lazuardi",
+        nim: "M3124001",
+        email: "mahasiswa@nexed.ai",
+        xp: 2180,
+        badgesCount: 5,
+        level: "Lvl 7 • Scholar",
+        isCurrentUser: Boolean(currentUserId && currentUserId === "usr_mhs_001"),
+      },
+      {
+        rank: 3,
+        name: "Zam Zam Zahrina",
+        nim: "202401015",
+        email: "zam.zam@student.uns.ac.id",
+        xp: 1950,
+        badgesCount: 4,
+        level: "Lvl 5 • Apprentice",
+        isCurrentUser: false,
+      },
+      {
+        rank: 4,
+        name: "Siti Aminah",
+        nim: "202401092",
+        email: "siti.aminah@student.uns.ac.id",
+        xp: 1420,
+        badgesCount: 3,
+        level: "Lvl 3 • Praktikan Terampil",
+        isCurrentUser: false,
+      },
+      {
+        rank: 5,
+        name: "Budi Santoso",
+        nim: "202401048",
+        email: "budi.santoso@student.uns.ac.id",
+        xp: 980,
+        badgesCount: 2,
+        level: "Lvl 2 • Learner",
+        isCurrentUser: false,
+      },
     ];
   }
 
@@ -575,6 +632,7 @@ export async function getLiveLeaderboard(currentUserId?: string) {
     rank: idx + 1,
     id: student.id,
     name: student.name,
+    email: student.email,
     nim: student.nimOrNip || `202401${String(idx + 10).padStart(3, "0")}`,
     xp: student.totalXp,
     badgesCount: student._count.userBadges,

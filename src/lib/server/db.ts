@@ -14,13 +14,12 @@ export const isDatabaseConfigured = (): boolean => {
   return Boolean(url && url.trim().length > 0 && !url.includes("placeholder"));
 };
 
-export const prisma: PrismaClient | null = isDatabaseConfigured()
-  ? (globalForPrisma.prisma ??
-    new PrismaClient({
-      log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-    }))
-  : null;
+export const prisma: PrismaClient =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+  });
 
-if (process.env.NODE_ENV !== "production" && prisma) {
+if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }

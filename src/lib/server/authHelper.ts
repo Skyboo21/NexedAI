@@ -21,6 +21,26 @@ export async function getSessionUser(request: NextRequest): Promise<Authenticate
     }
   }
 
+  // Support explicit x-user-email header if session cookie is not set
+  const headerEmail = request.headers.get("x-user-email");
+  if (!token && headerEmail && prisma && isDatabaseConfigured()) {
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: headerEmail.trim().toLowerCase() },
+        select: { id: true, email: true, name: true, role: true, nimOrNip: true },
+      });
+      if (dbUser) {
+        return {
+          id: dbUser.id,
+          email: dbUser.email,
+          name: dbUser.name,
+          role: dbUser.role,
+          nimOrNip: dbUser.nimOrNip ?? undefined,
+        };
+      }
+    } catch {}
+  }
+
   if (token) {
     const session = await verifySessionToken(token);
     if (session) {

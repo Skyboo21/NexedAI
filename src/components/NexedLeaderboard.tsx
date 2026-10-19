@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { onProgressUpdate } from "../lib/progressStorage";
+import { useAuthStore } from "../store/authStore";
 
 export interface LeaderboardEntry {
   rank: number;
@@ -24,6 +25,7 @@ export interface LeaderboardEntry {
   badgesCount: number;
   level: string;
   isCurrentUser?: boolean;
+  email?: string;
 }
 
 export interface BadgeItem {
@@ -51,10 +53,11 @@ const FALLBACK_LEADERBOARD: LeaderboardEntry[] = [
     rank: 2,
     name: "Muhammad Hariz Lazuardi",
     nim: "M3124001",
+    email: "mahasiswa@nexed.ai",
     xp: 2180,
     badgesCount: 5,
     level: "Lvl 7 • Scholar",
-    isCurrentUser: true,
+    isCurrentUser: false,
   },
   {
     rank: 3,
@@ -146,6 +149,14 @@ function formatXp(xp: number): string {
   return xp.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+function getLevelTitle(xp: number): string {
+  if (xp >= 2000) return "Lvl 7 • Scholar";
+  if (xp >= 1500) return "Lvl 5 • Apprentice";
+  if (xp >= 1000) return "Lvl 3 • Praktikan Terampil";
+  if (xp >= 500) return "Lvl 2 • Learner";
+  return "Lvl 1 • Novice";
+}
+
 function getBadgeIcon(iconName: string, tier: string) {
   const iconClass =
     tier === "Gold"
@@ -173,17 +184,38 @@ function getBadgeIcon(iconName: string, tier: string) {
 }
 
 export default function NexedLeaderboard() {
+  const { user: activeAuthUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"leaderboard" | "badges">("leaderboard");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(FALLBACK_LEADERBOARD);
   const [badges, setBadges] = useState<BadgeItem[]>(FALLBACK_BADGES);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isRowCurrentUser = (entry: LeaderboardEntry): boolean => {
+    if (activeAuthUser) {
+      if (activeAuthUser.email && entry.email && entry.email.toLowerCase() === activeAuthUser.email.toLowerCase()) {
+        return true;
+      }
+      if (activeAuthUser.nimOrNip && entry.nim && entry.nim === activeAuthUser.nimOrNip) {
+        return true;
+      }
+      if (activeAuthUser.name && entry.name && activeAuthUser.name.trim().toLowerCase() === entry.name.trim().toLowerCase()) {
+        return true;
+      }
+      return false;
+    }
+    return Boolean(entry.isCurrentUser);
+  };
+
   const loadData = async () => {
     try {
       setIsLoading(true);
+      const headers: Record<string, string> = {};
+      if (activeAuthUser?.email) {
+        headers["x-user-email"] = activeAuthUser.email;
+      }
       const [lbRes, badgesRes] = await Promise.all([
-        fetch("/api/gamification/leaderboard"),
-        fetch("/api/gamification/badges"),
+        fetch("/api/gamification/leaderboard", { headers }),
+        fetch("/api/gamification/badges", { headers }),
       ]);
 
       if (lbRes.ok) {
@@ -212,7 +244,7 @@ export default function NexedLeaderboard() {
       loadData();
     });
     return cleanup;
-  }, []);
+  }, [activeAuthUser?.email, activeAuthUser?.name]);
 
   const unlockedCount = badges.filter((b) => b.unlocked).length;
 
@@ -309,63 +341,110 @@ export default function NexedLeaderboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
-                {leaderboard.map((entry, idx) => (
-                  <motion.tr
-                    key={entry.nim || entry.name}
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.15, delay: idx * 0.03 }}
-                    className={`transition-colors ${
-                      entry.isCurrentUser
-                        ? "bg-neutral-100/70 border-l-2 border-black font-semibold hover:bg-neutral-100"
-                        : "hover:bg-neutral-50/80"
-                    }`}
-                  >
-                    <td className="py-3.5 px-4 text-center font-bold text-xs">
-                      {entry.rank === 1 ? (
-                        <span className="text-amber-600 font-extrabold font-mono">#1</span>
-                      ) : entry.rank === 2 ? (
-                        <span className="text-neutral-700 font-bold font-mono">#2</span>
-                      ) : entry.rank === 3 ? (
-                        <span className="text-amber-800 font-bold font-mono">#3</span>
-                      ) : (
-                        <span className="text-neutral-400 font-mono">#{entry.rank}</span>
-                      )}
+                {leaderboard.map((entry, idx) => {
+                  const isCurrent = isRowCurrentUser(entry);
+                  return (
+                    <motion.tr
+                      key={entry.nim || entry.name}
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.15, delay: idx * 0.03 }}
+                      className={`transition-colors ${
+                        isCurrent
+                          ? "bg-neutral-100/70 border-l-2 border-black font-semibold hover:bg-neutral-100"
+                          : "hover:bg-neutral-50/80"
+                      }`}
+                    >
+                      <td className="py-3.5 px-4 text-center font-bold text-xs">
+                        {entry.rank === 1 ? (
+                          <span className="text-amber-600 font-extrabold font-mono">#1</span>
+                        ) : entry.rank === 2 ? (
+                          <span className="text-neutral-700 font-bold font-mono">#2</span>
+                        ) : entry.rank === 3 ? (
+                          <span className="text-amber-800 font-bold font-mono">#3</span>
+                        ) : (
+                          <span className="text-neutral-400 font-mono">#{entry.rank}</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-mono font-medium shrink-0">
+                            {entry.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")}
+                          </div>
+                          <div>
+                            <div className="font-medium text-black flex items-center gap-1.5">
+                              <span>{entry.name}</span>
+                              {isCurrent && (
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black text-white">
+                                  Anda
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-neutral-400 font-mono">{entry.nim}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-700 font-normal">{entry.level}</td>
+                      <td className="py-3.5 px-4 text-center font-mono font-medium text-black">
+                        {entry.badgesCount}
+                      </td>
+                      <td
+                        suppressHydrationWarning
+                        className="py-3.5 px-4 text-right font-mono font-medium text-black"
+                      >
+                        {`${formatXp(entry.xp)} XP`}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+
+                {activeAuthUser && activeAuthUser.role === "mahasiswa" && !leaderboard.some(isRowCurrentUser) && (
+                  <tr className="bg-neutral-100/90 border-t-2 border-black/20 font-semibold transition-colors">
+                    <td className="py-3.5 px-4 text-center font-bold text-xs font-mono text-neutral-400">
+                      -
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-mono font-medium shrink-0">
-                          {entry.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join("")}
+                          {activeAuthUser.name
+                            ? activeAuthUser.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join("")
+                            : "AN"}
                         </div>
                         <div>
                           <div className="font-medium text-black flex items-center gap-1.5">
-                            <span>{entry.name}</span>
-                            {entry.isCurrentUser && (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black text-white">
-                                Anda
-                              </span>
-                            )}
+                            <span>{activeAuthUser.name || "Mahasiswa Aktif"}</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black text-white">
+                              Anda
+                            </span>
                           </div>
-                          <div className="text-[11px] text-neutral-400 font-mono">{entry.nim}</div>
+                          <div className="text-[11px] text-neutral-400 font-mono">
+                            {activeAuthUser.nimOrNip || "202401999"}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-neutral-700 font-normal">{entry.level}</td>
+                    <td className="py-3.5 px-4 text-neutral-700 font-normal">
+                      {getLevelTitle(activeAuthUser.xp ?? 0)}
+                    </td>
                     <td className="py-3.5 px-4 text-center font-mono font-medium text-black">
-                      {entry.badgesCount}
+                      {badges.filter((b) => b.unlocked).length}
                     </td>
                     <td
                       suppressHydrationWarning
                       className="py-3.5 px-4 text-right font-mono font-medium text-black"
                     >
-                      {`${formatXp(entry.xp)} XP`}
+                      {`${formatXp(activeAuthUser.xp ?? 0)} XP`}
                     </td>
-                  </motion.tr>
-                ))}
+                  </tr>
+                )}
               </tbody>
             </table>
           </motion.div>
