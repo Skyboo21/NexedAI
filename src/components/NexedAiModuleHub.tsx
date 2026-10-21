@@ -48,6 +48,8 @@ import {
   ArrowRight,
   LayoutDashboard,
   Bot,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 
 import {
@@ -120,7 +122,7 @@ export interface AnalyzedModuleResult {
 
 import { analyzeModuleContent, generateChatResponse } from "../lib/aiModuleAnalyzer";
 import { getAdaptiveRecommendations, type AdaptiveLearningResponse } from "../services/apiService";
-import { resolveCuratedResources } from "../lib/curatedResources";
+import { resolveCuratedResources, extractYoutubeId } from "../lib/curatedResources";
 
 const ANALYSIS_STEPS = [
   { percent: 25, label: "Membaca dan mengekstraksi konten materi...", icon: FileText },
@@ -406,6 +408,15 @@ export default function NexedAiModuleHub() {
 
   // Active Video Modal for Direct Embedded Playback
   const [activeVideoModal, setActiveVideoModal] = useState<RecommendedVideo | null>(null);
+  const [useVideoFallback, setUseVideoFallback] = useState<boolean>(false);
+  const [isVideoCopied, setIsVideoCopied] = useState<boolean>(false);
+  const [videoWatchedMarked, setVideoWatchedMarked] = useState<boolean>(false);
+
+  useEffect(() => {
+    setUseVideoFallback(false);
+    setIsVideoCopied(false);
+    setVideoWatchedMarked(false);
+  }, [activeVideoModal]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -421,20 +432,22 @@ export default function NexedAiModuleHub() {
     };
   }, [activeVideoModal]);
 
-  // Curated Fallback & Deep-Linked Video / Docs Resolution
-  const curatedFallback = analysisResult
-    ? resolveCuratedResources(`${analysisResult.title} ${analysisResult.summary?.overview || ""}`)
-    : null;
+  // Curated Fallback & Deep-Linked Video / Docs Resolution (Fail-Safe 100%)
+  const curatedFallback = resolveCuratedResources(
+    analysisResult
+      ? `${analysisResult.title} ${analysisResult.summary?.overview || ""}`
+      : "Algoritma Pemrograman Basis Data Pemrograman Web",
+  );
 
   const activeRecommendedVideos: RecommendedVideo[] =
-    analysisResult?.recommendedVideos && analysisResult.recommendedVideos.length > 0
+    analysisResult?.recommendedVideos && analysisResult.recommendedVideos.length >= 2
       ? analysisResult.recommendedVideos
-      : curatedFallback?.recommendedVideos ?? [];
+      : curatedFallback.recommendedVideos;
 
   const activeRecommendedDocs: RecommendedDoc[] =
-    analysisResult?.recommendedDocs && analysisResult.recommendedDocs.length > 0
+    analysisResult?.recommendedDocs && analysisResult.recommendedDocs.length >= 2
       ? analysisResult.recommendedDocs
-      : curatedFallback?.recommendedDocs ?? [];
+      : curatedFallback.recommendedDocs;
 
   // Adaptive Learning & External Recommendations
   const [adaptiveRecs, setAdaptiveRecs] = useState<AdaptiveLearningResponse | null>(null);
@@ -2735,86 +2748,220 @@ Silabus & Fokus Pembahasan:
         </div>
       )}
 
-      {/* MODAL PEMUTAR VIDEO EMBED YOUTUBE RESPONTIF (DIRECT DEEP-LINK) */}
-      {activeVideoModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in"
-          onClick={() => setActiveVideoModal(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Pemutar video: ${activeVideoModal.title}`}
-        >
+      {/* MODAL PEMUTAR VIDEO EMBED YOUTUBE RESPONSIF (DIRECT PRIVACY-ENHANCED & FAIL-SAFE) */}
+      {activeVideoModal && (() => {
+        const cleanEmbedId =
+          extractYoutubeId(activeVideoModal.embedId || activeVideoModal.videoUrl) ||
+          (activeVideoModal.embedId && activeVideoModal.embedId.length === 11 ? activeVideoModal.embedId : "1NigbK3Jk7Q");
+
+        const handleCopyVideoUrl = async (url: string) => {
+          try {
+            await navigator.clipboard.writeText(url);
+            setIsVideoCopied(true);
+            setTimeout(() => setIsVideoCopied(false), 2500);
+          } catch {
+            // safe fallback
+          }
+        };
+
+        const handleMarkWatched = () => {
+          setVideoWatchedMarked(true);
+          setTimeout(() => {
+            setActiveVideoModal(null);
+          }, 600);
+        };
+
+        return (
           <div
-            className="bg-white rounded-3xl border border-black/10 shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in"
+            onClick={() => setActiveVideoModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Pemutar video: ${activeVideoModal.title}`}
           >
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between gap-3">
-              <div className="min-w-0 pr-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-black bg-[#F4F4F6] px-2 py-0.5 rounded-md border border-black/8">
-                    {activeVideoModal.channel}
-                  </span>
-                  <span className="text-[10px] font-mono text-neutral-500">
-                    ⏱ {activeVideoModal.duration}
-                  </span>
-                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    Direct Deep-Link
-                  </span>
+            <div
+              className="bg-white rounded-3xl border border-black/10 shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 bg-white border-b border-black/8 flex items-center justify-between gap-3">
+                <div className="min-w-0 pr-2">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-black bg-[#F4F4F6] px-2 py-0.5 rounded-md border border-black/8">
+                      {activeVideoModal.channel}
+                    </span>
+                    <span className="text-[10px] font-mono text-neutral-500 inline-flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-neutral-400" />
+                      <span>{activeVideoModal.duration}</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      Privacy-Enhanced Embed
+                    </span>
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-black truncate">
+                    {activeVideoModal.title}
+                  </h3>
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-black truncate">
-                  {activeVideoModal.title}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveVideoModal(null)}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer shrink-0 font-bold"
-                aria-label="Tutup pemutar video"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Responsive aspect-video iframe */}
-            <div className="relative w-full aspect-video bg-black">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${activeVideoModal.embedId}?autoplay=1&rel=0`}
-                title={activeVideoModal.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full border-0"
-              />
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 sm:p-5 bg-[#FAFAFA] border-t border-black/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <p className="text-xs text-neutral-600 line-clamp-2 sm:line-clamp-1">
-                <span className="font-semibold text-black">Pokok Bahasan: </span>
-                {activeVideoModal.summaryTopic}
-              </p>
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={activeVideoModal.videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black text-xs font-medium border border-black/10 transition-colors"
-                >
-                  <span>Buka di YouTube</span>
-                  <span className="text-[11px]">↗</span>
-                </a>
                 <button
                   type="button"
                   onClick={() => setActiveVideoModal(null)}
-                  className="min-h-[44px] inline-flex items-center justify-center px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer shrink-0 font-bold"
+                  aria-label="Tutup pemutar video"
                 >
-                  Selesai Menonton
+                  <X className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* Player Area: Privacy Iframe OR Smart Fallback Preview Card */}
+              {useVideoFallback ? (
+                <div className="relative w-full aspect-video bg-neutral-950 flex flex-col items-center justify-center p-6 text-center text-white overflow-hidden group">
+                  {/* High-res / HQ Thumbnail Background */}
+                  <img
+                    src={`https://img.youtube.com/vi/${cleanEmbedId}/maxresdefault.jpg`}
+                    alt={activeVideoModal.title}
+                    className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${cleanEmbedId}/hqdefault.jpg`;
+                    }}
+                  />
+                  <div className="relative z-10 max-w-lg mx-auto space-y-3 p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-mono font-medium">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Mode Pratinjau Alternatif (Embed Dibatasi)</span>
+                    </div>
+                    <h4 className="text-sm sm:text-base font-bold text-white line-clamp-2">
+                      {activeVideoModal.title}
+                    </h4>
+                    <p className="text-xs text-neutral-300 line-clamp-2">
+                      Kreator kanal <span className="text-white font-medium">{activeVideoModal.channel}</span> membatasi penyematan di situs pihak ketiga. Anda dapat membuka langsung di YouTube atau menyalin tautan.
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                      <a
+                        href={activeVideoModal.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-md transition-all"
+                      >
+                        <PlayCircle className="w-4 h-4" />
+                        <span>Buka Langsung di YouTube</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyVideoUrl(activeVideoModal.videoUrl)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-medium border border-white/20 transition-all cursor-pointer"
+                      >
+                        {isVideoCopied ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Tautan Disalin!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Salin Tautan Video</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUseVideoFallback(false)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Muat Ulang Iframe</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative w-full aspect-video bg-black">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${cleanEmbedId}?autoplay=1&rel=0&modestbranding=1`}
+                    title={activeVideoModal.title}
+                    className="w-full h-full rounded-none border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 bg-[#FAFAFA] border-t border-black/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-neutral-600 line-clamp-1">
+                    <span className="font-semibold text-black">Pokok Bahasan: </span>
+                    {activeVideoModal.summaryTopic}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setUseVideoFallback(!useVideoFallback)}
+                    className="text-[11px] text-indigo-600 hover:text-indigo-800 underline font-medium mt-1 inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <AlertTriangle className="w-3 h-3 text-amber-500" />
+                    <span>{useVideoFallback ? "Tampilkan Pemutar Iframe Asli" : "Ada Masalah Pemutaran? Buka Mode Fallback"}</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyVideoUrl(activeVideoModal.videoUrl)}
+                    className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-medium border border-black/10 transition-colors cursor-pointer"
+                    title="Salin tautan video ke clipboard"
+                  >
+                    {isVideoCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-700 font-semibold">Tersalin</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Salin Tautan</span>
+                      </>
+                    )}
+                  </button>
+
+                  <a
+                    href={activeVideoModal.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black text-xs font-medium border border-black/10 transition-colors"
+                  >
+                    <span>Buka Langsung di YouTube</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleMarkWatched}
+                    className={`min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      videoWatchedMarked
+                        ? "bg-emerald-600 text-white"
+                        : "bg-black hover:bg-neutral-800 text-white"
+                    }`}
+                  >
+                    {videoWatchedMarked ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Selesai Ditonton!</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Tandai Selesai Menonton</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </section>
   );
 }

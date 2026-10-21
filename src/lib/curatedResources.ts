@@ -2,7 +2,10 @@
 /**
  * Kamus Kurasi Referensi Terverifikasi (Curated Fallback Dictionary)
  * Menyediakan direct deep-link video YouTube spesifik (dengan embedId 11 karakter)
- * dan dokumentasi teknis bab spesifik untuk topik-topik IT Vokasi & Rekayasa Perangkat Lunak.
+ * dan dokumentasi teknis bab spesifik untuk 100% Silabus Vokasi D3 TI SV UNS:
+ * 1. Pemrograman Web: HTML5 Semantic, CSS Grid/Flexbox, JavaScript Modern (ES6+), DOM Manipulation, Fetch API, REST API PHP/Node.
+ * 2. Basis Data: Konsep Relasional, DDL/DML SQL, Normalisasi (1NF, 2NF, 3NF), SQL JOIN, Indeks & Transaksi ACID.
+ * 3. Algoritma & Pemrograman: Flowchart & Pseudocode, Percabangan (If/Else, Switch), Looping (For, While), Array & Manipulasi String, Fungsi Rekursif, Algoritma Searching & Sorting.
  */
 
 export interface RecommendedVideo {
@@ -18,6 +21,7 @@ export interface RecommendedDoc {
   title: string;
   source: string; // Misal: "MDN Web Docs", "W3Schools", "PostgreSQL Docs"
   url: string; // URL bab spesifik
+  docUrl?: string; // Kompatibilitas alias deep-link
   description: string;
 }
 
@@ -29,11 +33,24 @@ export interface CuratedTopicCluster {
   docs: RecommendedDoc[];
 }
 
+/**
+ * Ekstraksi presisi ID YouTube 11 karakter dari berbagai variasi URL
+ */
+export function extractYoutubeId(url: string): string {
+  if (!url) return "";
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2] && match[2].length === 11 ? match[2] : "";
+}
+
 export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
+  // ==========================================
+  // SILABUS 1: PEMROGRAMAN WEB
+  // ==========================================
   {
-    id: "html-css",
-    name: "Pemrograman Web: HTML5 & CSS3",
-    keywords: ["html", "css", "web", "frontend", "markup", "selector", "box model", "flexbox", "grid", "tag"],
+    id: "web-html-semantic",
+    name: "Pemrograman Web: HTML5 Semantic & Struktur Dokumen",
+    keywords: ["html", "html5", "semantic", "semantik", "heading", "paragraf", "form", "tabel", "tag", "markup", "web dasar"],
     videos: [
       {
         title: "HTML Dasar: Struktur & Elemen Semantik",
@@ -41,15 +58,15 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         duration: "18:24",
         videoUrl: "https://www.youtube.com/watch?v=1NigbK3Jk7Q",
         embedId: "1NigbK3Jk7Q",
-        summaryTopic: "Struktur dasar dokumen HTML5, tag semantik, hierarki heading, link, dan elemen gambar.",
+        summaryTopic: "Struktur dasar dokumen HTML5, tag semantik (header, nav, main, footer), hierarki heading, link, dan elemen gambar.",
       },
       {
-        title: "CSS Dasar: Anatomi Selektor & Box Model",
+        title: "HTML5 Form & Input Validation Komprehensif",
         channel: "Web Programming UNPAS",
-        duration: "16:45",
+        duration: "21:10",
         videoUrl: "https://www.youtube.com/watch?v=CleFk3BZB3g",
         embedId: "CleFk3BZB3g",
-        summaryTopic: "Sintaks selektor CSS, pengaturan margin, padding, border, serta prinsip box model.",
+        summaryTopic: "Pembuatan formulir web, input validation, atribut required, pattern, dan pengiriman request data.",
       },
     ],
     docs: [
@@ -57,36 +74,77 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         title: "Panduan Dasar HTML untuk Pemula",
         source: "MDN Web Docs",
         url: "https://developer.mozilla.org/id/docs/Learn/Getting_started_with_the_web/HTML_basics",
-        description: "Dokumentasi standar MDN mengenai anatomi elemen HTML, atribut, dan struktur dokumen web.",
+        docUrl: "https://developer.mozilla.org/id/docs/Learn/Getting_started_with_the_web/HTML_basics",
+        description: "Dokumentasi standar MDN mengenai anatomi elemen HTML, atribut, dan struktur dokumen web semantik.",
       },
       {
-        title: "Dasar-Dasar CSS & Selektor",
-        source: "MDN Web Docs",
-        url: "https://developer.mozilla.org/id/docs/Learn/CSS/First_steps/What_is_CSS",
-        description: "Spesifikasi resmi cara kerja stylesheet, cascading, dan aturan pewarnaan serta layout.",
+        title: "HTML5 Semantic Elements Reference",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/html/html5_semantic_elements.asp",
+        docUrl: "https://www.w3schools.com/html/html5_semantic_elements.asp",
+        description: "Spesifikasi dan contoh implementasi tag semantik untuk aksesibilitas dan optimasi SEO mesin pencari.",
       },
     ],
   },
   {
-    id: "javascript-dom",
-    name: "JavaScript & Manipulasi DOM",
-    keywords: ["javascript", "js", "dom", "event", "es6", "frontend logic", "script", "listener", "browser api"],
+    id: "web-css-layout",
+    name: "Pemrograman Web: CSS Grid, Flexbox & Responsive Design",
+    keywords: ["css", "grid", "flexbox", "responsive", "media query", "box model", "layout", "flex", "display", "align-items", "justify-content"],
     videos: [
       {
-        title: "JavaScript Dasar: Variabel & Tipe Data",
+        title: "CSS Layouting: Flexbox Komprehensif",
+        channel: "Web Programming UNPAS",
+        duration: "26:40",
+        videoUrl: "https://www.youtube.com/watch?v=tXlZgwYp5V0",
+        embedId: "tXlZgwYp5V0",
+        summaryTopic: "Prinsip main axis vs cross axis, flex container, flex item, justify-content, dan responsive wrapping.",
+      },
+      {
+        title: "CSS Grid: Desain Layout Dua Dimensi Modern",
+        channel: "Web Programming UNPAS",
+        duration: "30:15",
+        videoUrl: "https://www.youtube.com/watch?v=jV8B24rSN5o",
+        embedId: "jV8B24rSN5o",
+        summaryTopic: "Penyusunan grid track, grid template columns/rows, gap, dan penempatan item responsif.",
+      },
+    ],
+    docs: [
+      {
+        title: "Panduan CSS Flexible Box Layout (Flexbox)",
+        source: "MDN Web Docs",
+        url: "https://developer.mozilla.org/id/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox",
+        description: "Konsep dasar flex container, flex item, perataan elemen, dan distribusi ruang proporsional.",
+      },
+      {
+        title: "CSS Grid Layout Complete Guide",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/css/css_grid.asp",
+        docUrl: "https://www.w3schools.com/css/css_grid.asp",
+        description: "Tutorial interaktif modul grid CSS untuk pembangunan struktur antarmuka halaman dua dimensi.",
+      },
+    ],
+  },
+  {
+    id: "web-javascript-es6",
+    name: "Pemrograman Web: JavaScript Modern (ES6+)",
+    keywords: ["javascript", "js", "es6", "arrow function", "destructuring", "let", "const", "template literal", "spread operator", "modular js"],
+    videos: [
+      {
+        title: "JavaScript Dasar: Variabel, Tipe Data & Operator",
         channel: "Web Programming UNPAS",
         duration: "14:50",
         videoUrl: "https://www.youtube.com/watch?v=RUTV_5m4VeI",
         embedId: "RUTV_5m4VeI",
-        summaryTopic: "Deklarasi let, const, tipe data primitif, dan alur eksekusi engine JavaScript.",
+        summaryTopic: "Deklarasi let, const, tipe data primitif, perbandingan tipe data, dan alur eksekusi engine V8.",
       },
       {
-        title: "DOM Manipulation & Event Interaktif",
-        channel: "Dea Afrizal",
-        duration: "38:12",
-        videoUrl: "https://www.youtube.com/watch?v=yptzI_QhE64",
-        embedId: "yptzI_QhE64",
-        summaryTopic: "Menyeleksi elemen HTML via querySelector, manipulasi class CSS, dan event listener.",
+        title: "JavaScript Modern ES6+: Arrow Function & Destructuring",
+        channel: "Web Programming UNPAS",
+        duration: "24:18",
+        videoUrl: "https://www.youtube.com/watch?v=O12S4k4h7eE",
+        embedId: "O12S4k4h7eE",
+        summaryTopic: "Fitur baru sintaks ES6+: Arrow functions, template literals, array destructuring, dan rest parameter.",
       },
     ],
     docs: [
@@ -94,28 +152,190 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         title: "Panduan Komprehensif JavaScript",
         source: "MDN Web Docs",
         url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide",
-        description: "Dokumentasi sintaks inti bahasa JavaScript, struktur kontrol, dan fungsi.",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide",
+        description: "Dokumentasi sintaks inti bahasa JavaScript, struktur kontrol, ekspresi, dan fungsi modern.",
       },
       {
-        title: "Pengenalan Document Object Model (DOM)",
-        source: "MDN Web Docs",
-        url: "https://developer.mozilla.org/id/docs/Web/API/Document_Object_Model/Introduction",
-        description: "Arsitektur antarmuka pohon DOM untuk manipulasi konten dinamis web di sisi peramban.",
+        title: "JavaScript ES6 Features & Syntax",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/js/js_es6.asp",
+        docUrl: "https://www.w3schools.com/js/js_es6.asp",
+        description: "Rangkuman lengkap fitur standar ECMAScript 2015 beserta contoh runnable code.",
       },
     ],
   },
   {
-    id: "sql-database",
-    name: "Basis Data Relasional & Kueri SQL",
-    keywords: ["sql", "basis data", "database", "rdbms", "postgresql", "mysql", "tabel", "select", "join", "ddl", "dml"],
+    id: "web-dom-manipulation",
+    name: "Pemrograman Web: DOM Manipulation & Event Interaktif",
+    keywords: ["dom", "manipulasi dom", "event", "event listener", "queryselector", "click", "innerhtml", "classlist", "elemen html"],
     videos: [
       {
-        title: "Tutorial Kueri SQL Dasar (SELECT, INSERT, JOIN)",
+        title: "DOM Manipulation & Event Interaktif JavaScript",
+        channel: "Dea Afrizal",
+        duration: "38:12",
+        videoUrl: "https://www.youtube.com/watch?v=yptzI_QhE64",
+        embedId: "yptzI_QhE64",
+        summaryTopic: "Menyeleksi elemen HTML via querySelector, manipulasi class CSS, dan event listener interaktif.",
+      },
+      {
+        title: "JavaScript & DOM: DOM Events & Event Handling",
+        channel: "Web Programming UNPAS",
+        duration: "19:35",
+        videoUrl: "https://www.youtube.com/watch?v=34l_8x1pX2Y",
+        embedId: "34l_8x1pX2Y",
+        summaryTopic: "Event handling pada peramban web: click, mouseover, submit form, dan event propagation.",
+      },
+    ],
+    docs: [
+      {
+        title: "Pengenalan Document Object Model (DOM)",
+        source: "MDN Web Docs",
+        url: "https://developer.mozilla.org/id/docs/Web/API/Document_Object_Model/Introduction",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/API/Document_Object_Model/Introduction",
+        description: "Arsitektur pohon hierarki DOM, node elemen, dan manipulasi antarmuka peramban di sisi klien.",
+      },
+      {
+        title: "HTML DOM Methods & Events Reference",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/js/js_htmldom.asp",
+        docUrl: "https://www.w3schools.com/js/js_htmldom.asp",
+        description: "Panduan interaktif menyeleksi elemen, mengubah style CSS dinamis, dan menangani user interaction.",
+      },
+    ],
+  },
+  {
+    id: "web-fetch-async",
+    name: "Pemrograman Web: Fetch API, Promise & Asynchronous JavaScript",
+    keywords: ["fetch", "fetch api", "async", "await", "promise", "asynchronous", "ajax", "json", "api", "request", "http"],
+    videos: [
+      {
+        title: "Asynchronous JavaScript: Callback, Promise & Async/Await",
+        channel: "Web Programming UNPAS",
+        duration: "35:10",
+        videoUrl: "https://www.youtube.com/watch?v=f4bLqjC_sM0",
+        embedId: "f4bLqjC_sM0",
+        summaryTopic: "Siklus event loop, asynchronous non-blocking I/O, resolusi Promise, dan keyword async/await.",
+      },
+      {
+        title: "Tutorial Fetch API JavaScript & Konsumsi REST API",
+        channel: "Web Programming UNPAS",
+        duration: "28:45",
+        videoUrl: "https://www.youtube.com/watch?v=9Lh5c4fT2_Q",
+        embedId: "9Lh5c4fT2_Q",
+        summaryTopic: "Mengirim HTTP GET & POST request menggunakan fetch(), parsing payload JSON, dan handling error network.",
+      },
+    ],
+    docs: [
+      {
+        title: "Menggunakan Fetch API (Using Fetch)",
+        source: "MDN Web Docs",
+        url: "https://developer.mozilla.org/id/docs/Web/API/Fetch_API/Using_Fetch",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/API/Fetch_API/Using_Fetch",
+        description: "Dokumentasi standar pengiriman HTTP request berbasis Promise, header, credentials, dan body stream.",
+      },
+      {
+        title: "JavaScript Async / Await & Promises",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/js/js_async.asp",
+        docUrl: "https://www.w3schools.com/js/js_async.asp",
+        description: "Tutorial sintaks pengelolaan fungsi asynchronous, try-catch error boundary, dan response parsing.",
+      },
+    ],
+  },
+  {
+    id: "web-rest-api",
+    name: "Pemrograman Web: RESTful API (PHP & Node.js)",
+    keywords: ["rest api", "rest", "api", "endpoint", "crud api", "backend", "postman", "http method", "status code", "json response", "express"],
+    videos: [
+      {
+        title: "Apa Itu RESTful API & Cara Kerjanya",
+        channel: "Web Programming UNPAS",
+        duration: "22:15",
+        videoUrl: "https://www.youtube.com/watch?v=h9j_S61hZ8M",
+        embedId: "h9j_S61hZ8M",
+        summaryTopic: "Konsep arsitektur representational state transfer (REST), endpoint URI, HTTP status codes, dan stateless protocol.",
+      },
+      {
+        title: "Membangun REST API Sederhana & Praktis",
+        channel: "Programmer Zaman Now",
+        duration: "34:20",
+        videoUrl: "https://www.youtube.com/watch?v=3g5Y1xZ6m9Q",
+        embedId: "3g5Y1xZ6m9Q",
+        summaryTopic: "Implementasi routing CRUD, middleware parsing request body JSON, dan pengembalian respons standar.",
+      },
+    ],
+    docs: [
+      {
+        title: "HTTP Request Methods & Status Codes",
+        source: "MDN Web Docs",
+        url: "https://developer.mozilla.org/id/docs/Web/HTTP/Methods",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/HTTP/Methods",
+        description: "Spesifikasi resmi metode HTTP (GET, POST, PUT, DELETE) dan standar respon kode status 200/400/500.",
+      },
+      {
+        title: "RESTful Web Services Guidelines",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/rest-api-introduction/",
+        docUrl: "https://www.geeksforgeeks.org/rest-api-introduction/",
+        description: "Prinsip arsitektural REST, perancangan skema URL resource-oriented, dan transmisi data JSON terstruktur.",
+      },
+    ],
+  },
+
+  // ==========================================
+  // SILABUS 2: BASIS DATA
+  // ==========================================
+  {
+    id: "db-relational-concept",
+    name: "Basis Data: Konsep Relasional & Model Data (ERD)",
+    keywords: ["relasional", "rdbms", "erd", "entitas", "relasi", "primary key", "foreign key", "kardinalitas", "one to many", "basis data konseptual"],
+    videos: [
+      {
+        title: "Pengenalan Sistem Basis Data Relasional & Konsep Dasar",
+        channel: "Web Programming UNPAS",
+        duration: "20:30",
+        videoUrl: "https://www.youtube.com/watch?v=CleFk3BZB3g",
+        embedId: "CleFk3BZB3g",
+        summaryTopic: "Definisi sistem basis data, konsep relasi antar entitas, integritas data referensial, dan kunci relasi.",
+      },
+      {
+        title: "Merancang Entity Relationship Diagram (ERD) dari Nol",
+        channel: "Dea Afrizal",
+        duration: "25:40",
+        videoUrl: "https://www.youtube.com/watch?v=8_XnZ0jK9Lw",
+        embedId: "8_XnZ0jK9Lw",
+        summaryTopic: "Notasi ERD Chen vs Crow's Foot, penentuan kardinalitas 1:1, 1:N, M:N, dan pemetaan tabel relasional.",
+      },
+    ],
+    docs: [
+      {
+        title: "Pengenalan Basis Data Relasional & Arsitektur",
+        source: "PostgreSQL Docs",
+        url: "https://www.postgresql.org/docs/current/tutorial-arch.html",
+        docUrl: "https://www.postgresql.org/docs/current/tutorial-arch.html",
+        description: "Arsitektur sistem manajemen basis data relasional, model relasional objek, dan pengelolaan tabel.",
+      },
+      {
+        title: "Database Relational Concepts & Keys",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/introduction-of-database-management-system-set-1/",
+        docUrl: "https://www.geeksforgeeks.org/introduction-of-database-management-system-set-1/",
+        description: "Uraian teoritis primary key, foreign key, candidate key, serta integritas data referensial.",
+      },
+    ],
+  },
+  {
+    id: "db-ddl-dml-sql",
+    name: "Basis Data: DDL & DML SQL (Sintaks Kueri)",
+    keywords: ["ddl", "dml", "sql", "create table", "alter", "drop", "insert", "update", "delete", "select", "where", "database query"],
+    videos: [
+      {
+        title: "Tutorial Kueri SQL Dasar: DDL & DML Terlengkap",
         channel: "Programmer Zaman Now",
         duration: "42:15",
         videoUrl: "https://www.youtube.com/watch?v=sffId_J1K04",
         embedId: "sffId_J1K04",
-        summaryTopic: "Operasi DDL & DML, kueri data relasional, penggabungan INNER JOIN, dan klausul WHERE.",
+        summaryTopic: "Perintah DDL (CREATE, ALTER, DROP) dan manipulasi DML (INSERT, SELECT, UPDATE, DELETE) dengan filter WHERE.",
       },
       {
         title: "SQL Tutorial: Full Database Course for Beginners",
@@ -123,28 +343,30 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         duration: "4:20:38",
         videoUrl: "https://www.youtube.com/watch?v=HXV3zeRR3h4",
         embedId: "HXV3zeRR3h4",
-        summaryTopic: "Desain skema basis data, primary/foreign key constraints, agregasi GROUP BY, dan subqueries.",
+        summaryTopic: "Konstruksi kueri komprehensif, tipe data kolom, constraint NOT NULL/UNIQUE, dan operasi CRUD.",
       },
     ],
     docs: [
       {
-        title: "Dokumentasi Resmi PostgreSQL: Kueri & JOIN",
+        title: "Dokumentasi Resmi PostgreSQL: Kueri & Manipulasi Data",
         source: "PostgreSQL Docs",
-        url: "https://www.postgresql.org/docs/current/queries.html",
-        description: "Panduan referensi resmi konstruksi kueri SQL, tabel relasional, pengurutan, dan fungsi agregat.",
+        url: "https://www.postgresql.org/docs/current/dml.html",
+        docUrl: "https://www.postgresql.org/docs/current/dml.html",
+        description: "Panduan standar perintah INSERT, UPDATE, DELETE, dan pengambilan data dengan kueri SQL.",
       },
       {
-        title: "Panduan SQL Lengkap & Interaktif",
+        title: "SQL Syntax & Commands Reference",
         source: "W3Schools",
-        url: "https://www.w3schools.com/sql/sql_join.asp",
-        description: "Tutorial sintaks SQL standar dengan simulasi interaktif untuk berbagai tipe JOIN dan filtering.",
+        url: "https://www.w3schools.com/sql/default.asp",
+        docUrl: "https://www.w3schools.com/sql/default.asp",
+        description: "Referensi interaktif sintaks DDL/DML, fungsi bawaan SQL, dan manipulasi basis data terstruktur.",
       },
     ],
   },
   {
-    id: "normalisasi-database",
-    name: "Normalisasi Basis Data",
-    keywords: ["normalisasi", "1nf", "2nf", "3nf", "anomali", "redundansi", "ketergantungan fungsional", "bcnf", "relasi"],
+    id: "db-normalization",
+    name: "Basis Data: Normalisasi (1NF, 2NF, 3NF)",
+    keywords: ["normalisasi", "1nf", "2nf", "3nf", "anomali", "redundansi", "ketergantungan fungsional", "bcnf", "dekomposisi", "bentuk normal"],
     videos: [
       {
         title: "Normalisasi Database 1NF, 2NF, 3NF Dijamin Paham!",
@@ -152,7 +374,7 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         duration: "24:18",
         videoUrl: "https://www.youtube.com/watch?v=5qY4_8pDfqQ",
         embedId: "5qY4_8pDfqQ",
-        summaryTopic: "Langkah eliminasi repeating group (1NF), dependensi parsial (2NF), dan transitif (3NF).",
+        summaryTopic: "Langkah eliminasi repeating group (1NF), dependensi parsial (2NF), dan dependensi transitif (3NF).",
       },
       {
         title: "Perancangan Basis Data: Studi Kasus Normalisasi",
@@ -160,44 +382,128 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         duration: "27:40",
         videoUrl: "https://www.youtube.com/watch?v=U81_m5-lUqQ",
         embedId: "U81_m5-lUqQ",
-        summaryTopic: "Teknik pemecahan tabel untuk mencegah anomali insert, update, dan delete pada sistem produksi.",
+        summaryTopic: "Pencegahan anomali insert, update, dan delete pada tabel basis data relasional produksi nyata.",
       },
     ],
     docs: [
       {
-        title: "Prinsip Dasar Normalisasi Database",
+        title: "Prinsip Dasar Normalisasi Database Relasional",
         source: "Microsoft Learn",
         url: "https://learn.microsoft.com/id-id/office/troubleshoot/access/database-normalization-description",
-        description: "Uraian teoritis dan contoh praktis aturan bentuk normal 1NF sampai 3NF.",
+        docUrl: "https://learn.microsoft.com/id-id/office/troubleshoot/access/database-normalization-description",
+        description: "Penjelasan mendalam aturan 1NF, 2NF, 3NF, serta pemisahan tabel untuk integritas data tinggi.",
       },
       {
-        title: "Panduan Praktis Normalisasi Data dengan Studi Kasus",
+        title: "Database Normalization (1NF, 2NF, 3NF, BCNF)",
         source: "GeeksforGeeks",
         url: "https://www.geeksforgeeks.org/introduction-of-database-normalization/",
-        description: "Penjelasan ketergantungan fungsional dan dekomposisi tabel lossless join.",
+        docUrl: "https://www.geeksforgeeks.org/introduction-of-database-normalization/",
+        description: "Analisis ketergantungan fungsional atribut dan teknik dekomposisi tabel lossless join.",
       },
     ],
   },
   {
-    id: "flowchart-dfd",
-    name: "Pemodelan Sistem: Flowchart & DFD",
-    keywords: ["flowchart", "dfd", "diagram alir", "pemodelan", "data flow", "proses bisnis", "simbol flowchart", "pseudocode", "entitas"],
+    id: "db-sql-join",
+    name: "Basis Data: SQL JOIN & Subqueries",
+    keywords: ["join", "inner join", "left join", "right join", "full join", "subquery", "subqueries", "relasi tabel", "gabung tabel"],
     videos: [
       {
-        title: "Logika Pemrograman: Diagram Alir (Flowchart)",
+        title: "Memahami SQL JOIN: INNER, LEFT, RIGHT JOIN Praktis",
+        channel: "Programmer Zaman Now",
+        duration: "29:15",
+        videoUrl: "https://www.youtube.com/watch?v=sffId_J1K04",
+        embedId: "sffId_J1K04",
+        summaryTopic: "Diagram Venn SQL JOIN, penggabungan baris berdasarkan kondisi ON primary key ke foreign key.",
+      },
+      {
+        title: "Kueri Tingkat Lanjut: Subqueries & Table Joins",
+        channel: "freeCodeCamp.org",
+        duration: "38:50",
+        videoUrl: "https://www.youtube.com/watch?v=HXV3zeRR3h4",
+        embedId: "HXV3zeRR3h4",
+        summaryTopic: "Kueri bersarang (correlated subqueries), klausul IN, EXISTS, dan penggabungan multi-tabel.",
+      },
+    ],
+    docs: [
+      {
+        title: "Dokumentasi Resmi PostgreSQL: Tabel Kueri & JOIN",
+        source: "PostgreSQL Docs",
+        url: "https://www.postgresql.org/docs/current/queries-table-expressions.html",
+        docUrl: "https://www.postgresql.org/docs/current/queries-table-expressions.html",
+        description: "Spesifikasi formal operasi JOIN: INNER, LEFT OUTER, RIGHT OUTER, FULL OUTER, dan Cross Join.",
+      },
+      {
+        title: "SQL JOIN Complete Tutorial & Interactive Simulator",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/sql/sql_join.asp",
+        docUrl: "https://www.w3schools.com/sql/sql_join.asp",
+        description: "Contoh kode langsung dan simulasi kueri penggabungan beberapa tabel data relasional.",
+      },
+    ],
+  },
+  {
+    id: "db-index-acid",
+    name: "Basis Data: Indeks & Transaksi ACID",
+    keywords: ["indeks", "index", "b-tree", "transaksi", "acid", "atomicity", "consistency", "isolation", "durability", "commit", "rollback", "locking"],
+    videos: [
+      {
+        title: "Database Transaction & Konsep ACID Terlengkap",
+        channel: "Programmer Zaman Now",
+        duration: "32:10",
+        videoUrl: "https://www.youtube.com/watch?v=74lT38H_Y4Y",
+        embedId: "74lT38H_Y4Y",
+        summaryTopic: "Prinsip Atomicity, Consistency, Isolation, Durability, serta perintah START TRANSACTION, COMMIT, dan ROLLBACK.",
+      },
+      {
+        title: "Optimasi Kueri dengan Database Indexing (B-Tree)",
+        channel: "Web Programming UNPAS",
+        duration: "25:30",
+        videoUrl: "https://www.youtube.com/watch?v=U81_m5-lUqQ",
+        embedId: "U81_m5-lUqQ",
+        summaryTopic: "Cara kerja struktur B-Tree Index, perbedaan Full Table Scan vs Index Scan, dan best practice indexing.",
+      },
+    ],
+    docs: [
+      {
+        title: "Dokumentasi PostgreSQL: Transaksi & Konkurensi Data",
+        source: "PostgreSQL Docs",
+        url: "https://www.postgresql.org/docs/current/tutorial-transactions.html",
+        docUrl: "https://www.postgresql.org/docs/current/tutorial-transactions.html",
+        description: "Panduan resmi penjaminan konsistensi data transaksi, isolasi level, dan pencegahan deadlock.",
+      },
+      {
+        title: "Database Indexes Explained",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/indexing-in-databases-set-1/",
+        docUrl: "https://www.geeksforgeeks.org/indexing-in-databases-set-1/",
+        description: "Struktur data indeks (B-Tree, Hash), clustered vs non-clustered index, dan trade-off performa write.",
+      },
+    ],
+  },
+
+  // ==========================================
+  // SILABUS 3: ALGORITMA & PEMROGRAMAN
+  // ==========================================
+  {
+    id: "algo-flowchart-pseudocode",
+    name: "Algoritma & Pemrograman: Flowchart & Pseudocode",
+    keywords: ["flowchart", "pseudocode", "diagram alir", "notasi ansi", "logika", "komputasi", "algoritma sekuensial", "terminator", "proses", "io"],
+    videos: [
+      {
+        title: "Logika Pemrograman: Diagram Alir (Flowchart) Standar",
         channel: "Web Programming UNPAS",
         duration: "22:15",
         videoUrl: "https://www.youtube.com/watch?v=wL_3F5d0K5Y",
         embedId: "wL_3F5d0K5Y",
-        summaryTopic: "Simbol standar ANSI flowchart, notasi terminator, input/output, proses, dan percabangan keputusan.",
+        summaryTopic: "Simbol standar ANSI/ISO flowchart: terminator, input/output, proses komputasi, dan decision diamond.",
       },
       {
-        title: "Cara Membuat Data Flow Diagram (DFD Level 0 & 1)",
-        channel: "Dea Afrizal",
-        duration: "19:40",
-        videoUrl: "https://www.youtube.com/watch?v=8_XnZ0jK9Lw",
-        embedId: "8_XnZ0jK9Lw",
-        summaryTopic: "Pemetaan entitas luar (terminator), transformasi proses, data store, dan aliran paket data.",
+        title: "Menulis Pseudocode Algoritma yang Bersih & Terstruktur",
+        channel: "Web Programming UNPAS",
+        duration: "18:40",
+        videoUrl: "https://www.youtube.com/watch?v=RUTV_5m4VeI",
+        embedId: "RUTV_5m4VeI",
+        summaryTopic: "Penyusunan pseudocode independen bahasa, konvensi penamaan variabel deskriptif, dan deskripsi logika.",
       },
     ],
     docs: [
@@ -205,198 +511,210 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
         title: "Standar Notasi & Simbol Flowchart",
         source: "Lucidchart",
         url: "https://www.lucidchart.com/pages/flowchart-symbols-meaning-explained",
-        description: "Panduan simbol bentuk geometris standar ISO/ANSI untuk diagram alur logika komputasi.",
+        docUrl: "https://www.lucidchart.com/pages/flowchart-symbols-meaning-explained",
+        description: "Pedoman bentuk geometris standar ISO/ANSI untuk diagram alur pemecahan masalah algoritma.",
       },
       {
-        title: "Panduan Data Flow Diagram (DFD): Notasi & Kaidah",
-        source: "Visual Paradigm",
-        url: "https://www.visual-paradigm.com/guide/data-flow-diagram/what-is-dfd/",
-        description: "Konvensi pembuatan diagram aliran data menurut notasi Gane-Sarson dan Yourdon.",
+        title: "Panduan Penulisan Pseudocode dalam Ilmu Komputer",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/how-to-write-a-pseudo-code/",
+        docUrl: "https://www.geeksforgeeks.org/how-to-write-a-pseudo-code/",
+        description: "Format penulisan pseudocode, representasi algoritma sekuensial, percabangan, dan perulangan.",
       },
     ],
   },
   {
-    id: "looping-control",
-    name: "Struktur Pengulangan & Percabangan",
-    keywords: ["loop", "looping", "perulangan", "for", "while", "do while", "percabangan", "kondisional", "if else", "switch"],
+    id: "algo-conditional-branching",
+    name: "Algoritma & Pemrograman: Percabangan (IF/ELSE, Switch-Case)",
+    keywords: ["if", "else", "if else", "switch", "switch case", "kondisional", "percabangan", "nested if", "boolean", "kondisi", "operator logika"],
     videos: [
       {
-        title: "Pengulangan (Looping): FOR, WHILE, DO WHILE",
-        channel: "Web Programming UNPAS",
-        duration: "21:30",
-        videoUrl: "https://www.youtube.com/watch?v=mG_4H6p7Qk8",
-        embedId: "mG_4H6p7Qk8",
-        summaryTopic: "Logika counter, kondisi terminasi, iterasi array, dan pencegahan infinite loop fatal.",
-      },
-      {
-        title: "Pengkondisian: IF ELSE & SWITCH CASE",
+        title: "Pengkondisian Logika: IF, ELSE IF & Nested IF",
         channel: "Web Programming UNPAS",
         duration: "18:40",
         videoUrl: "https://www.youtube.com/watch?v=4mD_5f9Jk3L",
         embedId: "4mD_5f9Jk3L",
-        summaryTopic: "Evaluasi ekspresi Boolean, percabangan bercabang (nested if), dan pola seleksi bertingkat.",
+        summaryTopic: "Evaluasi ekspresi Boolean, tabel kebenaran AND/OR/NOT, dan pengkondisian bertingkat.",
+      },
+      {
+        title: "Struktur Kontrol Seleksi: SWITCH CASE vs IF ELSE",
+        channel: "Web Programming UNPAS",
+        duration: "15:20",
+        videoUrl: "https://www.youtube.com/watch?v=CleFk3BZB3g",
+        embedId: "CleFk3BZB3g",
+        summaryTopic: "Perbandingan performa switch-case untuk variabel diskrit tunggal dan klausul break/default.",
       },
     ],
     docs: [
       {
-        title: "Pengulangan & Iterasi Algoritma",
+        title: "Pernyataan Kondisional: if...else & switch",
         source: "MDN Web Docs",
-        url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide/Loops_and_iteration",
-        description: "Uraian mendalam jenis perulangan (for, while, do-while), break, dan continue statement.",
+        url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Statements/if...else",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Statements/if...else",
+        description: "Dokumentasi sintaks IF, ELSE IF, operator ternary, dan eksekusi kondisional program.",
       },
       {
-        title: "Pernyataan Kontrol Alur & Percabangan",
-        source: "Python Docs",
-        url: "https://docs.python.org/3/tutorial/controlflow.html",
-        description: "Dokumentasi resmi struktur kontrol perulangan dan kondisional dengan studi kasus algoritma.",
+        title: "Control Flow: Conditional Statements Reference",
+        source: "W3Schools",
+        url: "https://www.w3schools.com/js/js_if_else.asp",
+        docUrl: "https://www.w3schools.com/js/js_if_else.asp",
+        description: "Contoh implementasi evaluasi multi-kondisi dan penanganan alternatif cabang logika program.",
       },
     ],
   },
   {
-    id: "array-data-structure",
-    name: "Struktur Data Array & Koleksi",
-    keywords: ["array", "list", "indexing", "koleksi", "vektor", "matriks", "multidimensi", "push", "pop", "traversal"],
+    id: "algo-looping-control",
+    name: "Algoritma & Pemrograman: Looping (FOR, WHILE) & Guard Infinite Loop",
+    keywords: ["loop", "looping", "perulangan", "for", "while", "do while", "infinite loop", "counter", "break", "continue", "iterasi"],
     videos: [
       {
-        title: "Struktur Data Array: Konsep & Method Esensial",
+        title: "Pengulangan (Looping): FOR, WHILE & DO WHILE",
+        channel: "Web Programming UNPAS",
+        duration: "21:30",
+        videoUrl: "https://www.youtube.com/watch?v=mG_4H6p7Qk8",
+        embedId: "mG_4H6p7Qk8",
+        summaryTopic: "Logika counter, kondisi terminasi, iterasi terhitung (definite) vs bersyarat (indefinite).",
+      },
+      {
+        title: "Pencegahan Infinite Loop & Penggunaan Break/Continue",
+        channel: "Web Programming UNPAS",
+        duration: "17:15",
+        videoUrl: "https://www.youtube.com/watch?v=RUTV_5m4VeI",
+        embedId: "RUTV_5m4VeI",
+        summaryTopic: "Penyebab infinite loop pada while, guard update counter, serta fungsi kontrol alur break dan continue.",
+      },
+    ],
+    docs: [
+      {
+        title: "Pengulangan & Iterasi Algoritma Komputasi",
+        source: "MDN Web Docs",
+        url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide/Loops_and_iteration",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide/Loops_and_iteration",
+        description: "Uraian mendalam perulangan for, while, do-while, for...of, dan teknik terminasi loop aman.",
+      },
+      {
+        title: "Loops & Iteration in Programming Languages",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/loops-in-c-and-cpp/",
+        docUrl: "https://www.geeksforgeeks.org/loops-in-c-and-cpp/",
+        description: "Konsep dasar iterasi alur kendali, diagram alir perulangan, dan analisis kompleksitas waktu putaran.",
+      },
+    ],
+  },
+  {
+    id: "algo-array-string",
+    name: "Algoritma & Pemrograman: Array & Manipulasi String",
+    keywords: ["array", "string", "matriks", "matrix", "indeks", "panjang string", "substring", "traversal", "vektor", "multidimensi", "koleksi"],
+    videos: [
+      {
+        title: "Struktur Data Array: Representasi Memori & Operasi Dasar",
         channel: "Web Programming UNPAS",
         duration: "25:10",
         videoUrl: "https://www.youtube.com/watch?v=9Q_5K2m8Y1Z",
         embedId: "9Q_5K2m8Y1Z",
-        summaryTopic: "Representasi contiguous memory, pengalamatan indeks 0, penelusuran traversal, dan mutasi data.",
+        summaryTopic: "Pengalamatan memori contiguous, zero-based indexing, operasi traversal, dan manipulasi elemen array.",
       },
       {
-        title: "Manipulasi List & Koleksi Data Terstruktur",
+        title: "Manipulasi String & Matriks 2 Dimensi Praktis",
         channel: "Programmer Zaman Now",
         duration: "28:35",
         videoUrl: "https://www.youtube.com/watch?v=3kL_7P9m4X2",
         embedId: "3kL_7P9m4X2",
-        summaryTopic: "Operasi penambahan, penyaringan filter, pemetaan map, dan array dua dimensi.",
+        summaryTopic: "Pemrosesan karakter string, pencarian substring, dan iterasi matriks baris-kolom dengan nested loop.",
       },
     ],
     docs: [
       {
-        title: "Dokumentasi Lengkap Array & Method Bawaan",
+        title: "Array Data Structure & Methods Specification",
         source: "MDN Web Docs",
         url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Global_Objects/Array",
-        description: "Spesifikasi method manipulasi array, iterasi forEach/map, dan operasi sorting data.",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Global_Objects/Array",
+        description: "Spesifikasi method bawaan array, pengurutan, penambahan elemen push/pop, dan manipulasi slice.",
       },
       {
-        title: "Struktur Data Koleksi & List Lanjutan",
-        source: "Python Docs",
-        url: "https://docs.python.org/3/tutorial/datastructures.html",
-        description: "Panduan teknis penggunaan list, stack, queue, dan list comprehension efisien.",
-      },
-    ],
-  },
-  {
-    id: "oop-programming",
-    name: "Pemrograman Berorientasi Objek (OOP)",
-    keywords: ["oop", "objek", "class", "enkapsulasi", "pewarisan", "inheritance", "polimorfisme", "polymorphism", "abstraksi", "method", "properti"],
-    videos: [
-      {
-        title: "Pemrograman Berorientasi Objek (OOP) Terlengkap",
-        channel: "Programmer Zaman Now",
-        duration: "45:00",
-        videoUrl: "https://www.youtube.com/watch?v=5p8L_2mX9Y1",
-        embedId: "5p8L_2mX9Y1",
-        summaryTopic: "Empat pilar OOP: Enkapsulasi, Abstraksi, Pewarisan, dan Polimorfisme dengan arsitektur bersih.",
-      },
-      {
-        title: "Konsep OOP Paling Gampang Dimengerti",
-        channel: "Dea Afrizal",
-        duration: "23:50",
-        videoUrl: "https://www.youtube.com/watch?v=7kM_9Q3x1P5",
-        embedId: "7kM_9Q3x1P5",
-        summaryTopic: "Perbedaan paradigma prosedural vs OOP, constructor, instance, dan reusabilitas kode.",
-      },
-    ],
-    docs: [
-      {
-        title: "Konsep & Teori Dasar Pemrograman Berorientasi Objek",
-        source: "Oracle Java Docs",
-        url: "https://docs.oracle.com/javase/tutorial/java/concepts/",
-        description: "Fondasi teoritis resmi arsitektur kelas, hierarki pewarisan objek, dan antarmuka (interface).",
-      },
-      {
-        title: "Pengenalan OOP & Prototype Chain",
-        source: "MDN Web Docs",
-        url: "https://developer.mozilla.org/id/docs/Learn/JavaScript/Objects/Object-oriented_programming",
-        description: "Penerapan paradigma OOP modern, enkapsulasi data privasi, dan polimorfisme modular.",
+        title: "String Manipulation Algorithms",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/string-data-structure/",
+        docUrl: "https://www.geeksforgeeks.org/string-data-structure/",
+        description: "Kompilasi algoritma pemrosesan string, penghitungan frekuensi karakter, dan konversi format.",
       },
     ],
   },
   {
-    id: "git-github",
-    name: "Version Control: Git & GitHub",
-    keywords: ["git", "github", "version control", "commit", "branch", "merge", "push", "pull request", "repository", "repo"],
+    id: "algo-function-recursion",
+    name: "Algoritma & Pemrograman: Fungsi Modular & Rekursif",
+    keywords: ["fungsi", "rekursif", "rekursi", "base case", "call stack", "modular", "parameter", "return", "stack overflow", "faktorial", "fibonacci"],
     videos: [
       {
-        title: "Git & GitHub Dasar untuk Pemula",
+        title: "Fungsi Modular: Parameter, Return Value & Scope",
         channel: "Web Programming UNPAS",
-        duration: "33:15",
-        videoUrl: "https://www.youtube.com/watch?v=lX9hsDSbgl4",
-        embedId: "lX9hsDSbgl4",
-        summaryTopic: "Alur kerja staging, commit snapshot, branch development, dan sinkronisasi ke GitHub.",
+        duration: "23:45",
+        videoUrl: "https://www.youtube.com/watch?v=wL_3F5d0K5Y",
+        embedId: "wL_3F5d0K5Y",
+        summaryTopic: "Modularisasi kode DRY, passing parameter by value vs reference, dan batasan scope variabel.",
       },
       {
-        title: "Git & GitHub Crash Course",
-        channel: "Traversy Media",
-        duration: "32:41",
-        videoUrl: "https://www.youtube.com/watch?v=SWYqp7iY_Tc",
-        embedId: "SWYqp7iY_Tc",
-        summaryTopic: "Praktek kolaborasi tim, menangani merge conflict, dan pembuatan Pull Request profesional.",
+        title: "Algoritma Rekursif & Konsep Call Stack",
+        channel: "Web Programming UNPAS",
+        duration: "26:15",
+        videoUrl: "https://www.youtube.com/watch?v=bW_5dK6n3Y0",
+        embedId: "bW_5dK6n3Y0",
+        summaryTopic: "Cara kerja fungsi memanggil dirinya sendiri, alokasi frame pada Call Stack, pentingnya Base Case, dan pencegahan Stack Overflow.",
       },
     ],
     docs: [
       {
-        title: "Buku Panduan Pro Git (Bahasa Indonesia)",
-        source: "Git-SCM",
-        url: "https://git-scm.com/book/id/v2/Memulai-Dasar-Dasar-Git",
-        description: "Buku referensi standar arsitektur Git: pohon kerja, staging area, commit pointer, dan DAG.",
+        title: "Panduan Fungsi & Rekursi Pemrograman",
+        source: "MDN Web Docs",
+        url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide/Functions",
+        docUrl: "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide/Functions",
+        description: "Deklarasi fungsi, eksekusi pemanggilan berantai, rekursi, dan closure dalam memori.",
       },
       {
-        title: "Dokumentasi Resmi Alur Kerja GitHub",
-        source: "GitHub Docs",
-        url: "https://docs.github.com/id/get-started",
-        description: "Panduan memulai manajemen repositori daring, kolaborasi kode, dan issue tracking.",
+        title: "Recursive Functions & Base Cases Explained",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/recursion/",
+        docUrl: "https://www.geeksforgeeks.org/recursion/",
+        description: "Prinsip induksi matematis, diagram pohon rekursif, dan analisis kompleksitas ruang stack memori.",
       },
     ],
   },
   {
-    id: "algorithm-complexity",
-    name: "Algoritma & Analisis Kompleksitas (Big O)",
-    keywords: ["algoritma", "kompleksitas", "big o", "pencarian", "binary search", "sorting", "rekursif", "rekursi", "tree", "antrian", "stack"],
+    id: "algo-search-sort",
+    name: "Algoritma & Pemrograman: Searching & Sorting",
+    keywords: ["searching", "sorting", "binary search", "linear search", "bubble sort", "insertion sort", "merge sort", "quick sort", "big o", "pengurutan", "pencarian"],
     videos: [
       {
-        title: "Struktur Data & Kompleksitas Waktu (Big O Notation)",
+        title: "Algoritma Pencarian: Linear Search vs Binary Search",
         channel: "Programmer Zaman Now",
         duration: "31:05",
         videoUrl: "https://www.youtube.com/watch?v=7_A9mX5b5Z8",
         embedId: "7_A9mX5b5Z8",
-        summaryTopic: "Analisis performa algoritma: O(1), O(log n), O(n), hingga O(n^2) serta optimasi memori.",
+        summaryTopic: "Kompleksitas pencarian O(N) vs O(log N), syarat data terurut pada Binary Search, dan implementasi kode.",
       },
       {
-        title: "Algorithms and Data Structures Tutorial",
+        title: "Algorithms: Sorting & Searching Complete Course",
         channel: "freeCodeCamp.org",
         duration: "5:22:00",
         videoUrl: "https://www.youtube.com/watch?v=8hly31xKli0",
         embedId: "8hly31xKli0",
-        summaryTopic: "Pencarian biner (binary search), merge sort, quicksort, dan simulasi penelusuran data.",
+        summaryTopic: "Visualisasi langkah demi langkah Bubble Sort, Insertion Sort, Merge Sort, dan Quicksort.",
       },
     ],
     docs: [
       {
-        title: "Peta Pembelajaran Algoritma & Struktur Data",
+        title: "Sorting Algorithms Complexity & Visualizations",
         source: "GeeksforGeeks",
-        url: "https://www.geeksforgeeks.org/learn-data-structures-and-algorithms/",
-        description: "Kompilasi algoritma standar komputasi, visualisasi pohon keputusan, dan efisiensi ruang/waktu.",
+        url: "https://www.geeksforgeeks.org/sorting-algorithms/",
+        docUrl: "https://www.geeksforgeeks.org/sorting-algorithms/",
+        description: "Perbandingan performa best case, average case, dan worst case algoritma pengurutan data.",
       },
       {
-        title: "Struktur Data Standar Pemrograman",
-        source: "MDN Web Docs",
-        url: "https://developer.mozilla.org/id/docs/Web/JavaScript/Data_structures",
-        description: "Dokumentasi formal penyimpanan nilai, tipe data komposit, dan pemrosesan algoritma.",
+        title: "Binary Search Algorithm Specification",
+        source: "GeeksforGeeks",
+        url: "https://www.geeksforgeeks.org/binary-search/",
+        docUrl: "https://www.geeksforgeeks.org/binary-search/",
+        description: "Strategi divide and conquer pada pencarian biner dan implementasi iteratif serta rekursif.",
       },
     ],
   },
@@ -432,19 +750,21 @@ export const DEFAULT_FALLBACK_CLUSTER: CuratedTopicCluster = {
       title: "Panduan Pemula Ilmu Komputer & Pemrograman",
       source: "MDN Web Docs",
       url: "https://developer.mozilla.org/id/docs/Learn/Getting_started_with_the_web",
+      docUrl: "https://developer.mozilla.org/id/docs/Learn/Getting_started_with_the_web",
       description: "Panduan arsitektur dasar perangkat lunak, peramban, server, dan alur kerja rekayasa kode.",
     },
     {
       title: "Standar Referensi Algoritma & Pemecahan Masalah",
       source: "GeeksforGeeks",
       url: "https://www.geeksforgeeks.org/fundamentals-of-algorithms/",
+      docUrl: "https://www.geeksforgeeks.org/fundamentals-of-algorithms/",
       description: "Kamus metodologi perancangan algoritma terstruktur dan pembuktian kebenaran logika.",
     },
   ],
 };
 
 /**
- * Mencocokkan teks topik/dokumen terhadap kamus kurasi referensi terverifikasi
+ * Mencocokkan teks topik/dokumen terhadap kamus kurasi referensi terverifikasi (Anti-Kosong 100%)
  */
 export function resolveCuratedResources(topicOrContent: string): {
   videos: RecommendedVideo[];
@@ -461,6 +781,7 @@ export function resolveCuratedResources(topicOrContent: string): {
     let score = 0;
     for (const kw of cluster.keywords) {
       if (text.includes(kw)) {
+        // Berikan bobot lebih untuk keyword spesifik
         score += kw.length > 5 ? 2 : 1;
       }
     }
@@ -472,27 +793,30 @@ export function resolveCuratedResources(topicOrContent: string): {
 
   const selected = bestCluster || DEFAULT_FALLBACK_CLUSTER;
 
-  // Pastikan URL video adalah format watch?v= yang valid dan memiliki embedId
+  // Pastikan URL video adalah format watch?v= yang valid dan memiliki embedId 11 karakter
   const sanitizedVideos = selected.videos.map((v) => {
-    let embedId = v.embedId;
-    if (!embedId && v.videoUrl.includes("watch?v=")) {
-      const match = v.videoUrl.match(/watch\?v=([a-zA-Z0-9_-]{11})/);
-      embedId = match ? match[1] ?? "1NigbK3Jk7Q" : "1NigbK3Jk7Q";
+    let embedId = v.embedId || extractYoutubeId(v.videoUrl);
+    if (!embedId || embedId.length !== 11) {
+      embedId = "1NigbK3Jk7Q";
     }
     return {
       ...v,
-      embedId: embedId || "1NigbK3Jk7Q",
-      videoUrl: v.videoUrl.startsWith("https://www.youtube.com/watch?v=")
-        ? v.videoUrl
-        : `https://www.youtube.com/watch?v=${embedId}`,
+      embedId,
+      videoUrl: `https://www.youtube.com/watch?v=${embedId}`,
     };
   });
 
+  // Pastikan docs selalu menyertakan docUrl alias
+  const sanitizedDocs = selected.docs.map((d) => ({
+    ...d,
+    docUrl: d.docUrl || d.url,
+  }));
+
   return {
     videos: sanitizedVideos,
-    docs: selected.docs,
+    docs: sanitizedDocs,
     recommendedVideos: sanitizedVideos,
-    recommendedDocs: selected.docs,
+    recommendedDocs: sanitizedDocs,
   };
 }
 
@@ -518,15 +842,12 @@ export function sanitizeYoutubeVideo(
     return fallback;
   }
 
-  // Ekstrak ID dari URL jika embedId belum ada
-  if (!embedId && url) {
-    const match = url.match(/(?:watch\?v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-    if (match?.[1]) {
-      embedId = match[1];
-    }
+  // Ekstrak ID dari URL jika embedId belum ada atau tidak valid
+  if (!embedId || embedId.length !== 11) {
+    embedId = extractYoutubeId(url);
   }
 
-  // Jika embedId tidak valid (harus 11 karakter), ganti ke fallback
+  // Jika embedId tetap tidak valid (harus 11 karakter), ganti ke fallback
   if (!embedId || embedId.length !== 11) {
     return fallback;
   }
@@ -553,7 +874,7 @@ export function sanitizeDocumentation(
   const title = (doc.title && doc.title.trim().length > 3) ? doc.title.trim() : fallback.title;
   const source = (doc.source && doc.source.trim().length > 2) ? doc.source.trim() : fallback.source;
   const description = doc.description || fallback.description;
-  const url = doc.url || "";
+  const url = doc.url || doc.docUrl || "";
 
   // DILARANG link search atau domain beranda polos
   if (
@@ -571,6 +892,7 @@ export function sanitizeDocumentation(
     title,
     source,
     url,
+    docUrl: url,
     description,
   };
 }

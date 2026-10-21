@@ -24,7 +24,7 @@ export default function MahasiswaLayout({ children }: { children: React.ReactNod
             badge: "5 Bab",
             badgeColor: "indigo",
           },
-          { label: "Peta Belajar", href: "/dashboard#peta" },
+          { label: "Peta Belajar", href: "/peta-belajar" },
           { label: "Riwayat Aktivitas", href: "/riwayat" },
           { label: "Profil Saya", href: "/profil" },
         ]}

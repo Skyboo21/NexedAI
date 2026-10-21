@@ -77,7 +77,7 @@ export default function ProfileLayoutClient({ initialRole, children }: ProfileLa
               badge: "5 Bab",
               badgeColor: "indigo" as const,
             },
-            { label: "Peta Belajar", href: "/dashboard#peta" },
+            { label: "Peta Belajar", href: "/peta-belajar" },
             { label: "Riwayat Aktivitas", href: "/riwayat" },
             { label: "Profil Saya", href: "/profil" },
           ] as NavItem[],

@@ -20,6 +20,7 @@ import {
   FileText,
   Menu,
   X,
+  Network,
 } from "lucide-react";
 
 export interface NavItem {
@@ -58,7 +59,7 @@ function getNavIcon(item: NavItem, isActive: boolean) {
     return <BookOpen className={`w-4 h-4 shrink-0 transition-colors ${isActive ? "text-white" : "text-indigo-600"}`} />;
   }
   if (labelLower.includes("peta") || hrefLower.includes("peta")) {
-    return <GitFork className={iconClass} />;
+    return <Network className={iconClass} />;
   }
   if (labelLower.includes("riwayat") || hrefLower.includes("riwayat") || labelLower.includes("aktivitas")) {
     return <History className={iconClass} />;
