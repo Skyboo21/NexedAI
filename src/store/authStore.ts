@@ -37,6 +37,7 @@ export interface AuthState {
   checkSession: () => Promise<User | null>;
   logout: () => Promise<void>;
   addXp: (amount: number) => void;
+  updateProfile: (data: Partial<User>) => void;
 }
 
 // Safely get initial auth state on hydration
@@ -335,6 +336,25 @@ export const useAuthStore = create<AuthState>((set) => ({
           localStorage.setItem("nexed_auth_user", JSON.stringify(updatedUser));
         } catch {}
       }
+      return { user: updatedUser };
+    });
+  },
+
+  updateProfile: (data: Partial<User>) => {
+    set((state) => {
+      const currentUser = state.user || {
+        name: "Mahasiswa",
+        email: "mahasiswa@nexed.ai",
+        role: "mahasiswa" as const,
+      };
+      const updatedUser: User = { ...currentUser, ...data };
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("nexed_auth_user", JSON.stringify(updatedUser));
+        } catch {}
+      }
+
       return { user: updatedUser };
     });
   },

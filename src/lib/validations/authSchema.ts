@@ -14,6 +14,8 @@ export const UserSchema = z.object({
   semester: z.number().optional(),
   prodi: z.string().optional(),
   xp: z.number().optional(),
+  bio: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;
