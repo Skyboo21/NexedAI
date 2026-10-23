@@ -24,6 +24,7 @@ import {
   Target,
   Check,
   RotateCcw,
+  ArrowLeft,
 } from "lucide-react";
 import {
   getCompletedTopicIds,
@@ -555,6 +556,24 @@ export default function PetaBelajarPage() {
         });
 
         setUploadedCourses(newUploadedMap);
+
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const courseParam = params.get("course");
+          if (courseParam && (newUploadedMap[courseParam] || COURSE_CURRICULA[courseParam])) {
+            setActiveCourseId(courseParam);
+          } else if (rawActive) {
+            try {
+              const parsedActive = JSON.parse(rawActive);
+              if (parsedActive && parsedActive.id) {
+                const activeId = `dok-${parsedActive.id}`;
+                if (newUploadedMap[activeId]) {
+                  setActiveCourseId(activeId);
+                }
+              }
+            } catch {}
+          }
+        }
       } catch (err) {
         console.warn("Gagal memuat modul unggahan di peta belajar:", err);
       }
@@ -879,14 +898,32 @@ export default function PetaBelajarPage() {
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-mono mb-2">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Alur Prasyarat & Roadmap Pembelajaran Adaptif</span>
+                <span>
+                  {activeCourseId.startsWith("dok-")
+                    ? "Peta Belajar Adaptif Hasil Ekstraksi AI Dokumen"
+                    : "Alur Prasyarat & Roadmap Pembelajaran Adaptif"}
+                </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-black">
                 {activeCourse.name} — Pohon Kompetensi
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 max-w-lg mx-auto mt-1">
-                Selesaikan materi secara bertahap dari Bab 1 untuk membuka kunci simpul bab berikutnya. Klik kartu simpul untuk meninjau detail capaian.
+                {activeCourseId.startsWith("dok-")
+                  ? "Daftar sub-topik terstruktur yang diekstrak langsung dari dokumen asli Anda. Selesaikan tahapan untuk menguasai seluruh materi."
+                  : "Selesaikan materi secara bertahap dari Bab 1 untuk membuka kunci simpul bab berikutnya. Klik kartu simpul untuk meninjau detail capaian."}
               </p>
+
+              {activeCourseId.startsWith("dok-") && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <Link
+                    href="/modul"
+                    className="min-h-[44px] inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium transition-all shadow-xs"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Kembali ke Detail Modul di Hub</span>
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Vertical Chained Graph */}

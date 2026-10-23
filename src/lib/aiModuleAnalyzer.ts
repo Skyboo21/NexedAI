@@ -1,5 +1,10 @@
 // src/lib/aiModuleAnalyzer.ts
-import type { AnalyzedModuleResult } from "../components/NexedAiModuleHub";
+import type {
+  AnalyzedModuleResult,
+  CommonPitfall,
+  KeyPointItem,
+  TechnicalProcedure,
+} from "../components/NexedAiModuleHub";
 import { resolveCuratedResources } from "./curatedResources";
 
 export interface AnalysisInput {
@@ -211,9 +216,55 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
       (/\bflowchart\b/i.test(cleanContent) && /\bdfd\b/i.test(cleanContent))) &&
     !/unity|game|c#|csharp|pmi|pertolongan/i.test(cleanContent);
 
-  // 1. Ekstrak Ikhtisar / Ringkasan Eksekutif dari Teks Riil yang Terstruktur & Lengkap
+  // 0. Deteksi Domain Topik Utama dari Dokumen
+  let domain = "Umum / Interdisipliner";
+  if (/unity|game\s*engine|c#|csharp|rigidbody|gameobject/i.test(cleanContent)) {
+    domain = "Game Development / Unity 3D & C#";
+  } else if (/pmi|palang\s*merah|pertolongan\s*pertama|first\s*aid|rjp|cpr|bhd|fraktur|balut\s*bidai/i.test(cleanContent)) {
+    domain = "Kesehatan & Kemanusiaan / Pertolongan Pertama (PMI)";
+  } else if (/iot|arduino|esp32|mikrokontroler|microcontroller|sensor|aktuator|actuator|embedded/i.test(cleanContent)) {
+    domain = "Sistem Tertanam & IoT / Mikrokontroler";
+  } else if (/python|machine\s*learning|deep\s*learning|data\s*science|pandas|numpy/i.test(cleanContent)) {
+    domain = "Artificial Intelligence & Data Science";
+  } else if (/flutter|dart|mobile\s*app|widget|stateless|stateful/i.test(cleanContent)) {
+    domain = "Mobile App Development / Flutter & Dart";
+  } else if (isDfdModule) {
+    domain = "Analisis Sistem & Pemodelan Proses Bisnis (Flowchart & DFD)";
+  } else if (isDataTypeModule) {
+    domain = "Algoritma & Pemrograman / Representasi Data";
+  } else if (/sql|database|basis\s*data|relasional|query|ddl|dml/i.test(cleanContent)) {
+    domain = "Arsitektur Basis Data Relasional & SQL";
+  } else if (/jaringan|network|tcp|ip|osi|router|switch|subnet/i.test(cleanContent)) {
+    domain = "Jaringan Komputer & Infrastruktur";
+  } else if (/manajemen|proyek|agile|scrum|bisnis|keuangan/i.test(cleanContent)) {
+    domain = "Manajemen & Bisnis / Rekayasa Proyek";
+  } else {
+    domain = `Kurikulum Akademik / ${formattedTitle.slice(0, 35)}`;
+  }
+
+  // 1. Ekstrak Ikhtisar & Konteks Industri dari Teks Riil yang Terstruktur & Lengkap
   let extractedOverview = "";
+  let industryContext = "";
   const keyTakeaways: string[] = [];
+
+  if (domain.includes("Unity")) {
+    industryContext =
+      "Dalam industri game development dan interactive media modern, penguasaan Unity 3D dan scripting C# merupakan standar industri vital untuk memproduksi mekanika gameplay responsif, optimasi rendering grafis real-time, dan manajemen arsitektur scene berskala enterprise.";
+  } else if (domain.includes("Pertolongan Pertama")) {
+    industryContext =
+      "Dalam dunia kedaruratan medis dan respon bencana kemanusiaan, pemahaman protokol Pertolongan Pertama (First Aid) PMI adalah kompetensi kritis penentu keselamatan jiwa (life-saving) sebelum pasien memperoleh intervensi medis lanjutan di fasilitas kesehatan.";
+  } else if (domain.includes("IoT")) {
+    industryContext =
+      "Dalam era Revolusi Industri 4.0 dan smart automation, keahlian pemrograman mikrokontroler (Arduino/ESP32) menjadi fondasi krusial integrasi perangkat keras sensorik dengan telemetri analitik cloud real-time.";
+  } else if (isDfdModule) {
+    industryContext =
+      "Dalam rekayasa sistem informasi enterprise, pemodelan proses bisnis yang presisi menggunakan Flowchart dan DFD menjamin efisiensi alur operasional serta mencegah anomali transformasi data pada tahap pengembangan perangkat lunak.";
+  } else if (isDataTypeModule) {
+    industryContext =
+      "Dalam rekayasa perangkat lunak berkinerja tinggi, pemilihan tipe data dan manajemen variabel yang tepat mencegah inefisiensi alokasi memori heap/stack, bug precision loss aritmatika, dan celah kerentanan overflow pada sistem produksi.";
+  } else {
+    industryContext = `Penguasaan materi "${formattedTitle}" memberikan landasan analitis dan keterampilan teknis yang langsung dapat diintegrasikan dalam pemecahan masalah nyata pada standar praktik industri terkini.`;
+  }
 
   if (isDataTypeModule) {
     extractedOverview = `Modul "${formattedTitle}" menguraikan fondasi fundamental representasi data dalam arsitektur komputasi dan pemrograman modern. Pembahasan mencakup klasifikasi tipe data esensial yang meliputi data numerik (bilangan bulat dan pecahan untuk kalkulasi matematis), karakter dan string (representasi teks dan simbol), serta nilai logika boolean untuk pengendalian alur program. Lebih lanjut, modul ini mendalami mekanisme variabel dan konstanta sebagai unit penyimpanan memori komputer, serta pemanfaatan operator aritmatika dan relasional dalam merealisasikan algoritma yang kokoh dan efisien.`;
@@ -253,7 +304,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
   }
 
   // 2. Ekstrak Istilah & Definisi Riil (Key Points) yang Bersih Tanpa Artefak
-  const extractedKeyPoints: Array<{ term: string; definition: string; category?: string }> = [];
+  const extractedKeyPoints: KeyPointItem[] = [];
 
   // Pola A: Bullet atau Numbered dengan colon (e.g., • Istilah: Definisi), mendukung indentasi
   const bulletColonRegex =
@@ -334,7 +385,275 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     );
   }
 
-  // 3. Deteksi Sub-Bab / Bagian Nyata dari Dokumen untuk Roadmap 4 Tahap
+  // Lengkapi analogi pada setiap keyPoint
+  const enhancedKeyPoints: KeyPointItem[] = extractedKeyPoints.map((kp) => {
+    let analogy = kp.analogy;
+    if (!analogy) {
+      if (domain.includes("Unity")) {
+        if (/gameobject/i.test(kp.term)) {
+          analogy = "Ibarat wadah kosong atau aktor di panggung teater yang membutuhkan kostum dan komponen agar dapat beraksi.";
+        } else if (/transform/i.test(kp.term)) {
+          analogy = "Ibarat koordinat GPS dan postur fisik objek (posisi, rotasi, skala) di dunia 3D.";
+        } else if (/rigidbody/i.test(kp.term)) {
+          analogy = "Ibarat memberi massa dan gaya gravitasi nyata agar objek tunduk pada simulasi hukum fisika.";
+        } else if (/collider/i.test(kp.term)) {
+          analogy = "Ibarat medan batas tak kasat mata yang mendeteksi tabrakan fisik dengan objek lain.";
+        } else {
+          analogy = "Ibarat blok instrumen spesifik yang melengkapi kapabilitas fungsional objek dalam game.";
+        }
+      } else if (domain.includes("Pertolongan Pertama")) {
+        if (/rjp|cpr|resusitasi/i.test(kp.term)) {
+          analogy = "Ibarat pompa manual darurat yang menggantikan fungsi mekanik jantung untuk mempertahankan suplai oksigen ke otak.";
+        } else if (/bidai|fraktur|tulang/i.test(kp.term)) {
+          analogy = "Ibarat tiang penyangga pada konstruksi yang retak guna mencegah pergeseran struktur berbahaya.";
+        } else if (/balut|perdarahan/i.test(kp.term)) {
+          analogy = "Ibarat sumbat mekanis yang menghentikan kebocoran saluran bertekanan tinggi.";
+        } else {
+          analogy = "Ibarat protokol keselamatan tanggap darurat yang mengunci kestabilan kondisi vital korban.";
+        }
+      } else if (domain.includes("IoT")) {
+        if (/gpio/i.test(kp.term)) {
+          analogy = "Ibarat sakelar dan indra elektrik mikrokontroler untuk mengirim instruksi atau membaca voltase lingkungan.";
+        } else if (/sensor/i.test(kp.term)) {
+          analogy = "Ibarat panca indra yang mendeteksi sinyal fisik lingkungan dan menerjemahkannya ke format digital.";
+        } else {
+          analogy = "Ibarat saluran komunikasi telemetri yang menghubungkan modul mikrokontroler dengan komputasi luar.";
+        }
+      } else if (isDataTypeModule) {
+        if (/variabel/i.test(kp.term)) {
+          analogy = "Ibarat kotak penyimpanan berlabel di rak memori komputer yang isinya dapat diganti sewaktu-waktu.";
+        } else if (/konstanta/i.test(kp.term)) {
+          analogy = "Ibarat segel permanen yang menjaga nilai acuan agar tidak dapat diubah oleh instruksi mana pun.";
+        } else if (/boolean/i.test(kp.term)) {
+          analogy = "Ibarat sakelar lampu biner: hanya ada kondisi menyala (True) atau padam (False).";
+        } else {
+          analogy = "Ibarat cetakan wadah yang memastikan hanya tipe data yang sesuai yang dapat ditampung dalam alokasi memori.";
+        }
+      } else {
+        analogy = `Ibarat fondasi bata dalam konstruksi bangunan yang menopang seluruh keutuhan modul ${formattedTitle.slice(0, 25)}.`;
+      }
+    }
+    return { ...kp, analogy };
+  });
+
+  // 3. Prosedur Teknis / Protokol Praktik
+  const technicalProcedures: TechnicalProcedure[] = [];
+  const stepRegex = /(?:^|\n)\s*(?:langkah|tahap|step|protokol|\d+)[.:\s]+([^\n\r]{15,180})/gi;
+  let sMatch: RegExpExecArray | null = stepRegex.exec(cleanContent);
+  while (sMatch !== null && technicalProcedures.length < 4) {
+    const rawStep = sMatch[1]?.trim();
+    if (rawStep && !isInstitutionalBoilerplate(rawStep)) {
+      const cleanStep = cleanModuleRawText(rawStep);
+      const colonIdx = cleanStep.indexOf(":");
+      const title =
+        colonIdx !== -1 && colonIdx < 35
+          ? cleanStep.slice(0, colonIdx).trim()
+          : `Prosedur ${technicalProcedures.length + 1}`;
+      const desc = colonIdx !== -1 ? cleanStep.slice(colonIdx + 1).trim() : cleanStep;
+      if (desc.length > 10) {
+        technicalProcedures.push({
+          step: technicalProcedures.length + 1,
+          title,
+          description: desc,
+        });
+      }
+    }
+    sMatch = stepRegex.exec(cleanContent);
+  }
+
+  if (technicalProcedures.length < 3) {
+    if (domain.includes("Unity")) {
+      technicalProcedures.push(
+        {
+          step: 1,
+          title: "Setup Scene & Hierarki GameObject",
+          description: "Inisialisasi project Unity, atur konfigurasi kamera, dan susun GameObject pada hierarki scene.",
+        },
+        {
+          step: 2,
+          title: "Konfigurasi Komponen & Sistem Fisika",
+          description: "Tambahkan komponen Rigidbody dan Collider pada objek, pastikan deteksi batas fisik aktif.",
+        },
+        {
+          step: 3,
+          title: "Scripting Logika C# & Event Lifecycle",
+          description: "Tautkan skrip C# turunan MonoBehaviour untuk menangani input controller dan event Update/FixedUpdate.",
+        },
+        {
+          step: 4,
+          title: "Uji Playmode & Validasi Console",
+          description: "Jalankan Playmode di Unity Editor, amati pergerakan, dan periksa tidak adanya NullReferenceException.",
+        },
+      );
+    } else if (domain.includes("Pertolongan Pertama")) {
+      technicalProcedures.push(
+        {
+          step: 1,
+          title: "Penilaian Keamanan Lokasi (Scene Safety)",
+          description: "Pastikan keselamatan diri penolong, lingkungan sekitar, dan korban aman dari bahaya lanjutan.",
+        },
+        {
+          step: 2,
+          title: "Pemeriksaan Respon & Kesadaran (AVPU)",
+          description: "Cek respon korban (Alert, Verbal, Pain, Unresponsive) dan hubungi nomor panggilan darurat segera.",
+        },
+        {
+          step: 3,
+          title: "Evaluasi Bantuan Hidup Dasar (CAB / ABC)",
+          description: "Periksa sirkulasi nadi, buka jalan napas (Airway), dan evaluasi ada/tidaknya hembusan napas normal.",
+        },
+        {
+          step: 4,
+          title: "Tindakan Resusitasi atau Balut-Bidai",
+          description: "Lakukan kompresi dada ritmis jika henti jantung, atau fiksasi fraktur tulang menggunakan bidai anatomis.",
+        },
+      );
+    } else if (domain.includes("IoT")) {
+      technicalProcedures.push(
+        {
+          step: 1,
+          title: "Pengkabelan Sensor & Pinout GPIO",
+          description: "Hubungkan pin sensor (VCC, GND, Signal) ke mikrokontroler dengan batas tegangan logika yang presisi.",
+        },
+        {
+          step: 2,
+          title: "Inisialisasi Firmware & Baudrate Serial",
+          description: "Konfigurasikan Serial.begin() dan deklarasikan mode pin input/output di dalam blok void setup().",
+        },
+        {
+          step: 3,
+          title: "Pembacaan Sinyal & Filtering Noise",
+          description: "Ambil sampel data sensor secara berkala di void loop() dan terapkan kalibrasi nilai ambang.",
+        },
+        {
+          step: 4,
+          title: "Transmisi Telemetri & Kendali Aktuator",
+          description: "Kirim data telemetri ke cloud/dashboard dan picu aktuator berdasarkan kondisi logika pemicu.",
+        },
+      );
+    } else if (isDataTypeModule) {
+      technicalProcedures.push(
+        {
+          step: 1,
+          title: "Analisis Kebutuhan Data & Domain Nilai",
+          description: "Identifikasi karakteristik data yang akan diproses: diskrit, desimal pecahan, teks, atau status logika.",
+        },
+        {
+          step: 2,
+          title: "Deklarasi Variabel & Penamaan Standar",
+          description: "Tulis deklarasi variabel dengan identifier deskriptif camelCase dan tipe data yang paling hemat memori.",
+        },
+        {
+          step: 3,
+          title: "Inisialisasi Nilai Awal (Default Value)",
+          description: "Tetapkan nilai awal pada variabel untuk mencegah pemrosesan nilai acak sampah (garbage value) memori.",
+        },
+        {
+          step: 4,
+          title: "Validasi Batas Nilai & Type Casting",
+          description: "Lakukan konversi eksplisit jika melibatkan operasi antar tipe data berbeda guna menghindari data truncation.",
+        },
+      );
+    } else {
+      technicalProcedures.push(
+        {
+          step: 1,
+          title: "Pemetaan Ruang Lingkup & Studi Dokumen",
+          description: `Pahami batasan masalah dan tujuan spesifik yang dibahas dalam modul "${formattedTitle}".`,
+        },
+        {
+          step: 2,
+          title: "Penerapan Metodologi & Langkah Kerja",
+          description: "Ikuti urutan instruksi teknis dan prosedur baku yang telah dirumuskan dalam materi ajar.",
+        },
+        {
+          step: 3,
+          title: "Pengujian Fungsional & Verifikasi Hasil",
+          description: "Jalankan simulasi atau pengujian terhadap luaran sistem untuk memastikan kesesuaian spesifikasi.",
+        },
+      );
+    }
+  }
+
+  // 4. Analisis Kesalahan Umum (Common Pitfalls)
+  const commonPitfalls: CommonPitfall[] = [];
+  if (domain.includes("Unity")) {
+    commonPitfalls.push(
+      {
+        pitfall: "Mengabaikan NullReferenceException akibat lupa menautkan referensi komponen di Inspector atau GetComponent.",
+        prevention: "Selalu tambahkan pengecekan null guard clause (if (target != null)) atau gunakan atribut [RequireComponent].",
+      },
+      {
+        pitfall: "Melakukan modifikasi Transform secara langsung pada objek bertipe Rigidbody di dalam method Update() biasa.",
+        prevention: "Gunakan method FixedUpdate() dan manipulasi fisika melalui Rigidbody.AddForce() atau Rigidbody.linearVelocity.",
+      },
+      {
+        pitfall: "Instansiasi prefab berulang-ulang tanpa mekanisme Object Pooling yang menyebabkan lag garbage collection.",
+        prevention: "Terapkan pola Object Pool untuk menggunakan kembali GameObject yang sering muncul/dihapus.",
+      },
+    );
+  } else if (domain.includes("Pertolongan Pertama")) {
+    commonPitfalls.push(
+      {
+        pitfall: "Memindahkan korban dugaan trauma leher/tulang belakang secara sembarangan sebelum dilakukan fiksasi servikal.",
+        prevention: "Terapkan in-line head stabilization secara manual dan jangan gerakkan leher korban kecuali ada ancaman bahaya fatal di lokasi.",
+      },
+      {
+        pitfall: "Memberikan minum atau makanan pada korban tidak sadar atau menjelang operasi, berisiko aspirasi paru-paru fatal.",
+        prevention: "Dilarang keras memasukkan cairan apa pun ke mulut korban yang tingkat kesadarannya menurun.",
+      },
+      {
+        pitfall: "Melakukan ikatan torniket secara berlebihan atau melonggarkan balutan tanpa evaluasi tanda-tanda iskemia jaringan.",
+        prevention: "Gunakan balut tekan terlebih dahulu, periksa denyut nadi distal dan perubahan warna kulit secara berkala.",
+      },
+    );
+  } else if (domain.includes("IoT")) {
+    commonPitfalls.push(
+      {
+        pitfall: "Menghubungkan pin sensor berdaya tinggi langsung ke GPIO mikrokontroler tanpa rangkaian driver transistor/relay.",
+        prevention: "Gunakan modul relay optocoupler atau MOSFET driver dengan proteksi reverse diode flyback.",
+      },
+      {
+        pitfall: "Menggunakan fungsi delay() berkepanjangan di dalam void loop(), yang memblokir eksekusi sensor dan respons jaringan.",
+        prevention: "Gunakan teknik non-blocking berbasis timer fungsi millis() untuk mengelola multitasking.",
+      },
+    );
+  } else if (isDataTypeModule) {
+    commonPitfalls.push(
+      {
+        pitfall: "Melakukan pembagian integer (misal 5 / 2 = 2) saat mengharapkan hasil pecahan, menyebabkan data truncation tersembunyi.",
+        prevention: "Lakukan explicit type casting ke tipe float/double pada salah satu operan sebelum operasi pembagian dijalankan.",
+      },
+      {
+        pitfall: "Menggunakan tipe data floating point untuk counter perulangan (looping) atau kalkulasi mata uang finansial.",
+        prevention: "Gunakan integer murni untuk counter perulangan dan integer berbasis sen (atau BigDecimal) untuk akurasi nilai mata uang.",
+      },
+    );
+  } else if (isDfdModule) {
+    commonPitfalls.push(
+      {
+        pitfall: "Membuat alur Miracle (data keluar dari proses tanpa ada data input) atau Black Hole (data masuk tanpa output).",
+        prevention: "Setiap proses transformasi DFD wajib memiliki minimal satu aliran data input dan satu aliran data output.",
+      },
+      {
+        pitfall: "Menghubungkan dua entitas eksternal atau dua data store secara langsung tanpa melalui proses perantara.",
+        prevention: "Aliran data antar entitas atau data store wajib melewati proses komputasi yang memvalidasi transfer informasi.",
+      },
+    );
+  } else {
+    commonPitfalls.push(
+      {
+        pitfall: `Terburu-buru melakukan implementasi tanpa memahami struktur model dan batasan materi "${formattedTitle}".`,
+        prevention: "Susun pemetaan konsep dan verifikasi seluruh asumsi prasyarat sebelum mengeksekusi tahapan kerja.",
+      },
+      {
+        pitfall: "Mengabaikan pengujian pada kondisi batas (edge cases) dan hanya menguji skenario ideal (happy path).",
+        prevention: "Rancang skenario uji ekstrem mencakup input kosong, nilai batas maksimum, dan anomali alur kerja.",
+      },
+    );
+  }
+
+  // 5. Deteksi Sub-Bab / Bagian Nyata dari Dokumen untuk Roadmap 4 hingga 6 Simpul
   const extractedSections: Array<{ heading: string; body: string }> = [];
   const lines = cleanContent
     .split(/\r?\n/)
@@ -372,7 +691,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     }
   }
 
-  // 4. Susun Roadmap Adaptif 4 Tahap berdasarkan Konten Riil
+  // 6. Susun Roadmap Adaptif 4 hingga 6 Simpul berdasarkan Konten Riil
   let roadmap: AnalyzedModuleResult["roadmap"];
 
   if (isDataTypeModule) {
@@ -462,17 +781,51 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
           "Bagaimana cara mencegah terjadinya data truncation saat melakukan konversi dari tipe data float ke integer?",
       },
     ];
+  } else if (extractedSections.length >= 4) {
+    // 100% Dynamic Roadmap dari daftar bab/sub-topik dokumen asli (4 hingga 6 simpul)
+    const targetSteps = Math.min(extractedSections.length, 6);
+    roadmap = extractedSections.slice(0, targetSteps).map((sec, idx) => {
+      const stepNum = idx + 1;
+      const stageName =
+        stepNum === 1
+          ? "Fondasi Konseptual"
+          : stepNum === 2
+            ? "Struktur Komponen & Logika"
+            : stepNum === targetSteps
+              ? "Pengujian & Validasi Integritas"
+              : `Praktik & Pendalaman ${stepNum - 1}`;
+
+      const keyConcepts =
+        enhancedKeyPoints[idx]
+          ? [enhancedKeyPoints[idx]!.term, sec.heading.slice(0, 30)]
+          : [sec.heading.slice(0, 35)];
+
+      return {
+        step: stepNum,
+        stage: `Tahap ${stepNum}: ${stageName}`,
+        title: sec.heading,
+        description:
+          sec.body.slice(0, 160) ||
+          `Pelajari topik "${sec.heading}" secara komprehensif sebagaimana dijabarkan dalam dokumen materi pembelajaran ini.`,
+        actionItem: `Kuasai dan dokumentasikan implementasi dari materi "${sec.heading}".`,
+        understood: false,
+        keyConcepts,
+        detailedGuide: `Pelajari panduan rinci untuk bab "${sec.heading}". Pahami landasan teoritis, aturan sintaks/prosedur, dan implementasikan ke dalam latihan kasus yang relevan dengan modul "${formattedTitle}".`,
+        practiceScenario: `Terapkan konsep "${sec.heading}" ke dalam studi kasus nyata dan verifikasi bahwa luaran memenuhi kriteria keberhasilan.`,
+        checkQuestion: `Bagaimana pemahaman Anda mengenai "${sec.heading}" berkontribusi pada penguasaan materi keseluruhan di modul ini?`,
+      };
+    });
   } else {
     // Bangun 4 Tahap Adaptif DARI DOKUMEN YANG DIUNGGAH (Zero Hallucination)
     const stage1Title =
       extractedSections[0]?.heading ||
-      (extractedKeyPoints[0] ? `Fondasi & Prinsip ${extractedKeyPoints[0].term}` : `Fondasi Konseptual ${formattedTitle}`);
+      (enhancedKeyPoints[0] ? `Fondasi & Prinsip ${enhancedKeyPoints[0].term}` : `Fondasi Konseptual ${formattedTitle}`);
     const stage2Title =
       extractedSections[1]?.heading ||
-      (extractedKeyPoints[1] ? `Komponen & Aturan ${extractedKeyPoints[1].term}` : `Struktur Komponen & Alur Materi`);
+      (enhancedKeyPoints[1] ? `Komponen & Aturan ${enhancedKeyPoints[1].term}` : `Struktur Komponen & Alur Materi`);
     const stage3Title =
       extractedSections[2]?.heading ||
-      (extractedKeyPoints[2] ? `Penerapan Kasus ${extractedKeyPoints[2].term}` : `Praktik & Implementasi Skenario Nyata`);
+      (enhancedKeyPoints[2] ? `Penerapan Kasus ${enhancedKeyPoints[2].term}` : `Praktik & Implementasi Skenario Nyata`);
     const stage4Title =
       extractedSections[3]?.heading ||
       `Evaluasi, Pengujian & Validasi ${formattedTitle.slice(0, 30)}`;
@@ -485,15 +838,15 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
         description:
           extractedSections[0]?.body?.slice(0, 160) ||
           `Pelajari definisi dasar, ruang lingkup, dan terminologi awal dari materi "${formattedTitle}" sebagaimana dijelaskan dalam modul.`,
-        actionItem: `Pelajari dan rangkum konsep esensial: "${extractedKeyPoints[0]?.term || stage1Title}".`,
+        actionItem: `Pelajari dan rangkum konsep esensial: "${enhancedKeyPoints[0]?.term || stage1Title}".`,
         understood: false,
         keyConcepts: [
-          extractedKeyPoints[0]?.term || "Konsep Dasar",
-          extractedKeyPoints[1]?.term || "Terminologi Inti",
+          enhancedKeyPoints[0]?.term || "Konsep Dasar",
+          enhancedKeyPoints[1]?.term || "Terminologi Inti",
         ],
         detailedGuide: `Pelajari konsep fundamental dari modul "${formattedTitle}". Pahami definisi utama, ruang lingkup materi, serta mengapa topik ini esensial. Fokuskan perhatian pada istilah kunci yang menjadi landasan materi pembelajaran.`,
         practiceScenario: `Identifikasi masalah nyata atau tujuan yang ingin diselesaikan oleh modul "${formattedTitle}" dan catat batasan ruang lingkupnya.`,
-        checkQuestion: `Mengapa penguasaan "${extractedKeyPoints[0]?.term || stage1Title}" menjadi prasyarat sebelum melangkah ke implementasi teknis?`,
+        checkQuestion: `Mengapa penguasaan "${enhancedKeyPoints[0]?.term || stage1Title}" menjadi prasyarat sebelum melangkah ke implementasi teknis?`,
       },
       {
         step: 2,
@@ -505,8 +858,8 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
         actionItem: `Petakan minimal 3 elemen atau aturan utama yang terlibat dalam "${stage2Title}".`,
         understood: false,
         keyConcepts: [
-          extractedKeyPoints[1]?.term || "Struktur Elemen",
-          extractedKeyPoints[2]?.term || "Mekanisme Kerja",
+          enhancedKeyPoints[1]?.term || "Struktur Elemen",
+          enhancedKeyPoints[2]?.term || "Mekanisme Kerja",
         ],
         detailedGuide: `Tahap ini berfokus pada pembedahan komponen sistem: bagaimana masukan diterima, bagaimana struktur relasi antar elemen dihubungkan, dan proses apa yang mentransformasikan data menjadi luaran yang valid.`,
         practiceScenario: `Buat diagram alur atau daftar hubungan yang merefleksikan keterkaitan antar komponen dalam materi "${formattedTitle}".`,
@@ -522,7 +875,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
         actionItem: `Selesaikan latihan studi kasus langkah demi langkah dan dokumentasikan setiap hasilnya.`,
         understood: false,
         keyConcepts: [
-          extractedKeyPoints[2]?.term || "Studi Kasus",
+          enhancedKeyPoints[2]?.term || "Studi Kasus",
           "Implementasi Teruji",
         ],
         detailedGuide: `Terapkan konsep teoritis ke dalam skenario studi kasus konkret. Ikuti tahapan instruksi praktikum, uji coba langkah pemecahan masalah, dan amati hasilnya dalam menyelesaikan persoalan nyata.`,
@@ -550,58 +903,58 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     ];
   }
 
-  // 5. Kuis Active Recall yang 100% Berakar pada Konten Dokumen
+  // 7. Kuis Active Recall yang 100% Berakar pada Konten Dokumen
   const quiz = [
     {
       id: 1,
       question: `Apa konsep atau tujuan fundamental yang dibahas dalam materi "${formattedTitle}"?`,
       options: [
-        extractedKeyPoints[0]?.definition
-          ? `${extractedKeyPoints[0].term}: ${extractedKeyPoints[0].definition.slice(0, 85)}`
+        enhancedKeyPoints[0]?.definition
+          ? `${enhancedKeyPoints[0].term}: ${enhancedKeyPoints[0].definition.slice(0, 85)}`
           : `Penguasaan komprehensif konsep dan penerapan praktis ${formattedTitle}`,
         "Menghafal teori tanpa memahami penerapan praktis di lapangan",
         "Mengabaikan standar dan prosedur keselamatan atau kaidah teknis modul",
         "Menghapus parameter evaluasi sebelum proses pengujian selesai",
       ],
       correctIndex: 0,
-      explanation: extractedKeyPoints[0]
-        ? `Berdasarkan dokumen, ${extractedKeyPoints[0].term} dijelaskan sebagai: ${extractedKeyPoints[0].definition}.`
+      explanation: enhancedKeyPoints[0]
+        ? `Berdasarkan dokumen, ${enhancedKeyPoints[0].term} dijelaskan sebagai: ${enhancedKeyPoints[0].definition}.`
         : `Materi "${formattedTitle}" berfokus pada penguasaan terstruktur dari prinsip dasar hingga implementasi nyata.`,
     },
     {
       id: 2,
-      question: extractedKeyPoints[1]
-        ? `Bagaimana peran "${extractedKeyPoints[1].term}" dalam topik "${formattedTitle}"?`
-        : `Mengapa penguasaan "${extractedKeyPoints[0]?.term || formattedTitle}" sangat krusial dalam materi ini?`,
+      question: enhancedKeyPoints[1]
+        ? `Bagaimana peran "${enhancedKeyPoints[1].term}" dalam topik "${formattedTitle}"?`
+        : `Mengapa penguasaan "${enhancedKeyPoints[0]?.term || formattedTitle}" sangat krusial dalam materi ini?`,
       options: [
-        extractedKeyPoints[1]?.definition
-          ? `${extractedKeyPoints[1].definition.slice(0, 95)}`
+        enhancedKeyPoints[1]?.definition
+          ? `${enhancedKeyPoints[1].definition.slice(0, 95)}`
           : `Menjadi acuan utama dalam memastikan integritas pemrosesan dan efektivitas implementasi`,
         "Hanya sebagai formalitas teoritis tanpa relevansi praktis nyata",
         "Mempersulit prosedur eksekusi dan meningkatkan redundansi langkah",
         "Menghilangkan konsistensi data yang diperlukan oleh sistem atau prosedur",
       ],
       correctIndex: 0,
-      explanation: extractedKeyPoints[1]
-        ? `Dokumen mendefinisikan ${extractedKeyPoints[1].term}: ${extractedKeyPoints[1].definition}.`
+      explanation: enhancedKeyPoints[1]
+        ? `Dokumen mendefinisikan ${enhancedKeyPoints[1].term}: ${enhancedKeyPoints[1].definition}.`
         : `Konsep ini merupakan landasan utama yang menjamin keandalan seluruh alur kerja materi ${formattedTitle}.`,
     },
     {
       id: 3,
-      question: extractedKeyPoints[2]
-        ? `Dalam penerapan studi kasus "${formattedTitle}", apa fungsi dari "${extractedKeyPoints[2].term}"?`
+      question: enhancedKeyPoints[2]
+        ? `Dalam penerapan studi kasus "${formattedTitle}", apa fungsi dari "${enhancedKeyPoints[2].term}"?`
         : `Langkah evaluasi dan validasi apa yang harus dilakukan setelah menyelesaikan modul "${formattedTitle}"?`,
       options: [
-        extractedKeyPoints[2]?.definition
-          ? `${extractedKeyPoints[2].definition.slice(0, 95)}`
+        enhancedKeyPoints[2]?.definition
+          ? `${enhancedKeyPoints[2].definition.slice(0, 95)}`
           : "Melakukan pengujian kasus batas, audit integritas alur, dan verifikasi luaran",
         "Langsung meluncurkan solusi tanpa melalui tahap pengujian dan validasi",
         "Mengabaikan dokumentasi dan standar konvensi operasional",
         "Menghapus seluruh variabel pengujian sebelum dipresentasikan",
       ],
       correctIndex: 0,
-      explanation: extractedKeyPoints[2]
-        ? `Sesuai dokumen, ${extractedKeyPoints[2].term} berfungsi untuk: ${extractedKeyPoints[2].definition}.`
+      explanation: enhancedKeyPoints[2]
+        ? `Sesuai dokumen, ${enhancedKeyPoints[2].term} berfungsi untuk: ${enhancedKeyPoints[2].definition}.`
         : "Pengujian dan validasi menyeluruh menjamin luaran bebas dari anomali dan sesuai dengan tujuan modul.",
     },
   ];
@@ -610,15 +963,19 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
 
   return {
     title: formattedTitle,
+    domain,
     sourceType: input.sourceType,
     fileName: input.fileName,
     estimatedTime: "45 Menit",
     difficulty: "Menengah",
-    xpReward: 130,
+    xpReward: 150,
     summary: {
       overview: extractedOverview,
+      industryContext,
       keyTakeaways: keyTakeaways.length > 0 ? keyTakeaways : undefined,
-      keyPoints: extractedKeyPoints,
+      keyPoints: enhancedKeyPoints,
+      technicalProcedures,
+      commonPitfalls,
       proTips:
         "Saat mempelajari materi ini, selalu petakan konsep inti dan hubungan antar elemen secara visual terlebih dahulu. Pahami prinsip dasarnya sebelum melangkah ke detail implementasi!",
       breakdownTime: {

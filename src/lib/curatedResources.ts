@@ -1008,6 +1008,67 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
+  // ==========================================
+  // TOPIK IOT & SISTEM TERTANAM: ARDUINO & ESP32
+  // ==========================================
+  {
+    id: "iot-embedded-systems",
+    name: "Sistem Tertanam & IoT: Arduino, ESP32 & Mikrokontroler",
+    keywords: [
+      "iot",
+      "internet of things",
+      "arduino",
+      "esp32",
+      "esp8266",
+      "mikrokontroler",
+      "microcontroller",
+      "raspberry pi",
+      "sensor",
+      "actuator",
+      "aktuator",
+      "gpio",
+      "embedded",
+      "sistem tertanam",
+      "pwm",
+      "i2c",
+      "spi",
+      "uart",
+    ],
+    videos: [
+      {
+        title: "Tutorial Arduino Dasar untuk Pemula: Setup, Input & Output",
+        channel: "Kelas Robot",
+        duration: "21:15",
+        videoUrl: "https://www.youtube.com/watch?v=nL34zDTPkcs",
+        embedId: "nL34zDTPkcs",
+        summaryTopic: "Arsitektur pin I/O, instalasi Arduino IDE, struktur sketch void setup() dan void loop(), serta pembacaan sinyal digital/analog.",
+      },
+      {
+        title: "Getting Started with ESP32 & IoT Sensor Integration",
+        channel: "Random Nerd Tutorials",
+        duration: "25:40",
+        videoUrl: "https://www.youtube.com/watch?v=k_DE_4Pfq7k",
+        embedId: "k_DE_4Pfq7k",
+        summaryTopic: "Konektivitas WiFi ESP32, pengiriman data telemetri sensor ke dashboard cloud, dan penanganan protokol MQTT/HTTP.",
+      },
+    ],
+    docs: [
+      {
+        title: "Arduino Language Reference & Programming Guide",
+        source: "Arduino Official Docs",
+        url: "https://docs.arduino.cc/programming/",
+        docUrl: "https://docs.arduino.cc/programming/",
+        description: "Dokumentasi standar bahasa C/C++ Arduino, fungsi kontrol pin pinMode, digitalRead, analogWrite, dan pustaka antarmuka.",
+      },
+      {
+        title: "ESP32 Documentation & IoT Programming Guide",
+        source: "Espressif Systems",
+        url: "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
+        docUrl: "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/",
+        description: "Dokumentasi arsitektur chip ESP32, sistem operasi real-time FreeRTOS, manajemen daya sleep mode, dan jaringan nirkabel.",
+      },
+    ],
+  },
 ];
 
 /**

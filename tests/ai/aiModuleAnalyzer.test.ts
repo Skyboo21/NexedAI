@@ -293,13 +293,25 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
     expect(terms).toContain("gameobject");
     expect(terms).toContain("transform");
 
-    // Roadmap stages MUST focus on Unity 3D and C# Game Development, NOT Web Programming / Flowchart / Tipe Data Alpro
-    expect(result.roadmap.length).toBe(4);
+    // Roadmap stages MUST focus on Unity 3D and C# Game Development (4-6 dynamic nodes)
+    expect(result.roadmap.length).toBeGreaterThanOrEqual(4);
+    expect(result.roadmap.length).toBeLessThanOrEqual(6);
     const roadmapText = JSON.stringify(result.roadmap).toLowerCase();
     expect(roadmapText).not.toContain("pemrograman web");
     expect(roadmapText).not.toContain("html5");
     expect(roadmapText).not.toContain("css grid");
     expect(roadmapText).not.toContain("kueri sql");
+
+    // Deep Academic Content Extractions
+    expect(result.domain).toBeDefined();
+    expect(result.domain?.toLowerCase()).toContain("unity");
+    expect(result.summary.industryContext).toBeDefined();
+    expect(result.summary.industryContext?.toLowerCase()).toContain("game development");
+    expect(result.summary.technicalProcedures).toBeDefined();
+    expect(result.summary.technicalProcedures!.length).toBeGreaterThanOrEqual(3);
+    expect(result.summary.commonPitfalls).toBeDefined();
+    expect(result.summary.commonPitfalls!.length).toBeGreaterThanOrEqual(2);
+    expect(result.summary.keyPoints.some((k) => Boolean(k.analogy))).toBe(true);
 
     // Recommended resources must be specific to Unity/C#, NOT Web Programming UNPAS HTML
     expect(result.recommendedVideos).toBeDefined();
@@ -341,10 +353,19 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
 
     expect(result.title.toLowerCase()).toContain("pertolongan pertama");
     expect(result.summary.overview.toLowerCase()).toContain("pertolongan pertama");
+    expect(result.domain?.toLowerCase()).toContain("kesehatan");
+    expect(result.summary.industryContext?.toLowerCase()).toContain("kedaruratan medis");
 
-    // Key points must relate to first aid
+    // Key points must relate to first aid with analogies
     const terms = result.summary.keyPoints.map((k) => k.term.toLowerCase()).join(" ");
     expect(terms).toContain("penolong");
+    expect(result.summary.keyPoints.some((k) => Boolean(k.analogy))).toBe(true);
+
+    // Procedures and common pitfalls
+    expect(result.summary.technicalProcedures).toBeDefined();
+    expect(result.summary.technicalProcedures!.length).toBeGreaterThanOrEqual(3);
+    expect(result.summary.commonPitfalls).toBeDefined();
+    expect(result.summary.commonPitfalls!.length).toBeGreaterThanOrEqual(2);
 
     // Roadmap must NOT contain IT concepts
     const roadmapText = JSON.stringify(result.roadmap).toLowerCase();
@@ -355,6 +376,63 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
     // Resources must be PMI / Kemenkes / WHO
     const videoChannels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
     expect(videoChannels).toMatch(/palang merah|kementerian kesehatan|akadem/i);
+  });
+
+  it("should analyze IoT and Embedded Systems module with Arduino/ESP32 references and zero web bias", () => {
+    const iotContent = `
+      MODUL PRAKTIKUM INTERNET OF THINGS (IOT)
+      BAB 4: SISTEM AKUISISI SENSOR ESP32 & TELEMETRI MQTT
+      
+      I. TUJUAN
+      1. Mengonfigurasi pin GPIO ESP32 untuk input sensor suhu DHT22.
+      2. Membaca sinyal analog ADC dan digital GPIO secara berkala.
+      3. Mengirimkan paket telemetri sensor ke broker MQTT melalui koneksi WiFi.
+      
+      II. TEORI
+      • GPIO: General Purpose Input Output pada chip mikrokontroler.
+      • ESP32: Modul mikrokontroler dual-core dengan kapabilitas WiFi dan Bluetooth.
+      • Sensor DHT22: Sensor digital untuk mengukur temperatur dan kelembaban udara.
+      • MQTT: Protokol komunikasi data ringan bertipe publish-subscribe untuk IoT.
+      
+      III. LANGKAH KERJA
+      1. Hubungkan pin VCC DHT22 ke 3.3V dan GND ke ground ESP32.
+      2. Hubungkan pin data DHT22 ke GPIO 4 dengan resistor pull-up 10K.
+      3. Unggah sketch firmware menggunakan Arduino IDE.
+      4. Buka Serial Monitor pada baudrate 115200 untuk melihat nilai telemetri.
+    `;
+
+    const input = {
+      title: "Praktikum IoT ESP32",
+      content: iotContent,
+      fileName: "Modul_IoT_ESP32.pdf",
+      sourceType: "file" as const,
+    };
+
+    const result = analyzeModuleContent(input);
+
+    expect(result.title.toLowerCase()).toMatch(/esp32|sensor|iot/i);
+    expect(result.domain?.toLowerCase()).toContain("iot");
+    expect(result.summary.industryContext?.toLowerCase()).toContain("revolusi industri 4.0");
+
+    // Technical procedures & pitfalls
+    expect(result.summary.technicalProcedures).toBeDefined();
+    expect(result.summary.technicalProcedures!.length).toBeGreaterThanOrEqual(3);
+    expect(result.summary.commonPitfalls).toBeDefined();
+    expect(result.summary.commonPitfalls!.length).toBeGreaterThanOrEqual(2);
+
+    // Roadmap must NOT have HTML/CSS
+    const roadmapText = JSON.stringify(result.roadmap).toLowerCase();
+    expect(roadmapText).not.toContain("html5");
+    expect(roadmapText).not.toContain("css grid");
+
+    // Recommended resources must be Arduino/ESP32 specific
+    expect(result.recommendedVideos).toBeDefined();
+    const channels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
+    expect(channels).toMatch(/kelas robot|random nerd tutorials|akadem/i);
+
+    expect(result.recommendedDocs).toBeDefined();
+    const docs = result.recommendedDocs!.map((d) => d.source.toLowerCase()).join(" ");
+    expect(docs).toMatch(/arduino|espressif|pustaka/i);
   });
 });
 

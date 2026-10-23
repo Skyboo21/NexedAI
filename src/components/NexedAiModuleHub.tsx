@@ -50,6 +50,11 @@ import {
   Bot,
   Clock,
   ExternalLink,
+  Briefcase,
+  ShieldCheck,
+  Workflow,
+  Compass,
+  Network,
 } from "lucide-react";
 
 import {
@@ -75,8 +80,27 @@ export interface RecommendedDoc {
   description: string;
 }
 
+export interface TechnicalProcedure {
+  step: number;
+  title: string;
+  description: string;
+}
+
+export interface CommonPitfall {
+  pitfall: string;
+  prevention: string;
+}
+
+export interface KeyPointItem {
+  term: string;
+  definition: string;
+  category?: string;
+  analogy?: string;
+}
+
 export interface AnalyzedModuleResult {
   title: string;
+  domain?: string;
   sourceType: "file" | "text";
   fileName?: string;
   estimatedTime: string;
@@ -84,12 +108,11 @@ export interface AnalyzedModuleResult {
   xpReward: number;
   summary: {
     overview: string;
+    industryContext?: string;
     keyTakeaways?: string[];
-    keyPoints: Array<{
-      term: string;
-      definition: string;
-      category?: string;
-    }>;
+    keyPoints: KeyPointItem[];
+    technicalProcedures?: TechnicalProcedure[];
+    commonPitfalls?: CommonPitfall[];
     proTips: string;
     breakdownTime: {
       concept: string;
@@ -1789,10 +1812,18 @@ Silabus & Fokus Pembahasan:
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-700 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-black" />
-                    <span>Sintesis AI Terverifikasi</span>
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {(analysisResult.domain || (analysisResult.summary as any)?.domain) && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-3 py-1 rounded-full flex items-center gap-1.5 font-bold">
+                        <Compass className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>{analysisResult.domain || (analysisResult.summary as any)?.domain}</span>
+                      </span>
+                    )}
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-700 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-black" />
+                      <span>Sintesis AI Terverifikasi</span>
+                    </span>
+                  </div>
                 </div>
 
                 {/* Structured Narrative Paragraphs */}
@@ -1803,6 +1834,21 @@ Silabus & Fokus Pembahasan:
                     </p>
                   ))}
                 </div>
+
+                {/* Industry Context / Real-World Applicability Card */}
+                {(analysisResult.summary.industryContext || (analysisResult as any).industryContext) && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/10 shadow-2xs space-y-2 mt-2">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                        Intisari & Relevansi Industri (Real-World Context):
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-700 leading-relaxed pl-6">
+                      {analysisResult.summary.industryContext || (analysisResult as any).industryContext}
+                    </p>
+                  </div>
+                )}
 
                 {/* Key Takeaways Section if Available */}
                 {analysisResult.summary.keyTakeaways &&
@@ -1829,7 +1875,7 @@ Silabus & Fokus Pembahasan:
                   )}
               </div>
 
-              {/* Key terms highlights */}
+              {/* Key terms highlights with Analogies */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1862,11 +1908,109 @@ Silabus & Fokus Pembahasan:
                           )}
                         </div>
                         <p className="text-xs text-neutral-600 leading-relaxed">{pt.definition}</p>
+                        {pt.analogy && (
+                          <div className="mt-3 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/60 text-[11px] text-amber-950 leading-relaxed flex items-start gap-2">
+                            <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-mono font-bold uppercase text-[9px] tracking-wider text-amber-800 block mb-0.5">
+                                Analogi Pemahaman:
+                              </span>
+                              <span>{pt.analogy}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Technical Procedures / Practical Protocol */}
+              {((analysisResult.summary.technicalProcedures && analysisResult.summary.technicalProcedures.length > 0) ||
+                ((analysisResult as any).technicalProcedures && (analysisResult as any).technicalProcedures.length > 0)) && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Workflow className="w-3.5 h-3.5 text-indigo-600" />
+                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-700">
+                        Prosedur Teknis & Protokol Praktik
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
+                      SOP Operasional
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {(analysisResult.summary.technicalProcedures || (analysisResult as any).technicalProcedures).map(
+                      (proc: TechnicalProcedure, pIdx: number) => (
+                        <div
+                          key={`proc-${pIdx}`}
+                          className="p-4 sm:p-5 rounded-2xl border border-black/8 bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-2"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-black text-white font-mono text-xs font-bold">
+                              {proc.step || pIdx + 1}
+                            </span>
+                            <div className="space-y-1">
+                              <h5 className="text-xs font-bold text-black leading-snug">{proc.title}</h5>
+                              <p className="text-xs text-neutral-600 leading-relaxed">{proc.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Common Pitfalls & Prevention Analysis */}
+              {((analysisResult.summary.commonPitfalls && analysisResult.summary.commonPitfalls.length > 0) ||
+                ((analysisResult as any).commonPitfalls && (analysisResult as any).commonPitfalls.length > 0)) && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-700">
+                        Analisis Kesalahan Umum & Mitigasi Praktis
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-mono text-neutral-600 bg-[#F4F4F6] border border-black/10 px-2.5 py-0.5 rounded-full">
+                      Best Practice
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {(analysisResult.summary.commonPitfalls || (analysisResult as any).commonPitfalls).map(
+                      (item: CommonPitfall, cIdx: number) => (
+                        <div
+                          key={`pitfall-${cIdx}`}
+                          className="p-4 sm:p-5 rounded-2xl border border-rose-100 bg-rose-50/30 hover:border-rose-200 transition-all space-y-2.5"
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-800">
+                                Kesalahan / Miskonsepsi Umum:
+                              </span>
+                              <p className="text-xs text-neutral-800 font-medium leading-snug">{item.pitfall}</p>
+                            </div>
+                          </div>
+                          <div className="pl-6 pt-2 border-t border-rose-100/80 flex items-start gap-2">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-800">
+                                Solusi & Pencegahan:
+                              </span>
+                              <p className="text-xs text-neutral-700 leading-relaxed">{item.prevention}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Pro Tips Callout */}
               <div className="p-4 sm:p-5 rounded-2xl bg-[#FAFAFA] border border-black/8 text-neutral-800 text-xs leading-relaxed flex items-start gap-3 shadow-2xs">
@@ -1934,19 +2078,36 @@ Silabus & Fokus Pembahasan:
           {/* ======================================================== */}
           {hubCurrentStage === 2 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="flex items-center justify-between p-5 bg-[#FAFAFA] rounded-3xl border border-black/8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-[#FAFAFA] rounded-3xl border border-black/8 gap-4">
                 <div>
-                  <h4 className="text-xs font-bold text-black">
-                    Progres Pemahaman Materi Anda
+                  <h4 className="text-xs font-bold text-black flex items-center gap-2">
+                    <span>Progres Pemahaman Materi Anda</span>
+                    <span className="text-[10px] font-mono font-normal text-neutral-600 bg-white border border-black/10 px-2.5 py-0.5 rounded-full">
+                      {analysisResult.roadmap.length} Simpul Belajar
+                    </span>
                   </h4>
-                  <p className="text-[11px] text-neutral-500">
-                    Tandai setiap tahapan yang sudah Anda pahami untuk memperbarui grafik capaian.
+                  <p className="text-[11px] text-neutral-500 mt-0.5">
+                    Tandai setiap tahapan yang sudah Anda pahami untuk memperbarui grafik capaian dan sinkronisasi ke Peta Belajar.
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono font-bold text-black">
+                <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                  <span className="text-xs font-mono font-bold text-black bg-white px-3 py-1.5 rounded-full border border-black/10">
                     {roadmapPercent}% Selesai
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const modId = selectedFile
+                        ? selectedFile.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
+                        : (analysisResult.title || "").toLowerCase().replace(/[^a-z0-9-_]/g, "-");
+                      router.push(`/peta-belajar?course=dok-${modId}`);
+                    }}
+                    className="min-h-[44px] px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Network className="w-3.5 h-3.5" />
+                    <span>Buka Visual Skill Tree</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
 

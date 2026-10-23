@@ -50,39 +50,49 @@ export async function generateAiModuleAnalysis(
     // Ambil sampel representatif dokumen (hingga 12.000 karakter)
     const textSample = cleanContent.slice(0, 12000);
 
-    const prompt = `Kamu adalah Academic AI Curriculum Architect untuk NEXED AI.
-Tugasmu adalah menganalisis dokumen ajar/modul yang diberikan dan menyusun rencana pembelajaran terstruktur 4 TAHAP.
+    const prompt = `Kamu adalah Principal Academic Curriculum Architect di NEXED AI.
+Tugasmu adalah membedah dokumen modul pembelajaran yang diunggah dan menyusun modul digital interaktif 4 TAHAP yang mendalam dan fungsional.
 
-ATURAN MUTLAK (STRICT GROUNDING):
-- Gunakan HANYA informasi yang ada di dalam teks dokumen yang dilampirkan.
-- DILARANG KERAS memunculkan materi JavaScript, Web Programming, Flowchart, atau Basis Data KECUALI dokumen tersebut secara eksplisit membahas topik tersebut.
-- Jika dokumen membahas Unity 3D, C# Game Dev, atau topik umum lainnya (seperti Pertolongan Pertama / PMI), seluruh Tahap 1 s/d Tahap 4 WAJIB fokus 100% pada topik tersebut.
-- Jika ada istilah yang tidak ada di dokumen, jangan mengarang. Ekstrak langsung daftar sub-bab, konsep kunci, dan praktikum nyata dari teks dokumen.
+PRINSIP UTAMA:
+1. ZERO IRRELEVANT BIAS: Dilarang keras memunculkan konsep JavaScript, Flowchart, atau Pemrograman Web jika dokumen membahas topik lain (seperti Game Engine Unity, Pertolongan Pertama PMI, Sistem Tertanam, dsb).
+2. PEMBAHASAN MENDALAM (DEEP-DIVE): Tahap 1 Konseptual TIDAK BOLEH berupa ringkasan dangkal. Wajib mencakup:
+   - Intisari & Konteks Industri: Mengapa materi ini penting dan bagaimana penerapannya di dunia nyata.
+   - Terminologi & Konsep Inti (minimal 4-6 konsep): Berikan definisi teknis mendalam dan analogi yang jelas dari dokumen.
+   - Prosedur Teknis / Best Practices: Langkah-langkah atau protokol penting sesuai isi modul.
+   - Analisis Kesalahan Umum (Common Pitfalls): 2-3 kesalahan yang sering dilakukan pemula pada materi ini.
+3. PETA BELAJAR DINAMIS (DYNAMIC ROADMAP):
+   - Ekstrak 4 hingga 6 simpul (nodes) pembelajaran berurutan yang merepresentasikan alur belajar modul secara logis dari dasar hingga mahir.
+   - Judul setiap simpul WAJIB berasal dari sub-bab/materi spesifik modul (misal untuk Unity: "Instalasi & Editor Workspace", "GameObject, Component & Transform", "C# Scripting Lifecycle", "Physics & Collision Detection").
+4. PENCARIAN REFERENSI RELEVAN:
+   - Ekstrak domain topik utama (misal: "Game Engine / Unity", "Kesehatan / Medis", "Web Development", "Embedded Systems").
+   - Buat 2 rekomendasi video YouTube yang sangat relevan dengan topik dokumen (cantumkan query pencarian presisi dan kanal referensi terpercaya di bidang tersebut).
+   - Buat 2 rekomendasi dokumentasi teknis otoritatif yang sesuai domain (misal: Unity Manual, MDN, Kemenkes/PMI, atau repositori resmi).
 
-PEDOMAN PENYUSUNAN KURIKULUM:
+PEDOMAN RINCI ELEMEN JSON:
 1. 'title': Judul modul/materi pembelajaran sesungguhnya yang rapi, profesional, dan bersumber langsung dari teks dokumen. DILARANG KERAS menggunakan nama universitas, fakultas, jurusan, prodi, atau header slide (seperti 'D3 Teknik Informatika', 'Universitas Sebelas Maret', 'Sekolah Vokasi', 'Halaman 1').
-2. 'summary.overview': Ringkasan eksekutif komprehensif dan mendalam (minimal 3-5 kalimat terstruktur rapi) yang menjelaskan konteks/urgensi materi dokumen, klasifikasi pokok bahasan utama dalam modul, serta relevansi praktisnya bagi kompetensi mahasiswa. DILARANG memotong teks dengan '...'.
-3. 'summary.keyTakeaways': Array berisi 3-4 poin pokok penting / capaian utama dari materi ini (tiap poin 1-2 kalimat lugas).
-4. 'summary.keyPoints': Array berisi 4-6 konsep/istilah esensial yang diekstrak langsung dari dokumen tanpa nomor halaman atau header kampus. Setiap item wajib memiliki 'term', 'definition', dan 'category'.
-5. 'summary.proTips': Tips belajar praktis dan peringatan jebakan kesalahan umum (common pitfalls) dari materi dokumen ini.
-6. 'roadmap': 4 Tahap Peta Belajar Adaptif yang WAJIB 100% SESUAI DENGAN MATERI MODUL!
-   - Setiap tahap WAJIB merefleksikan bab/sub-topik nyata dari dokumen secara bertahap:
-     * Tahap 1: Fondasi Konseptual (terminologi dasar & prinsip pertama dari dokumen)
-     * Tahap 2: Struktur Komponen & Logika (struktur komponen, sintaks/aturan, atau alur kerja dari dokumen)
-     * Tahap 3: Praktik & Implementasi Kasus (studi kasus / penerapan nyata yang ada di dokumen)
-     * Tahap 4: Pengujian & Validasi Integritas (pengecekan kesalahan umum, validasi integritas, pengujian, atau evaluasi)
-   - Setiap item tahap WAJIB menyertakan: 'step', 'stage', 'title', 'description', 'keyConcepts', 'detailedGuide', 'actionItem', 'practiceScenario', dan 'checkQuestion'.
-7. 'recommendedVideos': Array berisi 2 video edukasi terpercaya spesifik yang selaras 100% dengan topik materi dokumen (misal dari kanal resmi atau kreator tutorial terverifikasi). Wajib menyertakan URL video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dan 'embedId' 11 karakter yang valid.
-8. 'recommendedDocs': Array berisi 2 rujukan dokumentasi teknis atau pustaka resmi yang membahas materi ini secara spesifik.
+2. 'domain': Domain topik utama modul (misal: "Game Development / Unity 3D & C#", "Kesehatan & Kemanusiaan / Pertolongan Pertama (PMI)", "Sistem Tertanam & IoT / Mikrokontroler", "Web Development", "Artificial Intelligence & Data Science").
+3. 'summary.overview': Ringkasan eksekutif komprehensif dan mendalam (minimal 3-5 kalimat terstruktur rapi) yang menjelaskan substansi materi dokumen dan klasifikasi pokok bahasan utama. DILARANG memotong teks dengan '...'.
+4. 'summary.industryContext': Penjelasan mendalam (2-3 kalimat) mengenai urgensi materi ini di industri dan bagaimana penerapannya di dunia kerja profesional nyata.
+5. 'summary.keyTakeaways': Array berisi 3-4 poin pokok penting / capaian utama dari materi ini (tiap poin 1-2 kalimat lugas).
+6. 'summary.keyPoints': Array berisi 4-6 konsep/istilah esensial dari dokumen. Setiap item wajib memiliki 'term', 'definition', 'category', dan 'analogy' (analogi konkret yang mempermudah pemahaman).
+7. 'summary.technicalProcedures': Array berisi 3-4 langkah/protokol kerja praktis berdasarkan modul, dengan format: [{"step": 1, "title": "Nama Langkah", "description": "Uraian prosedur"}]
+8. 'summary.commonPitfalls': Array berisi 2-3 kesalahan umum pemula beserta pencegahannya, dengan format: [{"pitfall": "Kesalahan umum / jebakan", "prevention": "Langkah mitigasi / pencegahan"}]
+9. 'summary.proTips': Tips belajar praktis dan prinsip kunci untuk menghindari error dalam materi ini.
+10. 'roadmap': 4 hingga 6 simpul belajar adaptif yang 100% SESUAI DENGAN MATERI MODUL!
+    - Setiap item tahap WAJIB menyertakan: 'step', 'stage', 'title', 'description', 'keyConcepts', 'detailedGuide', 'actionItem', 'practiceScenario', dan 'checkQuestion'.
+11. 'recommendedVideos': Array berisi 2 video edukasi terpercaya spesifik yang selaras 100% dengan topik materi dokumen (misal kanal resmi Unity, Palang Merah Indonesia, Arduino, dsb). Wajib menyertakan URL video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dan 'embedId' 11 karakter yang valid.
+12. 'recommendedDocs': Array berisi 2 rujukan dokumentasi teknis atau pustaka resmi yang membahas materi ini secara spesifik (Unity Docs, PMI/WHO, Arduino Docs, MDN, dsb).
 
 Struktur JSON yang WAJIB dipatuhi:
 {
   "title": "Judul materi yang spesifik dan jelas dari dokumen",
+  "domain": "Domain topik materi",
   "difficulty": "Dasar" ATAU "Menengah" ATAU "Lanjut",
   "estimatedTime": "45 Menit",
-  "xpReward": 130,
+  "xpReward": 150,
   "summary": {
     "overview": "Ringkasan eksekutif 3-5 kalimat yang komprehensif, padat, dan akurat mencakup seluruh aspek penting dokumen ini",
+    "industryContext": "Penjelasan mengapa materi ini krusial di industri dan penerapannya di dunia kerja nyata",
     "keyTakeaways": [
       "Poin pokok 1 dari dokumen",
       "Poin pokok 2 dari dokumen",
@@ -91,23 +101,54 @@ Struktur JSON yang WAJIB dipatuhi:
     "keyPoints": [
       {
         "term": "Nama Konsep / Istilah 1 dari dokumen",
-        "definition": "Penjelasan konsep yang lugas dan informatif tanpa artefak halaman",
-        "category": "Kategori konsep"
+        "definition": "Penjelasan konsep teknis mendalam",
+        "category": "Kategori konsep",
+        "analogy": "Analogi intuitif yang memudahkan pemahaman"
       },
       {
         "term": "Nama Konsep / Istilah 2 dari dokumen",
-        "definition": "Penjelasan konsep yang lugas dan informatif tanpa artefak halaman",
-        "category": "Kategori konsep"
+        "definition": "Penjelasan konsep teknis mendalam",
+        "category": "Kategori konsep",
+        "analogy": "Analogi intuitif yang memudahkan pemahaman"
       },
       {
         "term": "Nama Konsep / Istilah 3 dari dokumen",
-        "definition": "Penjelasan konsep yang lugas dan informatif tanpa artefak halaman",
-        "category": "Kategori konsep"
+        "definition": "Penjelasan konsep teknis mendalam",
+        "category": "Kategori konsep",
+        "analogy": "Analogi intuitif yang memudahkan pemahaman"
       },
       {
         "term": "Nama Konsep / Istilah 4 dari dokumen",
-        "definition": "Penjelasan konsep yang lugas dan informatif tanpa artefak halaman",
-        "category": "Kategori konsep"
+        "definition": "Penjelasan konsep teknis mendalam",
+        "category": "Kategori konsep",
+        "analogy": "Analogi intuitif yang memudahkan pemahaman"
+      }
+    ],
+    "technicalProcedures": [
+      {
+        "step": 1,
+        "title": "Nama Langkah / Protokol",
+        "description": "Deskripsi instruksi atau langkah teknis berdasarkan isi dokumen"
+      },
+      {
+        "step": 2,
+        "title": "Nama Langkah / Protokol",
+        "description": "Deskripsi instruksi atau langkah teknis berdasarkan isi dokumen"
+      },
+      {
+        "step": 3,
+        "title": "Nama Langkah / Protokol",
+        "description": "Deskripsi instruksi atau langkah teknis berdasarkan isi dokumen"
+      }
+    ],
+    "commonPitfalls": [
+      {
+        "pitfall": "Kesalahan fatal / umum yang sering dilakukan pemula pada materi ini",
+        "prevention": "Langkah mitigasi / pencegahan teknis terbaik sesuai modul"
+      },
+      {
+        "pitfall": "Kesalahan fatal / umum yang sering dilakukan pemula pada materi ini",
+        "prevention": "Langkah mitigasi / pencegahan teknis terbaik sesuai modul"
       }
     ],
     "proTips": "Tips belajar praktis dan peringatan kesalahan umum (common pitfalls) dari materi ini",
@@ -121,7 +162,7 @@ Struktur JSON yang WAJIB dipatuhi:
     {
       "step": 1,
       "stage": "Tahap 1: Fondasi Konseptual",
-      "title": "Judul materi langkah 1 yang diambil langsung dari topik modul",
+      "title": "Judul materi langkah 1 yang diambil langsung dari sub-topik modul",
       "description": "Deskripsi materi yang harus dikuasai di langkah 1 (2-3 kalimat lugas)",
       "keyConcepts": ["Konsep Kunci 1A", "Konsep Kunci 1B"],
       "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 1 berdasarkan dokumen",
@@ -133,7 +174,7 @@ Struktur JSON yang WAJIB dipatuhi:
     {
       "step": 2,
       "stage": "Tahap 2: Struktur Komponen & Logika",
-      "title": "Judul materi langkah 2 yang diambil langsung dari topik modul",
+      "title": "Judul materi langkah 2 yang diambil langsung dari sub-topik modul",
       "description": "Deskripsi materi yang harus dikuasai di langkah 2 (2-3 kalimat lugas)",
       "keyConcepts": ["Konsep Kunci 2A", "Konsep Kunci 2B"],
       "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 2 berdasarkan dokumen",
@@ -145,7 +186,7 @@ Struktur JSON yang WAJIB dipatuhi:
     {
       "step": 3,
       "stage": "Tahap 3: Praktik & Implementasi Kasus",
-      "title": "Judul materi langkah 3 yang diambil langsung dari topik modul",
+      "title": "Judul materi langkah 3 yang diambil langsung dari sub-topik modul",
       "description": "Deskripsi materi yang harus dikuasai di langkah 3 (2-3 kalimat lugas)",
       "keyConcepts": ["Konsep Kunci 3A", "Konsep Kunci 3B"],
       "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 3 berdasarkan dokumen",
@@ -157,7 +198,7 @@ Struktur JSON yang WAJIB dipatuhi:
     {
       "step": 4,
       "stage": "Tahap 4: Pengujian & Validasi Integritas",
-      "title": "Judul materi langkah 4 yang diambil langsung dari topik modul",
+      "title": "Judul materi langkah 4 yang diambil langsung dari sub-topik modul",
       "description": "Deskripsi materi yang harus dikuasai di langkah 4 (2-3 kalimat lugas)",
       "keyConcepts": ["Konsep Kunci 4A", "Konsep Kunci 4B"],
       "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 4 berdasarkan dokumen",
@@ -203,8 +244,8 @@ Struktur JSON yang WAJIB dipatuhi:
   "recommendedDocs": [
     {
       "title": "Judul Bab Dokumentasi Resmi",
-      "source": "Sumber Resmi (MDN / Unity Docs / Microsoft / PMI / dll)",
-      "url": "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide",
+      "source": "Sumber Resmi (Unity Docs / PMI / Arduino / MDN / dll)",
+      "url": "https://docs.unity3d.com/Manual/index.html",
       "description": "Deskripsi konten bab dokumentasi spesifik"
     }
   ]
@@ -213,13 +254,13 @@ Struktur JSON yang WAJIB dipatuhi:
 Teks Dokumen Modul yang Diunggah Mahasiswa:
 ${textSample}`;
 
-    // Model cascading: Utamakan model berkecepatan tinggi (qwen & 20b: ~0.4s), dengan fallback ke 120b
+    // Model cascading: Utamakan model berkecepatan tinggi dengan token limit memadai
     const preferredModel = process.env.GROQ_MODEL?.trim();
     const candidateModels = [
-      ...(preferredModel ? [{ name: preferredModel, maxTokens: 1400 }] : []),
-      { name: "qwen/qwen3.8-27b", maxTokens: 1100 },
-      { name: "openai/gpt-oss-20b", maxTokens: 1200 },
-      { name: "openai/gpt-oss-120b", maxTokens: 1600 },
+      ...(preferredModel ? [{ name: preferredModel, maxTokens: 3200 }] : []),
+      { name: "qwen/qwen3.8-27b", maxTokens: 2800 },
+      { name: "openai/gpt-oss-20b", maxTokens: 2800 },
+      { name: "openai/gpt-oss-120b", maxTokens: 3200 },
     ];
 
     let rawReply = "";
@@ -231,7 +272,7 @@ ${textSample}`;
             {
               role: "system",
               content:
-                "Kamu adalah Academic AI Curriculum Architect untuk NEXED AI. ATURAN MUTLAK (STRICT GROUNDING): Gunakan HANYA informasi yang ada di dalam teks dokumen yang dilampirkan. DILARANG KERAS memunculkan materi JavaScript, Web Programming, Flowchart, atau Basis Data KECUALI dokumen tersebut secara eksplisit membahas topik tersebut. Jika dokumen membahas Unity 3D, C# Game Dev, atau topik umum lainnya (seperti Pertolongan Pertama / PMI), seluruh Tahap 1 s/d Tahap 4 WAJIB fokus 100% pada topik tersebut. Berikan respons HANYA dalam format JSON valid tanpa tanda markdown (tanpa ```json).",
+                "Kamu adalah Principal Academic Curriculum Architect di NEXED AI. ATURAN MUTLAK (STRICT GROUNDING): Dilarang keras memunculkan konsep JavaScript, Flowchart, atau Pemrograman Web jika dokumen membahas topik lain (seperti Game Engine Unity, Pertolongan Pertama PMI, Sistem Tertanam, dsb). Tahap 1 Konseptual TIDAK BOLEH berupa ringkasan dangkal; wajib mencakup Konteks Industri, 4-6 Terminologi dengan Analogi, Prosedur Teknis, dan Common Pitfalls. Roadmap harus terdiri dari 4 hingga 6 simpul berurutan dari sub-bab dokumen asli. Berikan respons HANYA dalam format JSON valid tanpa tanda markdown (tanpa ```json).",
             },
             { role: "user", content: prompt },
           ],
@@ -302,6 +343,11 @@ ${textSample}`;
       );
     }
 
+    const domain =
+      typeof parsed.domain === "string" && parsed.domain.trim().length > 2
+        ? cleanModuleRawText(parsed.domain.trim())
+        : undefined;
+
     const difficulty: "Dasar" | "Menengah" | "Lanjut" =
       parsed.difficulty === "Dasar" || parsed.difficulty === "Lanjut"
         ? parsed.difficulty
@@ -311,6 +357,11 @@ ${textSample}`;
       typeof parsed.summary?.overview === "string" && parsed.summary.overview.trim().length > 10
         ? cleanModuleRawText(parsed.summary.overview.trim())
         : `Modul "${sanitizedTitle}" memuat konsep esensial yang dipelajari secara mendalam dalam kurikulum akademik.`;
+
+    const industryContext =
+      typeof parsed.summary?.industryContext === "string" && parsed.summary.industryContext.trim().length > 10
+        ? cleanModuleRawText(parsed.summary.industryContext.trim())
+        : undefined;
 
     const keyTakeaways =
       Array.isArray(parsed.summary?.keyTakeaways) && parsed.summary.keyTakeaways.length > 0
@@ -323,6 +374,7 @@ ${textSample}`;
             term: cleanModuleRawText(String(kp.term || "Konsep Esensial")).replace(/^[•\-*\d.]+\s*/, "").trim(),
             definition: cleanModuleRawText(String(kp.definition || "Penjelasan konsep.")).replace(/^[;:,.-]+/, "").trim(),
             category: kp.category ? String(kp.category).trim() : "Konsep Inti",
+            analogy: kp.analogy ? cleanModuleRawText(String(kp.analogy)).trim() : undefined,
           }))
         : [
             {
@@ -336,6 +388,27 @@ ${textSample}`;
               category: "Arsitektur",
             },
           ];
+
+    const technicalProcedures =
+      Array.isArray(parsed.summary?.technicalProcedures) && parsed.summary.technicalProcedures.length > 0
+        ? parsed.summary.technicalProcedures
+            .map((tp, idx) => ({
+              step: typeof tp.step === "number" ? tp.step : idx + 1,
+              title: cleanModuleRawText(String(tp.title || `Langkah ${idx + 1}`)).trim(),
+              description: cleanModuleRawText(String(tp.description || "")).trim(),
+            }))
+            .filter((tp) => tp.description.length > 5)
+        : undefined;
+
+    const commonPitfalls =
+      Array.isArray(parsed.summary?.commonPitfalls) && parsed.summary.commonPitfalls.length > 0
+        ? parsed.summary.commonPitfalls
+            .map((cp) => ({
+              pitfall: cleanModuleRawText(String(cp.pitfall || "")).trim(),
+              prevention: cleanModuleRawText(String(cp.prevention || "")).trim(),
+            }))
+            .filter((cp) => cp.pitfall.length > 5 && cp.prevention.length > 5)
+        : undefined;
 
     const proTips =
       typeof parsed.summary?.proTips === "string" && parsed.summary.proTips.trim().length > 5
@@ -363,7 +436,8 @@ ${textSample}`;
     let roadmap: AnalyzedModuleResult["roadmap"];
     if (
       Array.isArray(parsed.roadmap) &&
-      parsed.roadmap.length === 4 &&
+      parsed.roadmap.length >= 4 &&
+      parsed.roadmap.length <= 6 &&
       !isHallucinated
     ) {
       roadmap = parsed.roadmap.map((item, idx) => ({
@@ -458,15 +532,19 @@ ${textSample}`;
 
     return {
       title: sanitizedTitle,
+      domain,
       sourceType: "file",
       fileName,
       estimatedTime: typeof parsed.estimatedTime === "string" ? parsed.estimatedTime : "45 Menit",
       difficulty,
-      xpReward: typeof parsed.xpReward === "number" ? parsed.xpReward : 130,
+      xpReward: typeof parsed.xpReward === "number" ? parsed.xpReward : 150,
       summary: {
         overview,
+        industryContext,
         keyTakeaways,
         keyPoints,
+        technicalProcedures,
+        commonPitfalls,
         proTips,
         breakdownTime,
       },
