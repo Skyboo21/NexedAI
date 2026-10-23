@@ -50,26 +50,30 @@ export async function generateAiModuleAnalysis(
     // Ambil sampel representatif dokumen (hingga 12.000 karakter)
     const textSample = cleanContent.slice(0, 12000);
 
-    const prompt = `Anda adalah asisten kurikulum akademik AI NexedAI. Analisis dokumen modul pembelajaran berikut secara mendalam, lalu hasilkan ringkasan akademik dan silabus pembelajaran lengkap dalam format JSON murni.
+    const prompt = `Kamu adalah Academic AI Curriculum Architect untuk NEXED AI.
+Tugasmu adalah menganalisis dokumen ajar/modul yang diberikan dan menyusun rencana pembelajaran terstruktur 4 TAHAP.
 
-PEDOMAN PENTING:
-1. 'title': Judul modul/materi pelajaran sesungguhnya yang rapi dan profesional. DILARANG KERAS menggunakan nama universitas, fakultas, jurusan, prodi, atau header slide (seperti 'D3 Teknik Informatika', 'Universitas Sebelas Maret', 'Sekolah Vokasi', 'K.kab Madiun', 'Halaman 1'). Contoh judul yang benar: 'Pertemuan 4: Tipe Data, Variabel & Operator' atau 'Bab 5: Pemodelan Proses Bisnis (Flowchart & DFD)'.
-2. 'summary.overview': Ringkasan eksekutif komprehensif dan mendalam (minimal 3-5 kalimat terstruktur rapi) yang menjelaskan konteks/urgensi materi, klasifikasi pokok bahasan utama dalam modul, serta relevansi praktisnya bagi kompetensi mahasiswa. DILARANG memotong teks dengan '...'.
+ATURAN MUTLAK (STRICT GROUNDING):
+- Gunakan HANYA informasi yang ada di dalam teks dokumen yang dilampirkan.
+- DILARANG KERAS memunculkan materi JavaScript, Web Programming, Flowchart, atau Basis Data KECUALI dokumen tersebut secara eksplisit membahas topik tersebut.
+- Jika dokumen membahas Unity 3D, C# Game Dev, atau topik umum lainnya (seperti Pertolongan Pertama / PMI), seluruh Tahap 1 s/d Tahap 4 WAJIB fokus 100% pada topik tersebut.
+- Jika ada istilah yang tidak ada di dokumen, jangan mengarang. Ekstrak langsung daftar sub-bab, konsep kunci, dan praktikum nyata dari teks dokumen.
+
+PEDOMAN PENYUSUNAN KURIKULUM:
+1. 'title': Judul modul/materi pembelajaran sesungguhnya yang rapi, profesional, dan bersumber langsung dari teks dokumen. DILARANG KERAS menggunakan nama universitas, fakultas, jurusan, prodi, atau header slide (seperti 'D3 Teknik Informatika', 'Universitas Sebelas Maret', 'Sekolah Vokasi', 'Halaman 1').
+2. 'summary.overview': Ringkasan eksekutif komprehensif dan mendalam (minimal 3-5 kalimat terstruktur rapi) yang menjelaskan konteks/urgensi materi dokumen, klasifikasi pokok bahasan utama dalam modul, serta relevansi praktisnya bagi kompetensi mahasiswa. DILARANG memotong teks dengan '...'.
 3. 'summary.keyTakeaways': Array berisi 3-4 poin pokok penting / capaian utama dari materi ini (tiap poin 1-2 kalimat lugas).
-4. 'summary.keyPoints': Array berisi 4-6 konsep/istilah esensial yang bersih tanpa nomor halaman atau header kampus. Setiap item wajib memiliki 'term', 'definition', dan 'category'.
-5. 'summary.proTips': Tips belajar praktis dan peringatan jebakan kesalahan umum (common pitfalls) dari materi ini.
+4. 'summary.keyPoints': Array berisi 4-6 konsep/istilah esensial yang diekstrak langsung dari dokumen tanpa nomor halaman atau header kampus. Setiap item wajib memiliki 'term', 'definition', dan 'category'.
+5. 'summary.proTips': Tips belajar praktis dan peringatan jebakan kesalahan umum (common pitfalls) dari materi dokumen ini.
 6. 'roadmap': 4 Tahap Peta Belajar Adaptif yang WAJIB 100% SESUAI DENGAN MATERI MODUL!
-   - DILARANG KERAS berhalusinasi atau mencantumkan bahasa pemrograman / teknologi yang TIDAK ADA dalam modul (Contoh: JANGAN mencantumkan Java/JDK/JVM jika modul adalah tentang Algoritma, Flowchart, DFD, atau Tipe Data umum).
    - Setiap tahap WAJIB merefleksikan bab/sub-topik nyata dari dokumen secara bertahap:
      * Tahap 1: Fondasi Konseptual (terminologi dasar & prinsip pertama dari dokumen)
-     * Tahap 2: Struktur Komponen & Logika (struktur data, sintaks, atau perancangan logika dari dokumen)
+     * Tahap 2: Struktur Komponen & Logika (struktur komponen, sintaks/aturan, atau alur kerja dari dokumen)
      * Tahap 3: Praktik & Implementasi Kasus (studi kasus / penerapan nyata yang ada di dokumen)
-     * Tahap 4: Pengujian & Validasi Integritas (pengecekan kesalahan umum, validasi integritas, atau debugging)
+     * Tahap 4: Pengujian & Validasi Integritas (pengecekan kesalahan umum, validasi integritas, pengujian, atau evaluasi)
    - Setiap item tahap WAJIB menyertakan: 'step', 'stage', 'title', 'description', 'keyConcepts', 'detailedGuide', 'actionItem', 'practiceScenario', dan 'checkQuestion'.
-7. 'recommendedVideos': Array berisi 2 video edukasi terpercaya spesifik (misal dari Web Programming UNPAS, Programmer Zaman Now, Dea Afrizal, freeCodeCamp.org).
-   - DILARANG KERAS menghasilkan link pencarian (/results?search_query= atau /search)!
-   - Wajib menyertakan URL video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dan 'embedId' 11 karakter yang valid.
-8. 'recommendedDocs': Array berisi 2 dokumentasi teknis resmi (MDN Web Docs, PostgreSQL Docs, W3Schools, Python Docs, dll) dengan URL bab/sub-bab spesifik yang membahas materi ini (BUKAN beranda website kosong).
+7. 'recommendedVideos': Array berisi 2 video edukasi terpercaya spesifik yang selaras 100% dengan topik materi dokumen (misal dari kanal resmi atau kreator tutorial terverifikasi). Wajib menyertakan URL video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dan 'embedId' 11 karakter yang valid.
+8. 'recommendedDocs': Array berisi 2 rujukan dokumentasi teknis atau pustaka resmi yang membahas materi ini secara spesifik.
 
 Struktur JSON yang WAJIB dipatuhi:
 {
@@ -88,7 +92,7 @@ Struktur JSON yang WAJIB dipatuhi:
       {
         "term": "Nama Konsep / Istilah 1 dari dokumen",
         "definition": "Penjelasan konsep yang lugas dan informatif tanpa artefak halaman",
-        "category": "Kategori konsep (contoh: Tipe Data, Arsitektur, Logika, Operator)"
+        "category": "Kategori konsep"
       },
       {
         "term": "Nama Konsep / Istilah 2 dari dokumen",
@@ -199,7 +203,7 @@ Struktur JSON yang WAJIB dipatuhi:
   "recommendedDocs": [
     {
       "title": "Judul Bab Dokumentasi Resmi",
-      "source": "MDN Web Docs",
+      "source": "Sumber Resmi (MDN / Unity Docs / Microsoft / PMI / dll)",
       "url": "https://developer.mozilla.org/id/docs/Web/JavaScript/Guide",
       "description": "Deskripsi konten bab dokumentasi spesifik"
     }
@@ -227,7 +231,7 @@ ${textSample}`;
             {
               role: "system",
               content:
-                "Anda adalah AI Curriculum Analyzer NexedAI. Analisis teks modul secara teliti. Berikan respons HANYA dalam format JSON valid tanpa tanda markdown (tanpa ```json).",
+                "Kamu adalah Academic AI Curriculum Architect untuk NEXED AI. ATURAN MUTLAK (STRICT GROUNDING): Gunakan HANYA informasi yang ada di dalam teks dokumen yang dilampirkan. DILARANG KERAS memunculkan materi JavaScript, Web Programming, Flowchart, atau Basis Data KECUALI dokumen tersebut secara eksplisit membahas topik tersebut. Jika dokumen membahas Unity 3D, C# Game Dev, atau topik umum lainnya (seperti Pertolongan Pertama / PMI), seluruh Tahap 1 s/d Tahap 4 WAJIB fokus 100% pada topik tersebut. Berikan respons HANYA dalam format JSON valid tanpa tanda markdown (tanpa ```json).",
             },
             { role: "user", content: prompt },
           ],
@@ -344,15 +348,23 @@ ${textSample}`;
       quiz: parsed.summary?.breakdownTime?.quiz || "10 Menit",
     };
 
-    const isJavaHallucinated =
-      !cleanContent.toLowerCase().includes("java") &&
-      JSON.stringify(parsed.roadmap || {}).toLowerCase().includes("java");
+    const isContentWeb = /html|css|javascript|react|dom|web/i.test(cleanContent);
+    const isContentSql = /sql|database|basis\s+data|tabel\s+relasi/i.test(cleanContent);
+    const isContentFlowchart = /flowchart|dfd|diagram\s+alir/i.test(cleanContent);
+
+    const roadmapStr = JSON.stringify(parsed.roadmap || {}).toLowerCase();
+
+    const isHallucinated =
+      (!cleanContent.toLowerCase().includes("java") && roadmapStr.includes("java")) ||
+      (!isContentWeb && (roadmapStr.includes("javascript") || roadmapStr.includes("html5") || roadmapStr.includes("css grid"))) ||
+      (!isContentSql && roadmapStr.includes("kueri sql")) ||
+      (!isContentFlowchart && roadmapStr.includes("simbol ansi flowchart"));
 
     let roadmap: AnalyzedModuleResult["roadmap"];
     if (
       Array.isArray(parsed.roadmap) &&
       parsed.roadmap.length === 4 &&
-      !isJavaHallucinated
+      !isHallucinated
     ) {
       roadmap = parsed.roadmap.map((item, idx) => ({
         step: idx + 1,
@@ -422,7 +434,7 @@ ${textSample}`;
           ];
 
     // Sanitasi & Resolusi Rekomendasi Video YouTube & Dokumentasi (Direct Deep-Links)
-    const curatedResources = resolveCuratedResources(`${sanitizedTitle} ${cleanContent.slice(0, 500)}`);
+    const curatedResources = resolveCuratedResources(cleanContent.slice(0, 1000), sanitizedTitle);
 
     let recommendedVideos: RecommendedVideo[] = [];
     if (Array.isArray(parsed.recommendedVideos) && parsed.recommendedVideos.length > 0) {

@@ -387,6 +387,44 @@ export default function NexedAiModuleHub() {
     xp: number;
   } | null>(null);
 
+  // Restore active analyzed module from localStorage on initial mount (survives page refresh)
+  useEffect(() => {
+    try {
+      const activeRaw = localStorage.getItem("nexed_active_analyzed_module");
+      if (activeRaw) {
+        const item = JSON.parse(activeRaw);
+        if (item && item.analyzedResult) {
+          setAnalyzedResult(item.analyzedResult);
+          if (item.rawText) {
+            setUploadedDocMeta({
+              chunkCount: item.chunkCount || 1,
+              totalWords: item.totalWords || item.rawText.split(/\s+/).length,
+              rawText: item.rawText,
+            });
+            const dummyFile = new File([item.rawText], item.filename || `${item.analyzedResult.title}.txt`, {
+              type: "text/plain",
+            });
+            setSelectedFile(dummyFile);
+          }
+          const initialRoadmap: Record<number, boolean> = {};
+          for (const stepItem of item.analyzedResult.roadmap || []) {
+            initialRoadmap[stepItem.step] = false;
+          }
+          setRoadmapStatus(initialRoadmap);
+          setChatMessages([
+            {
+              id: "init",
+              sender: "ai",
+              text: `Halo! Saya Nexed AI Tutor. Modul **"${item.analyzedResult.title}"** telah dimuat dari sesi belajar Anda sebelumnya. Silakan pelajari materinya atau ajukan pertanyaan!`,
+            },
+          ]);
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal memuat modul aktif dari localStorage:", err);
+    }
+  }, []);
+
   // Restore saved module progress
   useEffect(() => {
     if (!analysisResult) return;
@@ -807,6 +845,32 @@ Silabus & Fokus Pembahasan:
             }
             setRoadmapStatus(initialRoadmap);
 
+            // Persist module data so refresh won't lose analysis
+            try {
+              const activePayload = {
+                id: (activeFile?.name || chosenData.title).toLowerCase().replace(/[^a-z0-9-_]/g, "-"),
+                title: chosenData.title,
+                filename: activeFile?.name || `${chosenData.title}.txt`,
+                chunkCount: uploadedDocMeta?.chunkCount || 1,
+                totalWords: uploadedDocMeta?.totalWords || content.split(/\s+/).length,
+                rawText: content,
+                analyzedResult: chosenData,
+                savedAt: new Date().toISOString(),
+              };
+              localStorage.setItem("nexed_active_analyzed_module", JSON.stringify(activePayload));
+              const stored = JSON.parse(localStorage.getItem("nexed_uploaded_modules") || "[]");
+              const updated = [
+                activePayload,
+                ...stored.filter((m: { id: string }) => m.id !== activePayload.id),
+              ];
+              localStorage.setItem("nexed_uploaded_modules", JSON.stringify(updated));
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("nexed_modules_updated"));
+              }
+            } catch (persistErr) {
+              console.warn("Could not persist active module:", persistErr);
+            }
+
             setChatMessages([
               {
                 id: "init",
@@ -1152,6 +1216,9 @@ Silabus & Fokus Pembahasan:
           <button
             type="button"
             onClick={() => {
+              try {
+                localStorage.removeItem("nexed_active_analyzed_module");
+              } catch {}
               setAnalyzedResult(null);
               setSelectedFile(null);
               setUploadedDocMeta(null);

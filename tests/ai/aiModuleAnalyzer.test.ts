@@ -250,4 +250,111 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
       expect(step.checkQuestion).toBeDefined();
     }
   });
+
+  it("should analyze Unity 3D Game Engine module with strict zero-hallucination grounding", () => {
+    const unityContent = `
+      MODUL PRAKTIKUM PENGEMBANGAN GAME
+      BAB 3: ARSITEKTUR UNITY 3D & SCRIPTING C#
+      
+      I. TUJUAN
+      1. Memahami hierarki Scene, GameObject, dan Transform di Unity.
+      2. Menerapkan komponen Rigidbody dan BoxCollider untuk simulasi fisika.
+      3. Menulis skrip C# turunan MonoBehaviour untuk mendeteksi input pemain.
+      
+      II. DASAR TEORI
+      • GameObject: Entitas dasar di dalam scene yang menampung berbagai komponen fungsional.
+      • Transform: Komponen wajib pada setiap GameObject yang menyimpan posisi, rotasi, dan skala (X, Y, Z).
+      • Rigidbody: Komponen fisika yang memungkinkan objek dipengaruhi oleh gaya gravitasi dan benturan.
+      • MonoBehaviour: Kelas dasar dalam C# Unity yang menyediakan method siklus hidup Start() dan Update().
+      
+      III. PRAKTIKUM
+      1. Buat Scene baru bernama 'Level1'.
+      2. Tambahkan 3D Object Cube sebagai Player dan tambahkan Rigidbody.
+      3. Buat skrip C# PlayerMovement.cs untuk menggerakkan kubus ke depan dengan kecepatan 10 unit per detik.
+    `;
+
+    const input = {
+      title: "Arsitektur Unity 3D & Scripting C#",
+      content: unityContent,
+      fileName: "Modul_Unity_GameDev.pdf",
+      sourceType: "file" as const,
+    };
+
+    const result = analyzeModuleContent(input);
+
+    // Title should strictly be Unity / Game
+    expect(result.title.toLowerCase()).toContain("unity");
+
+    // Overview should mention Unity or Game development
+    expect(result.summary.overview.toLowerCase()).toContain("unity");
+
+    // Key points must contain GameObject and Rigidbody
+    const terms = result.summary.keyPoints.map((k) => k.term.toLowerCase()).join(" ");
+    expect(terms).toContain("gameobject");
+    expect(terms).toContain("transform");
+
+    // Roadmap stages MUST focus on Unity 3D and C# Game Development, NOT Web Programming / Flowchart / Tipe Data Alpro
+    expect(result.roadmap.length).toBe(4);
+    const roadmapText = JSON.stringify(result.roadmap).toLowerCase();
+    expect(roadmapText).not.toContain("pemrograman web");
+    expect(roadmapText).not.toContain("html5");
+    expect(roadmapText).not.toContain("css grid");
+    expect(roadmapText).not.toContain("kueri sql");
+
+    // Recommended resources must be specific to Unity/C#, NOT Web Programming UNPAS HTML
+    expect(result.recommendedVideos).toBeDefined();
+    expect(result.recommendedVideos!.length).toBeGreaterThanOrEqual(2);
+    const videoChannels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
+    expect(videoChannels).toMatch(/brackeys|code monkey|akadem/i);
+
+    expect(result.recommendedDocs).toBeDefined();
+    const docSources = result.recommendedDocs!.map((d) => d.source.toLowerCase()).join(" ");
+    expect(docSources).toMatch(/unity|microsoft|pustaka/i);
+  });
+
+  it("should analyze Pertolongan Pertama (PMI) module with zero IT-hallucination", () => {
+    const pmiContent = `
+      BUKU PANDUAN PELATIHAN PERTOLONGAN PERTAMA
+      PALANG MERAH INDONESIA (PMI)
+      
+      BAB 1: PRINSIP DASAR PERTOLONGAN PERTAMA & PENILAIAN DINI
+      • Penolong Pertama: Orang yang pertama kali tiba di lokasi kejadian yang memiliki kemampuan medis dasar.
+      • Airway (Jalan Napas): Memastikan saluran pernapasan korban terbuka dan bebas dari sumbatan benda asing.
+      • Resusitasi Jantung Paru (RJP): Tindakan pertolongan darurat henti jantung melalui kompresi dada ritmis 30 kali dan 2 kali bantuan napas.
+      • Pembidaian: Prosedur imobilisasi tulang yang patah menggunakan bidai kaku untuk mencegah pergeseran fragmen tulang.
+      
+      LANGKAH PENANGANAN KEGAWATDARURATAN:
+      1. Amankan diri penolong, amankan lokasi kejadian, amankan korban.
+      2. Periksa kesadaran dengan metode ASNT (Awas, Suara, Nyeri, Tidak respon).
+      3. Hubungi ambulans darurat PMI (021-7992325).
+      4. Tangani perdarahan hebat dengan penekanan langsung dan balut tekan.
+    `;
+
+    const input = {
+      title: "Pertolongan Pertama PMI",
+      content: pmiContent,
+      fileName: "Panduan_P3K_PMI.pdf",
+      sourceType: "file" as const,
+    };
+
+    const result = analyzeModuleContent(input);
+
+    expect(result.title.toLowerCase()).toContain("pertolongan pertama");
+    expect(result.summary.overview.toLowerCase()).toContain("pertolongan pertama");
+
+    // Key points must relate to first aid
+    const terms = result.summary.keyPoints.map((k) => k.term.toLowerCase()).join(" ");
+    expect(terms).toContain("penolong");
+
+    // Roadmap must NOT contain IT concepts
+    const roadmapText = JSON.stringify(result.roadmap).toLowerCase();
+    expect(roadmapText).not.toContain("javascript");
+    expect(roadmapText).not.toContain("database");
+    expect(roadmapText).not.toContain("flowchart");
+
+    // Resources must be PMI / Kemenkes / WHO
+    const videoChannels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
+    expect(videoChannels).toMatch(/palang merah|kementerian kesehatan|akadem/i);
+  });
 });
+

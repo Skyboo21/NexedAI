@@ -193,10 +193,23 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     .map((w) => (w.length > 1 ? w.charAt(0).toUpperCase() + w.slice(1) : w.toUpperCase()))
     .join(" ");
 
-  // Deteksi Domain Spesifik dari Isi Dokumen
+  // Deteksi Domain Spesifik dari Dokumen
+  // ATURAN MUTLAK: Hanya aktif jika dokumen secara eksplisit membahas topik tersebut sebagai topik primer,
+  // BUKAN jika hanya memuat kata umum seperti "string" atau "variabel" dalam skrip Unity atau teks umum.
   const isDataTypeModule =
-    /tipe\s+data|variabel|konstanta|operator|integer|float|string|boolean/i.test(cleanContent);
-  const isDfdModule = /dfd|data\s+flow|flowchart|proses\s+bisnis/i.test(cleanContent);
+    (/\btipe\s+data\b/i.test(cleanTitle) ||
+      /\bdata\s+types?\b/i.test(cleanTitle) ||
+      (/\btipe\s+data\b/i.test(cleanContent) &&
+        /\bvariabel\b/i.test(cleanContent) &&
+        !/unity|game|c#|csharp|pmi|pertolongan|bisnis|manajemen|jaringan|pohon|tree|graf|database|basis\s+data/i.test(
+          cleanContent,
+        )));
+
+  const isDfdModule =
+    (/\b(flowchart|dfd|data\s+flow\s+diagram)\b/i.test(cleanTitle) ||
+      /\bpemodelan\s+proses\s+bisnis\b/i.test(cleanContent) ||
+      (/\bflowchart\b/i.test(cleanContent) && /\bdfd\b/i.test(cleanContent))) &&
+    !/unity|game|c#|csharp|pmi|pertolongan/i.test(cleanContent);
 
   // 1. Ekstrak Ikhtisar / Ringkasan Eksekutif dari Teks Riil yang Terstruktur & Lengkap
   let extractedOverview = "";
@@ -219,20 +232,21 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
       "Integritas Arsitektur: Menghindari anomali perancangan seperti Black Hole, Miracle, dan Gray Hole melalui balancing hierarki.",
     );
   } else {
-    // Analisis generik terstruktur berdasarkan paragraf substantif
+    // Analisis 100% dinamis berdasarkan substansi teks dokumen yang diunggah
     const paras = cleanContent
       .split(/\n\s*\n/)
       .map((p) => p.replace(/\s+/g, " ").trim())
-      .filter((p) => p.length > 50 && !isInstitutionalBoilerplate(p));
+      .filter((p) => p.length > 40 && !isInstitutionalBoilerplate(p));
 
     const leadPara = paras[0] || "";
+    const secondPara = paras[1] || "";
 
-    extractedOverview = `Modul "${formattedTitle}" menyajikan pembelajaran komprehensif yang dirancang untuk memperkuat kompetensi teknis mahasiswa secara terstruktur. Dokumen ini mengupas landasan teori konseptual, metodologi pemecahan masalah (computational thinking), serta pengorganisasian elemen sistem secara sistematis. ${leadPara.length > 30 ? `Fokus materi diawali dengan penguasaan materi pokok: ${leadPara.slice(0, 240)}... ` : ""}Melalui pendekatan bertahap, modul ini mengarahkan mahasiswa untuk menghubungkan prinsip teori dengan studi kasus nyata sehingga menghasilkan pemahaman yang mendalam dan aplikatif di industri modern.`;
+    extractedOverview = `Modul "${formattedTitle}" memuat pembelajaran terstruktur yang disusun secara mendalam berdasarkan dokumen materi yang dilampirkan. ${leadPara.length > 30 ? `${leadPara.slice(0, 260)}. ` : ""}${secondPara.length > 30 ? `${secondPara.slice(0, 220)}. ` : ""}Materi ini mengarahkan pembelajar untuk menguasai landasan konseptual, metodologi pemecahan masalah konkret, serta implementasi teruji yang relevan langsung dengan tujuan studi.`;
 
     if (paras.length > 0) {
       keyTakeaways.push(
-        `Penguasaan Fondasi: Memahami prinsip utama dan terminologi kunci dalam ${formattedTitle}.`,
-        "Implementasi Terstruktur: Mengaplikasikan alur logika sistematis pada skenario kasus yang dihadirkan.",
+        `Penguasaan Fondasi: Memahami prinsip utama dan terminologi pokok dalam ${formattedTitle}.`,
+        "Metodologi & Prosedur: Mengaplikasikan alur kerja sistematis pada skenario kasus yang dihadirkan di modul.",
         "Evaluasi & Validasi: Menguji efisiensi dan keakuratan hasil implementasi melalui simulasi studi kasus.",
       );
     }
@@ -241,9 +255,9 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
   // 2. Ekstrak Istilah & Definisi Riil (Key Points) yang Bersih Tanpa Artefak
   const extractedKeyPoints: Array<{ term: string; definition: string; category?: string }> = [];
 
-  // Pola A: Bullet atau Numbered dengan colon (e.g., • Istilah: Definisi)
+  // Pola A: Bullet atau Numbered dengan colon (e.g., • Istilah: Definisi), mendukung indentasi
   const bulletColonRegex =
-    /(?:^[•\-*]|\n[•\-*]|\n\d+\.)\s*([A-Za-z0-9\s/()–—]{3,35}?)\s*[:–—]\s*([^\n\r]{20,200})/gm;
+    /(?:^[•\-*]|\n\s*[•\-*]|\n\s*\d+[.:]|\n\s*[-*•])\s*([A-Za-z0-9#+.\s/()–—]{2,40}?)\s*[:–—]\s*([^\n\r]{10,250})/gm;
   let match: RegExpExecArray | null = bulletColonRegex.exec(cleanContent);
   while (match !== null && extractedKeyPoints.length < 6) {
     let rawTerm = match[1]?.trim() || "";
@@ -271,7 +285,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
   // Pola B: Kalimat Definisi "adalah" / "merupakan" jika butuh tambahan
   if (extractedKeyPoints.length < 4) {
     const isDefRegex =
-      /([A-Z][A-Za-z0-9\s/()]{3,30})\s+(adalah|merupakan|yaitu)\s+([^\n\r.!?]{20,180}[.!?])/g;
+      /([A-Z][A-Za-z0-9#+.\s/()]{2,35})\s+(adalah|merupakan|yaitu)\s+([^\n\r.!?]{15,200}[.!?])/g;
     let defMatch: RegExpExecArray | null = isDefRegex.exec(cleanContent);
     while (defMatch !== null && extractedKeyPoints.length < 6) {
       let term = defMatch[1]?.trim() || "";
@@ -297,272 +311,302 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     }
   }
 
-  // Tambahan Konsep Domain Spesifik jika belum lengkap
-  if (isDataTypeModule && extractedKeyPoints.length < 4) {
-    if (!extractedKeyPoints.some((k) => /numerik/i.test(k.term))) {
-      extractedKeyPoints.push({
-        term: "Data Numerik",
-        definition:
-          "Tipe data yang digunakan untuk operasi aritmatika (penjumlahan, pengurangan, perkalian), mencakup bilangan bulat (integer) dan bilangan real/pecahan (float).",
-        category: "Tipe Data",
-      });
-    }
-    if (!extractedKeyPoints.some((k) => /karakter|string/i.test(k.term))) {
-      extractedKeyPoints.push({
-        term: "Data Karakter & String",
-        definition:
-          "Tipe data yang merepresentasikan satu karakter tunggal (char) atau kumpulan untaian teks berurutan (string).",
-        category: "Tipe Data",
-      });
-    }
-    if (!extractedKeyPoints.some((k) => /boolean/i.test(k.term))) {
-      extractedKeyPoints.push({
-        term: "Data Boolean",
-        definition:
-          "Tipe data logika yang hanya memiliki dua kemungkinan nilai kebenaran: True (benar/1) atau False (salah/0).",
-        category: "Tipe Data",
-      });
-    }
-    if (!extractedKeyPoints.some((k) => /variabel/i.test(k.term))) {
-      extractedKeyPoints.push({
-        term: "Variabel & Konstanta",
-        definition:
-          "Variabel adalah lokasi memori yang nilainya dapat dimodifikasi selama program dieksekusi, sedangkan konstanta menyimpan nilai permanen yang tidak dapat diubah.",
-        category: "Konsep Memori",
-      });
-    }
-  }
-
-  // Fallback Key Points Umum jika dokumen sangat minim
+  // Fallback Key Points: ekstrak konsep penting dari judul dan teks jika dokumen sangat ringkas
   if (extractedKeyPoints.length < 3) {
     extractedKeyPoints.push(
       {
-        term: "Prinsip Dasar & Landasan Teori",
-        definition: `Fondasi utama dalam modul "${formattedTitle}" yang mendasari kerangka berpikir analitis dan alur pemrosesan sistem.`,
+        term: `Prinsip ${formattedTitle.slice(0, 30)}`,
+        definition: `Fondasi utama dalam modul "${formattedTitle}" yang mendasari kerangka berpikir analitis dan alur pemrosesan materi.`,
         category: "Fondasi",
       },
       {
-        term: "Struktur Komponen & Alur Data",
+        term: "Struktur Komponen & Alur Kerja",
         definition:
-          "Pengorganisasian entitas, transformasi proses, dan penyimpanan yang menjamin konsistensi informasi dari input hingga output.",
-        category: "Arsitektur",
+          "Pengorganisasian elemen penting, hubungan antar entitas, dan prosedur yang menjamin konsistensi informasi dari awal hingga akhir.",
+        category: "Komponen",
       },
       {
-        term: "Metodologi & Standar Praktik",
+        term: "Penerapan Praktis & Validasi",
         definition:
-          "Penerapan standar notasi dan kaidah terbaik industri guna meminimalisir kesalahan logika fatal dan meningkatkan skalabilitas.",
-        category: "Metodologi",
-      },
-      {
-        term: "Evaluasi & Studi Kasus Nyata",
-        definition:
-          "Penyelesaian skenario kasus konkret untuk memvalidasi pemahaman teoritis melalui pengujian terstruktur.",
+          "Penyelesaian studi kasus konkret dengan menguji efektivitas hasil implementasi terhadap kriteria mutu materi pembelajaran.",
         category: "Implementasi",
       },
     );
   }
 
-  // 3. Susun Roadmap Adaptif 4 Tahap berdasarkan Konten Riil
-  const roadmap = isDataTypeModule
-    ? [
-        {
-          step: 1,
-          stage: "Tahap 1: Fondasi Konseptual",
-          title: "Klasifikasi Tipe Data Numerik, Karakter & Logika",
-          description:
-            "Kuasai tiga kelompok besar tipe data: Numerik (Integer & Float), Karakter/Teks (Char & String), dan Boolean untuk evaluasi percabangan.",
-          actionItem:
-            "Tentukan jenis tipe data dan kebutuhan alokasi memori yang paling tepat untuk 4 variabel studi kasus: jumlahMahasiswa, ipkSemester, statusLulus, dan nilaiHuruf.",
-          understood: false,
-          keyConcepts: [
-            "Data Numerik (Integer vs Float)",
-            "Karakter & Teks (Char vs String)",
-            "Boolean (True / False)",
-          ],
-          detailedGuide:
-            "Tipe data menentukan jenis nilai yang sah disimpan dalam memori komputer dan operasi aritmatika maupun perbandingan apa saja yang valid dilakukan. Data numerik terbagi menjadi Integer (bilangan bulat diskrit tanpa desimal) dan Float/Real (bilangan pecahan desimal). Karakter merepresentasikan satu simbol tunggal ASCII/Unicode, String menampung kumpulan karakter, dan Boolean hanya memiliki dua keadaan logika: True (1) atau False (0) yang mengatur jalannya struktur kontrol program.",
-          practiceScenario:
-            "Buat pemetaan tabel tipe data untuk sistem akademik kampus yang menyimpan nilai mentah tugas (0-100), rata-rata bobot (desimal), predikat huruf (A/B/C), serta status kelulusan (Lulus/Tidak).",
-          checkQuestion:
-            "Mengapa kita sebaiknya tidak menggunakan tipe data float untuk counter perulangan (looping)?",
-        },
-        {
-          step: 2,
-          stage: "Tahap 2: Struktur Komponen & Logika",
-          title: "Manajemen Memori, Identifier & Deklarasi Variabel",
-          description:
-            "Pahami peran variabel sebagai wadah penyimpanan nilai dinamis (mutable) di RAM, aturan penamaan identifier yang sah, dan pencegahan uninitialized variable.",
-          actionItem:
-            "Tulis deklarasi variabel dengan penamaan camelCase yang deskriptif dan valid sesuai standar penulisan kode tanpa karakter terlarang.",
-          understood: false,
-          keyConcepts: [
-            "Aturan Penamaan Identifier",
-            "Variabel Dinamis (Mutable)",
-            "Inisialisasi Nilai Awal",
-          ],
-          detailedGuide:
-            "Variabel adalah lokasi memori bernama yang nilainya dapat dimodifikasi secara dinamis selama jalannya program. Aturan identifier: wajib diawali huruf atau garis bawah (_), tidak boleh mengandung spasi atau operator matematika, bersifat case-sensitive, dan tidak boleh menabrak kata kunci khusus (keywords). Variabel harus selalu diinisialisasi nilai awalnya sebelum digunakan dalam kalkulasi untuk menghindari nilai sampah (garbage value) di memori.",
-          practiceScenario:
-            "Rancang 5 deklarasi variabel untuk menyimpan data transaksi belanja kasir minimarket: namaBarang, hargaSatuan, kuantitasBeli, diskonMember, dan totalBayar.",
-          checkQuestion:
-            "Apa yang terjadi jika sebuah variabel dipanggil dalam rumus perhitungan sebelum diberikan nilai awal?",
-        },
-        {
-          step: 3,
-          stage: "Tahap 3: Praktik & Implementasi Kasus",
-          title: "Penerapan Konstanta (Immutable) & Operasi Aritmatika",
-          description:
-            "Terapkan konstanta bernilai tetap untuk menjaga integritas data patokan, serta kuasai presedensi operator aritmatika dan relasional.",
-          actionItem:
-            "Definisikan konstanta NILAI_PI dan BESAR_DISKON_PERSEN, lalu hitung total tagihan belanja dengan rumus aritmatika bertingkat.",
-          understood: false,
-          keyConcepts: [
-            "Konstanta (Immutable Identifier)",
-            "Presedensi Operator Aritmatika",
-            "Ekspresi Relasional",
-          ],
-          detailedGuide:
-            "Konstanta adalah identifier khusus yang nilainya dikunci secara permanen sejak dideklarasikan hingga eksekusi program selesai. Penggunaan konstanta (biasanya ditulis UPPERCASE) menjamin nilai-nilai acuan penting (seperti besaran pajak atau nilai fisika) tidak sengaja tertimpa di tengah jalan. Dalam menyusun ekspresi, perhatikan aturan urutan pengerjaan operator: tanda kurung -> pangkat -> kali/bagi/modulus -> tambah/kurang -> perbandingan relasional.",
-          practiceScenario:
-            "Implementasikan formula perhitungan luas lingkaran dan keliling tabung dengan memanfaatkan konstanta PHI = 3.14159 dan variabel jari-jari serta tinggi.",
-          checkQuestion:
-            "Kapan seorang programmer wajib memilih konstanta dibanding variabel biasa dalam perancangan aplikasi?",
-        },
-        {
-          step: 4,
-          stage: "Tahap 4: Pengujian & Validasi Integritas",
-          title: "Konversi Tipe Data (Type Casting) & Deteksi Bug Nilai Batas",
-          description:
-            "Lakukan pengujian konversi tipe data (implisit vs eksplisit), atasi jebakan integer division, dan validasi rentang batas nilai (overflow/underflow).",
-          actionItem:
-            "Uji perhitungan rata-rata dengan membagi dua bilangan integer ganjil, lalu terapkan type casting agar menghasilkan nilai pecahan akurat.",
-          understood: false,
-          keyConcepts: [
-            "Type Casting (Implisit & Eksplisit)",
-            "Integer Division Pitfall",
-            "Pencegahan Overflow & Underflow",
-          ],
-          detailedGuide:
-            "Konversi tipe data sering diperlukan ketika mengolah data antar format berbeda, misalnya menerima input teks dari pengguna lalu mengubahnya menjadi angka untuk dijumlahkan. Waspadai implicit casting yang dapat memotong angka desimal tanpa peringatan (truncation). Dalam pembagian integer di banyak bahasa komputer, 5 / 2 akan menghasilkan 2 bukan 2.5 jika tidak dikonversi ke float terlebih dahulu. Uji kode Anda dengan rentang angka ekstrem untuk mencegah overflow memori.",
-          practiceScenario:
-            "Tulis skenario uji di mana input berat badan (kg) dan tinggi badan (cm) dikonversi untuk menghitung indeks massa tubuh (BMI) dalam format desimal.",
-          checkQuestion:
-            "Bagaimana cara mencegah terjadinya data truncation saat melakukan konversi dari tipe data float ke integer?",
-        },
-      ]
-    : [
-        {
-          step: 1,
-          stage: "Tahap 1: Fondasi Konseptual",
-          title: `Kuasai Landasan Teori ${formattedTitle.slice(0, 35)}`,
-          description:
-            "Pahami latar belakang permasalahan, batasan modul, serta terminologi inti yang menjadi tolok ukur penguasaan materi.",
-          actionItem: `Buat ringkasan satu paragraf mengenai konsep kunci: "${extractedKeyPoints[0]?.term || formattedTitle}".`,
-          understood: false,
-          keyConcepts: [
-            extractedKeyPoints[0]?.term || "Konsep Dasar",
-            extractedKeyPoints[1]?.term || "Terminologi Inti",
-          ],
-          detailedGuide: `Pelajari konsep fundamental dari modul "${formattedTitle}". Pahami definisi utama, ruang lingkup materi, serta mengapa topik ini esensial dalam kerangka kurikulum akademik. Fokuskan perhatian pada istilah kunci yang menjadi pondasi analisis sistem.`,
-          practiceScenario: `Identifikasi masalah nyata yang ingin dipecahkan oleh materi "${formattedTitle}" dan catat batasan ruang lingkupnya.`,
-          checkQuestion: `Mengapa penguasaan fondasi konseptual "${extractedKeyPoints[0]?.term || formattedTitle}" menjadi prasyarat sebelum melangkah ke implementasi teknis?`,
-        },
-        {
-          step: 2,
-          stage: "Tahap 2: Pemetaan Komponen & Logika",
-          title: "Identifikasi Komponen & Hubungan Antar Elemen",
-          description:
-            "Petakan seluruh input, proses pengolahan, serta output yang dihasilkan sistem sesuai skenario modul pembelajaran.",
-          actionItem: `Identifikasi minimal 3 entitas atau variabel utama yang terlibat dalam studi kasus "${formattedTitle}".`,
-          understood: false,
-          keyConcepts: [
-            extractedKeyPoints[1]?.term || "Struktur Data",
-            extractedKeyPoints[2]?.term || "Alur Logika",
-          ],
-          detailedGuide: `Tahap ini berfokus pada pembedahan komponen sistem: bagaimana data masukan diterima, bagaimana struktur relasi antar elemen dihubungkan, dan proses komputasi apa yang mentransformasikan data menjadi luaran yang valid.`,
-          practiceScenario: `Buat diagram alur atau daftar variabel yang merefleksikan hubungan antar komponen dalam materi "${formattedTitle}".`,
-          checkQuestion: `Bagaimana Anda memverifikasi bahwa seluruh komponen input memiliki jalur pemrosesan yang jelas tanpa terjadi redundansi?`,
-        },
-        {
-          step: 3,
-          stage: "Tahap 3: Praktik & Implementasi Kasus",
-          title: "Penerapan Solusi pada Studi Kasus",
-          description:
-            "Lakukan perancangan atau penulisan alur solusi langkah demi langkah mengikuti panduan tugas praktikum yang telah disediakan.",
-          actionItem:
-            "Kerjakan simulasi langkah praktikum secara sistematis dan dokumentasikan hasil eksekusinya.",
-          understood: false,
-          keyConcepts: [
-            extractedKeyPoints[2]?.term || "Studi Kasus",
-            extractedKeyPoints[3]?.term || "Implementasi Praktis",
-          ],
-          detailedGuide: `Terapkan konsep teoritis ke dalam skenario studi kasus konkret. Ikuti tahapan instruksi praktikum, uji coba langkah komputasi, dan amati bagaimana sistem beroperasi dalam menyelesaikan persoalan nyata.`,
-          practiceScenario: `Simulasikan kasus uji konkret dengan data uji yang representatif dan catat keluaran yang dihasilkan.`,
-          checkQuestion: `Langkah pencegahan apa yang Anda terapkan agar solusi yang dirancang tetap efisien ketika volume data meningkat?`,
-        },
-        {
-          step: 4,
-          stage: "Tahap 4: Audit & Validasi Integritas",
-          title: "Verifikasi Kelayakan & Pengujian Bebas Kesalahan",
-          description:
-            "Lakukan pengecekan menyeluruh terhadap potensi kesalahan logika, konsistensi data, dan kepatuhan terhadap kaidah modul.",
-          actionItem:
-            "Uji hasil rancangan Anda dengan skenario kasus batas (edge case) dan pastikan tidak terdapat kebocoran logika.",
-          understood: false,
-          keyConcepts: [
-            "Audit Integritas",
-            "Validasi Edge Case",
-            "Pencegahan Logika Cacat",
-          ],
-          detailedGuide: `Tahap akhir bertujuan memastikan bahwa hasil analisis dan rancangan bebas dari kesalahan fatal. Uji sistem dengan skenario ekstrem (nilai batas, input kosong, data tak valid) dan pastikan mekanisme penanganan kesalahan berfungsi dengan baik.`,
-          practiceScenario: `Rancang 3 skenario uji batas (edge cases) dan uji apakah sistem memberikan respons atau luaran yang tepat.`,
-          checkQuestion: `Mengapa pengujian kasus batas (edge cases) sama pentingnya dengan pengujian kasus normal (happy path)?`,
-        },
-      ];
+  // 3. Deteksi Sub-Bab / Bagian Nyata dari Dokumen untuk Roadmap 4 Tahap
+  const extractedSections: Array<{ heading: string; body: string }> = [];
+  const lines = cleanContent
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
 
-  // 4. Kuis Active Recall yang Relevan dengan Konten Riil
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i]!;
+    if (isInstitutionalBoilerplate(l)) continue;
+
+    const isHeading =
+      /^#{1,3}\s+([^\n\r]+)/.test(l) ||
+      /^(?:BAB|Bab|Bagian|Pertemuan|Modul)\s+\d+[:.\s]+([^\n\r]+)/i.test(l) ||
+      /^(?:I|II|III|IV|V|VI|VII|VIII|IX|X)\.\s+([A-Za-z0-9\s/()–—]{4,60})/.test(l) ||
+      /^\d+\.\s+([A-Z][A-Za-z0-9\s/()–—]{4,55})/.test(l);
+
+    if (isHeading && l.length < 80) {
+      const cleanH = l
+        .replace(/^#{1,3}\s+/, "")
+        .replace(/^(?:BAB|Bab|Bagian|Pertemuan|Modul)\s+\d+[:.\s]*/i, "")
+        .replace(/^[A-Za-z0-9IVX]+[.:\s]+\s*/, "")
+        .trim();
+
+      if (
+        cleanH.length > 3 &&
+        !isInstitutionalBoilerplate(cleanH) &&
+        !extractedSections.some((s) => s.heading.toLowerCase() === cleanH.toLowerCase())
+      ) {
+        const nextLines = lines
+          .slice(i + 1, i + 4)
+          .filter((nl) => !isInstitutionalBoilerplate(nl))
+          .join(" ");
+        extractedSections.push({ heading: cleanH, body: nextLines });
+      }
+    }
+  }
+
+  // 4. Susun Roadmap Adaptif 4 Tahap berdasarkan Konten Riil
+  let roadmap: AnalyzedModuleResult["roadmap"];
+
+  if (isDataTypeModule) {
+    roadmap = [
+      {
+        step: 1,
+        stage: "Tahap 1: Fondasi Konseptual",
+        title: "Klasifikasi Tipe Data Numerik, Karakter & Logika",
+        description:
+          "Kuasai tiga kelompok besar tipe data: Numerik (Integer & Float), Karakter/Teks (Char & String), dan Boolean untuk evaluasi percabangan.",
+        actionItem:
+          "Tentukan jenis tipe data dan kebutuhan alokasi memori yang paling tepat untuk 4 variabel studi kasus: jumlahMahasiswa, ipkSemester, statusLulus, dan nilaiHuruf.",
+        understood: false,
+        keyConcepts: [
+          "Data Numerik (Integer vs Float)",
+          "Karakter & Teks (Char vs String)",
+          "Boolean (True / False)",
+        ],
+        detailedGuide:
+          "Tipe data menentukan jenis nilai yang sah disimpan dalam memori komputer dan operasi aritmatika maupun perbandingan apa saja yang valid dilakukan. Data numerik terbagi menjadi Integer (bilangan bulat diskrit tanpa desimal) dan Float/Real (bilangan pecahan desimal). Karakter merepresentasikan satu simbol tunggal ASCII/Unicode, String menampung kumpulan karakter, dan Boolean hanya memiliki dua keadaan logika: True (1) atau False (0) yang mengatur jalannya struktur kontrol program.",
+        practiceScenario:
+          "Buat pemetaan tabel tipe data untuk sistem akademik kampus yang menyimpan nilai mentah tugas (0-100), rata-rata bobot (desimal), predikat huruf (A/B/C), serta status kelulusan (Lulus/Tidak).",
+        checkQuestion:
+          "Mengapa kita sebaiknya tidak menggunakan tipe data float untuk counter perulangan (looping)?",
+      },
+      {
+        step: 2,
+        stage: "Tahap 2: Struktur Komponen & Logika",
+        title: "Manajemen Memori, Identifier & Deklarasi Variabel",
+        description:
+          "Pahami peran variabel sebagai wadah penyimpanan nilai dinamis (mutable) di RAM, aturan penamaan identifier yang sah, dan pencegahan uninitialized variable.",
+        actionItem:
+          "Tulis deklarasi variabel dengan penamaan camelCase yang deskriptif dan valid sesuai standar penulisan kode tanpa karakter terlarang.",
+        understood: false,
+        keyConcepts: [
+          "Aturan Penamaan Identifier",
+          "Variabel Dinamis (Mutable)",
+          "Inisialisasi Nilai Awal",
+        ],
+        detailedGuide:
+          "Variabel adalah lokasi memori bernama yang nilainya dapat dimodifikasi secara dinamis selama jalannya program. Aturan identifier: wajib diawali huruf atau garis bawah (_), tidak boleh mengandung spasi atau operator matematika, bersifat case-sensitive, dan tidak boleh menabrak kata kunci khusus (keywords). Variabel harus selalu diinisialisasi nilai awalnya sebelum digunakan dalam kalkulasi untuk menghindari nilai sampah (garbage value) di memori.",
+        practiceScenario:
+          "Rancang 5 deklarasi variabel untuk menyimpan data transaksi belanja kasir minimarket: namaBarang, hargaSatuan, kuantitasBeli, diskonMember, dan totalBayar.",
+        checkQuestion:
+          "Apa yang terjadi jika sebuah variabel dipanggil dalam rumus perhitungan sebelum diberikan nilai awal?",
+      },
+      {
+        step: 3,
+        stage: "Tahap 3: Praktik & Implementasi Kasus",
+        title: "Penerapan Konstanta (Immutable) & Operasi Aritmatika",
+        description:
+          "Terapkan konstanta bernilai tetap untuk menjaga integritas data patokan, serta kuasai presedensi operator aritmatika dan relasional.",
+        actionItem:
+          "Definisikan konstanta NILAI_PI dan BESAR_DISKON_PERSEN, lalu hitung total tagihan belanja dengan rumus aritmatika bertingkat.",
+        understood: false,
+        keyConcepts: [
+          "Konstanta (Immutable Identifier)",
+          "Presedensi Operator Aritmatika",
+          "Ekspresi Relasional",
+        ],
+        detailedGuide:
+          "Konstanta adalah identifier khusus yang nilainya dikunci secara permanen sejak dideklarasikan hingga eksekusi program selesai. Penggunaan konstanta (biasanya ditulis UPPERCASE) menjamin nilai-nilai acuan penting (seperti besaran pajak atau nilai fisika) tidak sengaja tertimpa di tengah jalan. Dalam menyusun ekspresi, perhatikan aturan urutan pengerjaan operator: tanda kurung -> pangkat -> kali/bagi/modulus -> tambah/kurang -> perbandingan relasional.",
+        practiceScenario:
+          "Implementasikan formula perhitungan luas lingkaran dan keliling tabung dengan memanfaatkan konstanta PHI = 3.14159 dan variabel jari-jari serta tinggi.",
+        checkQuestion:
+          "Kapan seorang programmer wajib memilih konstanta dibanding variabel biasa dalam perancangan aplikasi?",
+      },
+      {
+        step: 4,
+        stage: "Tahap 4: Pengujian & Validasi Integritas",
+        title: "Konversi Tipe Data (Type Casting) & Deteksi Bug Nilai Batas",
+        description:
+          "Lakukan pengujian konversi tipe data (implisit vs eksplisit), atasi jebakan integer division, dan validasi rentang batas nilai (overflow/underflow).",
+        actionItem:
+          "Uji perhitungan rata-rata dengan membagi dua bilangan integer ganjil, lalu terapkan type casting agar menghasilkan nilai pecahan akurat.",
+        understood: false,
+        keyConcepts: [
+          "Type Casting (Implisit & Eksplisit)",
+          "Integer Division Pitfall",
+          "Pencegahan Overflow & Underflow",
+        ],
+        detailedGuide:
+          "Konversi tipe data sering diperlukan ketika mengolah data antar format berbeda, misalnya menerima input teks dari pengguna lalu mengubahnya menjadi angka untuk dijumlahkan. Waspadai implicit casting yang dapat memotong angka desimal tanpa peringatan (truncation). Dalam pembagian integer di banyak bahasa komputer, 5 / 2 akan menghasilkan 2 bukan 2.5 jika tidak dikonversi ke float terlebih dahulu. Uji kode Anda dengan rentang angka ekstrem untuk mencegah overflow memori.",
+        practiceScenario:
+          "Tulis skenario uji di mana input berat badan (kg) dan tinggi badan (cm) dikonversi untuk menghitung indeks massa tubuh (BMI) dalam format desimal.",
+        checkQuestion:
+          "Bagaimana cara mencegah terjadinya data truncation saat melakukan konversi dari tipe data float ke integer?",
+      },
+    ];
+  } else {
+    // Bangun 4 Tahap Adaptif DARI DOKUMEN YANG DIUNGGAH (Zero Hallucination)
+    const stage1Title =
+      extractedSections[0]?.heading ||
+      (extractedKeyPoints[0] ? `Fondasi & Prinsip ${extractedKeyPoints[0].term}` : `Fondasi Konseptual ${formattedTitle}`);
+    const stage2Title =
+      extractedSections[1]?.heading ||
+      (extractedKeyPoints[1] ? `Komponen & Aturan ${extractedKeyPoints[1].term}` : `Struktur Komponen & Alur Materi`);
+    const stage3Title =
+      extractedSections[2]?.heading ||
+      (extractedKeyPoints[2] ? `Penerapan Kasus ${extractedKeyPoints[2].term}` : `Praktik & Implementasi Skenario Nyata`);
+    const stage4Title =
+      extractedSections[3]?.heading ||
+      `Evaluasi, Pengujian & Validasi ${formattedTitle.slice(0, 30)}`;
+
+    roadmap = [
+      {
+        step: 1,
+        stage: "Tahap 1: Fondasi Konseptual",
+        title: stage1Title,
+        description:
+          extractedSections[0]?.body?.slice(0, 160) ||
+          `Pelajari definisi dasar, ruang lingkup, dan terminologi awal dari materi "${formattedTitle}" sebagaimana dijelaskan dalam modul.`,
+        actionItem: `Pelajari dan rangkum konsep esensial: "${extractedKeyPoints[0]?.term || stage1Title}".`,
+        understood: false,
+        keyConcepts: [
+          extractedKeyPoints[0]?.term || "Konsep Dasar",
+          extractedKeyPoints[1]?.term || "Terminologi Inti",
+        ],
+        detailedGuide: `Pelajari konsep fundamental dari modul "${formattedTitle}". Pahami definisi utama, ruang lingkup materi, serta mengapa topik ini esensial. Fokuskan perhatian pada istilah kunci yang menjadi landasan materi pembelajaran.`,
+        practiceScenario: `Identifikasi masalah nyata atau tujuan yang ingin diselesaikan oleh modul "${formattedTitle}" dan catat batasan ruang lingkupnya.`,
+        checkQuestion: `Mengapa penguasaan "${extractedKeyPoints[0]?.term || stage1Title}" menjadi prasyarat sebelum melangkah ke implementasi teknis?`,
+      },
+      {
+        step: 2,
+        stage: "Tahap 2: Struktur Komponen & Logika",
+        title: stage2Title,
+        description:
+          extractedSections[1]?.body?.slice(0, 160) ||
+          `Petakan struktur hubungan antar elemen, parameter penting, dan mekanisme kerja sesuai penjelasan dalam materi ini.`,
+        actionItem: `Petakan minimal 3 elemen atau aturan utama yang terlibat dalam "${stage2Title}".`,
+        understood: false,
+        keyConcepts: [
+          extractedKeyPoints[1]?.term || "Struktur Elemen",
+          extractedKeyPoints[2]?.term || "Mekanisme Kerja",
+        ],
+        detailedGuide: `Tahap ini berfokus pada pembedahan komponen sistem: bagaimana masukan diterima, bagaimana struktur relasi antar elemen dihubungkan, dan proses apa yang mentransformasikan data menjadi luaran yang valid.`,
+        practiceScenario: `Buat diagram alur atau daftar hubungan yang merefleksikan keterkaitan antar komponen dalam materi "${formattedTitle}".`,
+        checkQuestion: `Bagaimana Anda memverifikasi bahwa seluruh komponen input memiliki alur pemrosesan yang jelas tanpa terjadi anomali?`,
+      },
+      {
+        step: 3,
+        stage: "Tahap 3: Praktik & Implementasi Kasus",
+        title: stage3Title,
+        description:
+          extractedSections[2]?.body?.slice(0, 160) ||
+          `Terapkan prosedur dan panduan praktikum pada skenario studi kasus konkret yang tercantum di dalam modul.`,
+        actionItem: `Selesaikan latihan studi kasus langkah demi langkah dan dokumentasikan setiap hasilnya.`,
+        understood: false,
+        keyConcepts: [
+          extractedKeyPoints[2]?.term || "Studi Kasus",
+          "Implementasi Teruji",
+        ],
+        detailedGuide: `Terapkan konsep teoritis ke dalam skenario studi kasus konkret. Ikuti tahapan instruksi praktikum, uji coba langkah pemecahan masalah, dan amati hasilnya dalam menyelesaikan persoalan nyata.`,
+        practiceScenario: `Simulasikan kasus uji konkret dengan data atau situasi yang representatif dan evaluasi hasil tindakan atau luaran yang dihasilkan.`,
+        checkQuestion: `Langkah mitigasi apa yang Anda terapkan agar solusi yang dirancang tetap efisien dan stabil saat menghadapi variasi kasus?`,
+      },
+      {
+        step: 4,
+        stage: "Tahap 4: Pengujian & Validasi Integritas",
+        title: stage4Title,
+        description:
+          extractedSections[3]?.body?.slice(0, 160) ||
+          `Lakukan audit integritas, verifikasi kepatuhan kaidah modul, dan pengujian terhadap potensi kesalahan skenario ekstrem.`,
+        actionItem: `Uji hasil rancangan Anda dengan skenario kasus batas (edge case) dan pastikan tidak terdapat celah kesalahan fatal.`,
+        understood: false,
+        keyConcepts: [
+          "Audit Integritas",
+          "Validasi Kasus Ekstrem",
+          "Kepatuhan Standar",
+        ],
+        detailedGuide: `Tahap akhir bertujuan memastikan bahwa hasil analisis dan rancangan bebas dari kesalahan fatal. Uji sistem atau tindakan dengan skenario ekstrem dan pastikan mekanisme penanganan kondisi batas berfungsi dengan baik.`,
+        practiceScenario: `Rancang 3 skenario uji batas (edge cases) dan verifikasi apakah luaran atau respons yang dihasilkan memenuhi standar mutu.`,
+        checkQuestion: `Mengapa pengujian kasus batas (edge cases) sama pentingnya dengan pengujian kasus normal pada materi "${formattedTitle}"?`,
+      },
+    ];
+  }
+
+  // 5. Kuis Active Recall yang 100% Berakar pada Konten Dokumen
   const quiz = [
     {
       id: 1,
-      question: `Apa fokus konseptual utama yang dipelajari dalam modul "${formattedTitle}"?`,
+      question: `Apa konsep atau tujuan fundamental yang dibahas dalam materi "${formattedTitle}"?`,
       options: [
-        `Penguasaan teori dan implementasi terstruktur terkait ${extractedKeyPoints[0]?.term || formattedTitle}`,
-        "Menghafal baris kode tanpa memahami struktur logika proses",
-        "Menghindari penggunaan diagram visual dalam perancangan sistem",
-        "Membuat sistem tanpa melakukan identifikasi kebutuhan pengguna",
+        extractedKeyPoints[0]?.definition
+          ? `${extractedKeyPoints[0].term}: ${extractedKeyPoints[0].definition.slice(0, 85)}`
+          : `Penguasaan komprehensif konsep dan penerapan praktis ${formattedTitle}`,
+        "Menghafal teori tanpa memahami penerapan praktis di lapangan",
+        "Mengabaikan standar dan prosedur keselamatan atau kaidah teknis modul",
+        "Menghapus parameter evaluasi sebelum proses pengujian selesai",
       ],
       correctIndex: 0,
-      explanation: `Modul "${formattedTitle}" berfokus pada penguasaan terstruktur dari prinsip dasar hingga implementasi nyata agar alur sistem berjalan optimal.`,
+      explanation: extractedKeyPoints[0]
+        ? `Berdasarkan dokumen, ${extractedKeyPoints[0].term} dijelaskan sebagai: ${extractedKeyPoints[0].definition}.`
+        : `Materi "${formattedTitle}" berfokus pada penguasaan terstruktur dari prinsip dasar hingga implementasi nyata.`,
     },
     {
       id: 2,
-      question: `Mengapa konsep "${extractedKeyPoints[0]?.term || "Fondasi Dasar"}" sangat krusial dalam materi ini?`,
+      question: extractedKeyPoints[1]
+        ? `Bagaimana peran "${extractedKeyPoints[1].term}" dalam topik "${formattedTitle}"?`
+        : `Mengapa penguasaan "${extractedKeyPoints[0]?.term || formattedTitle}" sangat krusial dalam materi ini?`,
       options: [
-        `Sebagai acuan utama dalam memastikan integritas pemrosesan data dan logika sistem`,
-        "Hanya sebagai formalitas penulisan dokumentasi tanpa fungsi teknis",
-        "Untuk memperlambat waktu eksekusi program di server produksi",
-        "Agar struktur sistem menjadi rumit dan sulit didebug oleh pengembang lain",
+        extractedKeyPoints[1]?.definition
+          ? `${extractedKeyPoints[1].definition.slice(0, 95)}`
+          : `Menjadi acuan utama dalam memastikan integritas pemrosesan dan efektivitas implementasi`,
+        "Hanya sebagai formalitas teoritis tanpa relevansi praktis nyata",
+        "Mempersulit prosedur eksekusi dan meningkatkan redundansi langkah",
+        "Menghilangkan konsistensi data yang diperlukan oleh sistem atau prosedur",
       ],
       correctIndex: 0,
-      explanation: `${extractedKeyPoints[0]?.term || "Konsep tersebut"} merupakan landasan utama yang menjamin reliabilitas dan konsistensi seluruh alur kerja sistem.`,
+      explanation: extractedKeyPoints[1]
+        ? `Dokumen mendefinisikan ${extractedKeyPoints[1].term}: ${extractedKeyPoints[1].definition}.`
+        : `Konsep ini merupakan landasan utama yang menjamin keandalan seluruh alur kerja materi ${formattedTitle}.`,
     },
     {
       id: 3,
-      question:
-        "Langkah validasi apa yang paling efektif sebelum meluncurkan solusi hasil praktikum ke lingkungan produksi?",
+      question: extractedKeyPoints[2]
+        ? `Dalam penerapan studi kasus "${formattedTitle}", apa fungsi dari "${extractedKeyPoints[2].term}"?`
+        : `Langkah evaluasi dan validasi apa yang harus dilakukan setelah menyelesaikan modul "${formattedTitle}"?`,
       options: [
-        "Melakukan audit integritas alur logika serta pengujian kasus batas (edge cases)",
-        "Langsung menerapkan kode tanpa melakukan pengujian unit atau integrasi",
-        "Menghapus seluruh dokumentasi sistem agar ukuran berkas lebih kecil",
-        "Mengabaikan standar penamaan dan kaidah konvensi modul",
+        extractedKeyPoints[2]?.definition
+          ? `${extractedKeyPoints[2].definition.slice(0, 95)}`
+          : "Melakukan pengujian kasus batas, audit integritas alur, dan verifikasi luaran",
+        "Langsung meluncurkan solusi tanpa melalui tahap pengujian dan validasi",
+        "Mengabaikan dokumentasi dan standar konvensi operasional",
+        "Menghapus seluruh variabel pengujian sebelum dipresentasikan",
       ],
       correctIndex: 0,
-      explanation:
-        "Pengujian kasus batas dan audit integritas alur logika memastikan sistem stabil terhadap input tak terduga serta bebas dari celah kesalahan fatal.",
+      explanation: extractedKeyPoints[2]
+        ? `Sesuai dokumen, ${extractedKeyPoints[2].term} berfungsi untuk: ${extractedKeyPoints[2].definition}.`
+        : "Pengujian dan validasi menyeluruh menjamin luaran bebas dari anomali dan sesuai dengan tujuan modul.",
     },
   ];
 
-  const curated = resolveCuratedResources(`${formattedTitle} ${cleanContent.slice(0, 500)}`);
+  const curated = resolveCuratedResources(cleanContent.slice(0, 1000), formattedTitle);
 
   return {
     title: formattedTitle,
@@ -576,7 +620,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
       keyTakeaways: keyTakeaways.length > 0 ? keyTakeaways : undefined,
       keyPoints: extractedKeyPoints,
       proTips:
-        "Saat mempelajari materi ini, selalu petakan entitas masukan dan keluaran secara visual terlebih dahulu. Jangan langsung melompat ke detail teknis sebelum logika tingkat tingginya tervalidasi!",
+        "Saat mempelajari materi ini, selalu petakan konsep inti dan hubungan antar elemen secara visual terlebih dahulu. Pahami prinsip dasarnya sebelum melangkah ke detail implementasi!",
       breakdownTime: {
         concept: "15 Menit",
         practice: "20 Menit",

@@ -447,6 +447,9 @@ export default function PetaBelajarPage() {
   // Selected Course Tab
   const [activeCourseId, setActiveCourseId] = useState<string>("algoritma-pemrograman");
 
+  // Dynamic Uploaded Modules mapped as Course Curricula
+  const [uploadedCourses, setUploadedCourses] = useState<Record<string, CourseCurriculum>>({});
+
   // Interactive Detail Drawer / Modal
   const [selectedChapter, setSelectedChapter] = useState<CurriculumChapter | null>(null);
 
@@ -465,13 +468,121 @@ export default function PetaBelajarPage() {
       }
     };
 
+    const loadUploadedModules = () => {
+      try {
+        const rawUploaded = localStorage.getItem("nexed_uploaded_modules");
+        const rawActive = localStorage.getItem("nexed_active_analyzed_module");
+
+        const parsedUploaded: Array<{
+          id: string;
+          title: string;
+          rawText?: string;
+          filename?: string;
+          chunkCount?: number;
+          totalWords?: number;
+          analyzedResult?: {
+            title?: string;
+            summary?: { overview?: string };
+            roadmap?: Array<{
+              step: number;
+              stage: string;
+              title: string;
+              description: string;
+              actionItem?: string;
+              keyConcepts?: string[];
+            }>;
+          };
+        }> = rawUploaded ? JSON.parse(rawUploaded) : [];
+
+        if (rawActive) {
+          const parsedActive = JSON.parse(rawActive);
+          if (
+            parsedActive &&
+            parsedActive.id &&
+            !parsedUploaded.some((u) => u.id === parsedActive.id)
+          ) {
+            parsedUploaded.unshift(parsedActive);
+          }
+        }
+
+        const newUploadedMap: Record<string, CourseCurriculum> = {};
+
+        parsedUploaded.forEach((mod) => {
+          if (
+            !mod.analyzedResult ||
+            !Array.isArray(mod.analyzedResult.roadmap) ||
+            mod.analyzedResult.roadmap.length === 0
+          ) {
+            return;
+          }
+          const courseId = `dok-${mod.id}`;
+          const roadmap = mod.analyzedResult.roadmap;
+
+          newUploadedMap[courseId] = {
+            id: courseId,
+            name: mod.analyzedResult.title || mod.title || "Modul Unggahan",
+            code: "MOD-AI",
+            semester: "Modul Dokumen Unggahan",
+            totalSks: 2,
+            instructor: "AI Curriculum Architect NexedAI",
+            description:
+              mod.analyzedResult.summary?.overview ||
+              "Kurikulum adaptif yang diekstraksi secara presisi dari dokumen yang Anda unggah.",
+            chapters: roadmap.map((step, idx) => ({
+              id: `${courseId}-step-${step.step}`,
+              numericId: 5000 + idx,
+              chapterNumber: step.step,
+              title: step.title || `Tahap ${step.step}`,
+              subtitle: step.description || "Substansi materi tahap ini.",
+              duration: "45 Menit",
+              xpReward: 130,
+              prerequisiteChapterId: idx > 0 ? `${courseId}-step-${idx}` : undefined,
+              prerequisiteTitle:
+                idx > 0
+                  ? `Tahap ${idx}: ${(roadmap[idx - 1]?.title || "").slice(0, 30)}`
+                  : undefined,
+              learningOutcomes:
+                Array.isArray(step.keyConcepts) && step.keyConcepts.length > 0
+                  ? step.keyConcepts
+                  : [step.actionItem || "Penguasaan konsep dan metodologi tahap ini."],
+              keyTopics:
+                Array.isArray(step.keyConcepts) && step.keyConcepts.length > 0
+                  ? step.keyConcepts
+                  : [step.title || "Konsep Inti"],
+              suggestedPreset: undefined,
+            })),
+          };
+        });
+
+        setUploadedCourses(newUploadedMap);
+      } catch (err) {
+        console.warn("Gagal memuat modul unggahan di peta belajar:", err);
+      }
+    };
+
     refreshData();
+    loadUploadedModules();
+
     const cleanup = onProgressUpdate(refreshData);
-    return cleanup;
+    if (typeof window !== "undefined") {
+      window.addEventListener("nexed_modules_updated", loadUploadedModules);
+    }
+
+    return () => {
+      cleanup();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("nexed_modules_updated", loadUploadedModules);
+      }
+    };
   }, []);
 
+  const allCourses: Record<string, CourseCurriculum> = {
+    ...COURSE_CURRICULA,
+    ...uploadedCourses,
+  };
+
   const defaultCourse = COURSE_CURRICULA["algoritma-pemrograman"]!;
-  const activeCourse: CourseCurriculum = COURSE_CURRICULA[activeCourseId] ?? defaultCourse;
+  const activeCourse: CourseCurriculum = allCourses[activeCourseId] ?? defaultCourse;
 
   // Helper to determine node status for a chapter
   const getChapterStatus = (chapter: CurriculumChapter, index: number): NodeStatus => {
@@ -517,14 +628,32 @@ export default function PetaBelajarPage() {
     .filter((c, i) => getChapterStatus(c, i) === "COMPLETED")
     .reduce((acc, c) => acc + c.xpReward, 0);
 
-  // Global Semester Mastery (Across all 3 courses: 15 chapters)
+  // Global Semester Mastery (Across all standard and custom courses)
   const totalSemesterChapters = 15;
   const globalCompletedCount =
     completedChaptersCount +
-    (activeCourseId === "algoritma-pemrograman" ? 1 : 2); // Dynamic estimation based on active courses
-  const globalMasteryPercent = Math.min(100, Math.round((globalCompletedCount / totalSemesterChapters) * 100));
+    (activeCourseId === "algoritma-pemrograman" ? 1 : 2);
+  const globalMasteryPercent = Math.min(
+    100,
+    Math.round((globalCompletedCount / totalSemesterChapters) * 100),
+  );
 
   const handleStartLearning = (chapter: CurriculumChapter) => {
+    // If it's an uploaded course, activate that module in localStorage and navigate
+    if (activeCourseId.startsWith("dok-")) {
+      const origId = activeCourseId.replace(/^dok-/, "");
+      try {
+        const rawUploaded = localStorage.getItem("nexed_uploaded_modules");
+        const parsed = rawUploaded ? JSON.parse(rawUploaded) : [];
+        const found = parsed.find((p: { id: string }) => p.id === origId);
+        if (found) {
+          localStorage.setItem("nexed_active_analyzed_module", JSON.stringify(found));
+        }
+      } catch {}
+      router.push(`/modul`);
+      return;
+    }
+
     // Navigate to module hub with recommended preset
     const preset = chapter.suggestedPreset || "binary_search";
     router.push(`/modul?preset=${preset}&topic=${encodeURIComponent(chapter.title)}`);
@@ -690,8 +819,9 @@ export default function PetaBelajarPage() {
         <section className="bg-white rounded-3xl p-3 sm:p-4 border border-black/8 shadow-sm">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-              {Object.values(COURSE_CURRICULA).map((course) => {
+              {Object.values(allCourses).map((course) => {
                 const isActive = course.id === activeCourseId;
+                const isCustom = course.id.startsWith("dok-");
                 return (
                   <button
                     key={course.id}
@@ -703,13 +833,22 @@ export default function PetaBelajarPage() {
                         : "bg-[#F4F4F6] text-neutral-700 hover:bg-neutral-200"
                     }`}
                   >
+                    {isCustom && (
+                      <Sparkles
+                        className={`w-3.5 h-3.5 shrink-0 ${
+                          isActive ? "text-amber-300" : "text-indigo-600"
+                        }`}
+                      />
+                    )}
                     <span>{course.name}</span>
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-md font-mono ${
-                        isActive ? "bg-white/20 text-white" : "bg-white text-neutral-600 border border-black/5"
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-white text-neutral-600 border border-black/5"
                       }`}
                     >
-                      5 Bab
+                      {isCustom ? "Dokumen Anda" : `${course.chapters.length} Bab`}
                     </span>
                   </button>
                 );
