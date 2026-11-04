@@ -48,3 +48,10 @@ __pycache__/
 
 # Vercel
 .vercel
+
+# Flutter mobile build ignores
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.pub-cache/
