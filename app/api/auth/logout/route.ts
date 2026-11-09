@@ -14,6 +14,7 @@ export async function POST() {
     sameSite: "lax",
     path: "/",
     maxAge: 0,
+    expires: new Date(0),
   });
 
   response.cookies.set("nexed_session_role", "", {
@@ -22,6 +23,7 @@ export async function POST() {
     sameSite: "lax",
     path: "/",
     maxAge: 0,
+    expires: new Date(0),
   });
 
   return response;

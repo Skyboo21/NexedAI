@@ -41,9 +41,10 @@ export async function smartApiFetch(
   const baseUrl = getApiBaseUrl();
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
 
-  // Jika baseUrl kosong (Vercel production tanpa external backend), langsung panggil Next.js internal route dengan zero delay
-  if (!baseUrl) {
-    return fetch(cleanEndpoint, init);
+  // Endpoint internal BFF Next.js (/api/auth/*) selalu dipanggil langsung ke Next.js server
+  // agar cookie HttpOnly (nexed_session_token) dan database Prisma Next.js bekerja dengan benar
+  if (!baseUrl || cleanEndpoint.startsWith("/api/auth/")) {
+    return fetch(cleanEndpoint, { ...init, credentials: "include" });
   }
 
   const primaryUrl = `${baseUrl}${cleanEndpoint}`;
@@ -58,10 +59,14 @@ export async function smartApiFetch(
       signal: controller.signal,
     });
     clearTimeout(timer);
+    // Jika backend eksternal belum memiliki endpoint tersebut (404), otomatis fallback ke Next.js internal API route
+    if (res.status === 404) {
+      return fetch(cleanEndpoint, init);
+    }
     return res;
   } catch {
     clearTimeout(timer);
-    // Hanya fallback ke Next.js internal route jika terjadi network failure (offline, timeout, refused)
+    // Fallback ke Next.js internal route jika terjadi network failure (offline, timeout, refused)
     return fetch(cleanEndpoint, init);
   }
 }

@@ -14,10 +14,9 @@ export interface RegisteredUserRecord {
   prodi?: string;
 }
 
-import { smartApiFetch } from "../utils/apiConfig";
-
 const authFetch = (endpoint: string, init?: RequestInit): Promise<Response> => {
-  return smartApiFetch(endpoint, { ...init, credentials: "include" });
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return fetch(cleanEndpoint, { ...init, credentials: "include" });
 };
 
 export interface AuthState {
@@ -271,6 +270,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("nexed_auth_user", JSON.stringify(userData));
+          document.cookie = `nexed_session_role=${userData.role}; path=/; max-age=604800; SameSite=Lax`;
         } catch {
           // safe
         }
@@ -309,6 +309,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.removeItem("nexed_auth_user");
         localStorage.removeItem("uns_auth_user");
         localStorage.removeItem("nexed_auth_token");
+        document.cookie = "nexed_session_role=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+        document.cookie = "nexed_session_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
       } catch {
         // ignore
       }

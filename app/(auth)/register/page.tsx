@@ -58,12 +58,13 @@ export default function RegisterPage() {
       setSuccessMessage("Pendaftaran akun berhasil! Mengalihkan ke portal Anda...");
 
       setTimeout(() => {
-        if (data.role === "dosen") {
-          router.push("/dosen-dashboard");
+        const targetUrl = data.role === "dosen" ? "/dosen-dashboard" : "/dashboard";
+        if (typeof window !== "undefined") {
+          window.location.replace(targetUrl);
         } else {
-          router.push("/dashboard");
+          router.push(targetUrl);
         }
-      }, 800);
+      }, 600);
     } catch {
       setIsSubmitting(false);
       setRegisterError("Terjadi kesalahan saat memproses registrasi akun.");

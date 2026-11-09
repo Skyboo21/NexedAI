@@ -325,9 +325,41 @@ export async function registerServerUser(params: {
   await initServerUserRegistry();
 
   const cleanEmail = params.email.trim().toLowerCase();
-  const existing = await findUserByIdentifier(cleanEmail);
-  if (existing) {
-    throw new Error("Email atau identitas sudah terdaftar dalam sistem.");
+  const cleanNim = params.nimOrNip?.trim();
+
+  // Periksa duplikasi HANYA pada email yang sama persis
+  if (SERVER_USERS.has(cleanEmail)) {
+    throw new Error("Alamat email ini sudah terdaftar dalam sistem. Silakan gunakan email lain atau langsung Masuk.");
+  }
+
+  if (prisma && isDatabaseConfigured()) {
+    try {
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+      });
+      if (existingByEmail) {
+        throw new Error("Alamat email ini sudah terdaftar dalam sistem. Silakan gunakan email lain atau langsung Masuk.");
+      }
+      if (cleanNim) {
+        const existingByNim = await prisma.user.findFirst({
+          where: { nimOrNip: { equals: cleanNim, mode: "insensitive" } },
+        });
+        if (existingByNim) {
+          throw new Error(`NIM/NIP "${cleanNim}" sudah terdaftar pada akun lain. Gunakan NIM/NIP milik Anda sendiri.`);
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && (err.message.includes("sudah terdaftar") || err.message.includes("NIM/NIP"))) {
+        throw err;
+      }
+      console.warn("[PostgreSQL] Check existing user warning:", (err as Error).message);
+    }
+  } else if (cleanNim) {
+    for (const u of SERVER_USERS.values()) {
+      if (u.nimOrNip && u.nimOrNip.toLowerCase() === cleanNim.toLowerCase()) {
+        throw new Error(`NIM/NIP "${cleanNim}" sudah terdaftar pada akun lain. Gunakan NIM/NIP milik Anda sendiri.`);
+      }
+    }
   }
 
   const salt = generateSalt();
@@ -338,7 +370,7 @@ export async function registerServerUser(params: {
     name: params.name.trim(),
     email: cleanEmail,
     role: params.role,
-    nimOrNip: params.nimOrNip?.trim(),
+    nimOrNip: cleanNim,
     passwordHash,
     salt,
     semester: params.semester || 1,
@@ -352,8 +384,18 @@ export async function registerServerUser(params: {
   // 2. Persist to PostgreSQL if connected
   if (prisma && isDatabaseConfigured()) {
     try {
-      await prisma.user.create({
-        data: {
+      await prisma.user.upsert({
+        where: { email: newUser.email },
+        update: {
+          name: newUser.name,
+          role: newUser.role,
+          nimOrNip: newUser.nimOrNip,
+          passwordHash: newUser.passwordHash,
+          salt: newUser.salt,
+          semester: newUser.semester,
+          prodi: newUser.prodi,
+        },
+        create: {
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,

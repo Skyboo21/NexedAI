@@ -66,6 +66,14 @@ export async function POST(request: Request) {
       maxAge: Math.floor(tokenMaxAge / 1000),
     });
 
+    response.cookies.set("nexed_session_role", newUser.role, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: Math.floor(tokenMaxAge / 1000),
+    });
+
     return response;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Terjadi kesalahan pendaftaran.";

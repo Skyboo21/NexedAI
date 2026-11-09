@@ -227,9 +227,13 @@ export default function UserProfile() {
     };
   }, [activeUser.email]);
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
+  const handleLogout = async () => {
+    await logout();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    } else {
+      router.push("/login");
+    }
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
