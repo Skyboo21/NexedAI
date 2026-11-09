@@ -2,14 +2,22 @@
 /**
  * API Route: Module Document Upload & Automatic Chunking for RAG
  * Accepts multipart/form-data with 'file' and 'moduleId'.
- * Extracts text from PDF or text documents, generates overlapping chunks,
- * and saves into the module registry.
+ * Extracts text directly in Next.js Node.js runtime (unpdf / pdf-parse)
+ * with fallback to FastAPI /api/modul/extract-text, validates against status messages,
+ * generates overlapping chunks, and saves into the module registry.
  */
 
 import { type NextRequest, NextResponse } from "next/server";
 import { generateAiModuleAnalysis } from "@/lib/aiModuleServer";
-import { chunkText, extractTextFromPdf, getModule, listModules, saveModule } from "@/lib/ragEngine";
+import {
+  chunkText,
+  extractTextAndPagesFromPdf,
+  getModule,
+  listModules,
+  saveModule,
+} from "@/lib/ragEngine";
 
+export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -35,19 +43,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fileName =
+    const rawFileName =
       typeof (file as { name?: unknown }).name === "string"
         ? (file as { name: string }).name
         : "dokumen.pdf";
+
+    const cleanFileNameWithoutExt =
+      rawFileName
+        .replace(/\.[^/.]+$/, "")
+        .replace(/\s+/g, " ")
+        .trim() || "modul-pembelajaran";
 
     // 2. Tentukan moduleId (dari form data atau gunakan slug nama file)
     const moduleId =
       typeof rawModuleId === "string" && rawModuleId.trim().length > 0
         ? rawModuleId.trim()
-        : fileName
-            .replace(/\.[^/.]+$/, "")
+        : cleanFileNameWithoutExt
             .toLowerCase()
-            .replace(/[^a-z0-9-_]/g, "-");
+            .replace(/[^a-z0-9-_]/g, "-")
+            .replace(/-+/g, "-");
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -56,56 +70,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File yang diunggah kosong (0 bytes)." }, { status: 400 });
     }
 
-    // 3. Ekstraksi teks multi-strategi: Prioritaskan FastAPI /api/modul/extract-text (pypdf),
-    //    dengan fallback ke ekstraktor lokal Next.js jika FastAPI sedang offline.
-    let extractedText = "";
-    let pageCount = 1;
-    const fastApiBaseUrl = (
-      process.env.FASTAPI_URL ||
-      process.env.NEXT_PUBLIC_FASTAPI_URL ||
-      "https://nexed-backend.vercel.app"
-    ).replace(/\/$/, "");
-
-    try {
-      const fastApiForm = new FormData();
-      const fileBlob = new Blob([buffer], {
-        type:
-          typeof (file as { type?: unknown }).type === "string"
-            ? (file as { type: string }).type
-            : "application/octet-stream",
-      });
-      fastApiForm.append("file", fileBlob, fileName);
-
-      const fastApiRes = await fetch(`${fastApiBaseUrl}/api/modul/extract-text`, {
-        method: "POST",
-        body: fastApiForm,
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (fastApiRes.ok) {
-        const fastApiData = (await fastApiRes.json().catch(() => null)) as {
-          extractedText?: string;
-          pageCount?: number;
-        } | null;
-        if (
-          fastApiData &&
-          typeof fastApiData.extractedText === "string" &&
-          fastApiData.extractedText.trim().length >= 20
-        ) {
-          extractedText = fastApiData.extractedText.trim();
-          if (typeof fastApiData.pageCount === "number" && fastApiData.pageCount > 0) {
-            pageCount = fastApiData.pageCount;
-          }
-        }
-      }
-    } catch (fastApiErr) {
-      console.warn(
-        "[upload] FastAPI /api/modul/extract-text tidak terjangkau, menggunakan fallback ekstraktor lokal Next.js:",
-        fastApiErr,
-      );
-    }
-
-    const lowerName = fileName.toLowerCase();
+    const lowerName = rawFileName.toLowerCase();
     const isPdf =
       lowerName.endsWith(".pdf") ||
       (typeof (file as { type?: unknown }).type === "string" &&
@@ -117,79 +82,142 @@ export async function POST(request: NextRequest) {
       lowerName.endsWith(".ppt") ||
       lowerName.endsWith(".odt");
 
-    if (!extractedText || extractedText.trim().length < 20) {
-      if (isPdf) {
-        try {
-          extractedText = await extractTextFromPdf(buffer);
-        } catch (pdfErr) {
-          console.warn(
-            "Ekstraksi standar PDF dilewati, menggunakan stream regex fallback:",
-            pdfErr,
-          );
-        }
+    let extractedText = "";
+    let pageCount = 1;
 
-        // Jika PDF parse tidak menghasilkan teks (misal font encoding non-standar), ekstrak string terbaca
-        if (!extractedText || extractedText.trim().length < 20) {
-          const raw = buffer.toString("latin1");
-          const printableMatches = raw.match(
-            /[A-Za-z0-9\s.,;:!?'"()_\-–—/\\+*=<>@#$%^&[\]{}]{4,}/g,
-          );
-          if (printableMatches && printableMatches.length > 0) {
-            extractedText = printableMatches.filter((s) => s.trim().length > 3).join(" ");
-          }
-        }
-      } else if (isOffice) {
-        const raw = buffer.toString("latin1");
-        // Cocokkan tag teks Word <w:t> dan PowerPoint <a:t>
-        const xmlMatches = raw.match(/<(?:w|a):t[^>]*>([^<]+)<\/(?:w|a):t>/g);
-        if (xmlMatches && xmlMatches.length > 0) {
-          extractedText = xmlMatches.map((m) => m.replace(/<[^>]+>/g, "")).join(" ");
-        } else {
-          const printableMatches = raw.match(
-            /[A-Za-z0-9\s.,;:!?'"()_\-–—/\\+*=<>@#$%^&[\]{}]{4,}/g,
-          );
-          if (printableMatches && printableMatches.length > 0) {
-            extractedText = printableMatches.filter((s) => s.trim().length > 3).join(" ");
-          }
-        }
+    // 3. Ekstraksi teks langsung di server Next.js terlebih dahulu
+    if (isPdf) {
+      try {
+        const localPdf = await extractTextAndPagesFromPdf(buffer);
+        extractedText = localPdf.text;
+        pageCount = localPdf.pageCount;
+      } catch (pdfErr) {
+        console.warn("[upload] Ekstraksi PDF lokal Next.js gagal, mencoba cadangan:", pdfErr);
+      }
+    } else if (isOffice) {
+      const raw = buffer.toString("latin1");
+      const xmlMatches = raw.match(/<(?:w|a):t[^>]*>([^<]+)<\/(?:w|a):t>/g);
+      if (xmlMatches && xmlMatches.length > 0) {
+        extractedText = xmlMatches.map((m) => m.replace(/<[^>]+>/g, "")).join(" ");
       } else {
-        // Format teks biasa, markdown, code (.js, .ts, .py, .java, .sql, .html, .css, dsb)
-        extractedText = buffer.toString("utf-8");
-        if (extractedText.trim().length === 0) {
-          return NextResponse.json(
-            {
-              error:
-                "Tidak ada teks terbaca di dalam dokumen. Pastikan file bukan berupa scan gambar tanpa OCR.",
-            },
-            { status: 422 },
-          );
+        const printableMatches = raw.match(
+          /[A-Za-z0-9\s.,;:!?'"()_\-–—/\\+*=<>@#$%^&[\]{}]{4,}/g,
+        );
+        if (printableMatches && printableMatches.length > 0) {
+          extractedText = printableMatches.filter((s) => s.trim().length > 3).join(" ");
         }
+      }
+    } else {
+      extractedText = buffer.toString("utf-8");
+      if (extractedText.trim().length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Tidak ada teks terbaca di dalam dokumen. Pastikan file bukan berupa scan gambar tanpa OCR.",
+          },
+          { status: 422 },
+        );
       }
     }
 
-    // 4. Validasi & Pembersihan Teks (maksimal 15000 karakter bersih untuk pipeline analisis)
-    let cleanText = extractedText.replace(/[^\x20-\x7E\r\n\t\u00A0-\u024F]/g, " ").trim();
-    cleanText = cleanText.replace(/[ \t]{2,}/g, " ").trim();
+    // 4. Cadangan: Jika ekstraksi lokal gagal/kurang dari 150 karakter untuk PDF, panggil FastAPI /api/modul/extract-text
+    if (
+      (!extractedText ||
+        extractedText.trim().length < (isPdf ? 150 : 20) ||
+        extractedText.toLowerCase().includes("berhasil diindeks ke vector store")) &&
+      (isPdf || isOffice)
+    ) {
+      const fastApiBaseUrl = (
+        process.env.FASTAPI_URL ||
+        process.env.NEXT_PUBLIC_FASTAPI_URL ||
+        "https://nexed-backend.vercel.app"
+      ).replace(/\/+$/, "");
 
-    if (cleanText.length < 20) {
-      const prettyTitle = fileName
-        .replace(/\.[^/.]+$/, "")
-        .replace(/[-_]/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      cleanText = `Dokumen: ${prettyTitle}\nCatatan: Dokumen ini memiliki teks yang sangat minim atau berbasis gambar.`;
+      try {
+        const fastApiForm = new FormData();
+        const fileBlob = new Blob([buffer], {
+          type:
+            typeof (file as { type?: unknown }).type === "string"
+              ? (file as { type: string }).type
+              : "application/pdf",
+        });
+        fastApiForm.append("file", fileBlob, rawFileName);
+
+        const fastApiRes = await fetch(`${fastApiBaseUrl}/api/modul/extract-text`, {
+          method: "POST",
+          body: fastApiForm,
+          signal: AbortSignal.timeout(20000),
+        });
+
+        if (fastApiRes.ok) {
+          const fastApiData = (await fastApiRes.json().catch(() => null)) as {
+            extractedText?: string;
+            pageCount?: number;
+          } | null;
+          if (
+            fastApiData &&
+            typeof fastApiData.extractedText === "string" &&
+            fastApiData.extractedText.trim().length > extractedText.trim().length &&
+            !fastApiData.extractedText.toLowerCase().includes("berhasil diindeks ke vector store")
+          ) {
+            extractedText = fastApiData.extractedText.trim();
+            if (typeof fastApiData.pageCount === "number" && fastApiData.pageCount > 0) {
+              pageCount = fastApiData.pageCount;
+            }
+          }
+        }
+      } catch (fastApiErr) {
+        console.warn("[upload] Cadangan FastAPI /api/modul/extract-text tidak terjangkau:", fastApiErr);
+      }
     }
 
-    const boundedCleanText = cleanText.slice(0, 15000);
-    const previewSnippet = boundedCleanText.slice(0, 300);
+    // 5. Bersihkan whitespace berlebih dan ambil maksimal 18.000 karakter pertama yang representatif
+    let cleanText = extractedText
+      .replace(/[^\x20-\x7E\r\n\t\u00A0-\u024F]/g, " ")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
 
-    // 5. Pecah teks menjadi potongan konteks (~500 kata, 100 kata overlap)
+    // Hapus kalimat status sistem jika tidak sengaja terbawa
+    cleanText = cleanText
+      .replace(/Modul\s+['"][^'"]+['"]\s+berhasil\s+diindeks\s+ke\s+vector\s+store\.?/gi, "")
+      .trim();
+
+    // Validasi Anti-Status-Message & panjang minimum PDF
+    if (
+      cleanText.toLowerCase().includes("berhasil diindeks ke vector store") ||
+      (isPdf && cleanText.length < 150)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Isi teks PDF tidak terbaca. Pastikan file PDF berisi teks yang dapat disalin.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (cleanText.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Tidak ada teks terbaca di dalam dokumen. Pastikan file bukan berupa scan gambar tanpa OCR.",
+        },
+        { status: 422 },
+      );
+    }
+
+    const boundedCleanText = cleanText.slice(0, 18000);
+    const previewSnippet = boundedCleanText.slice(0, 250).replace(/\s+/g, " ").trim();
+
+    // 6. Pecah teks menjadi potongan konteks (~500 kata, 100 kata overlap)
     const chunks = chunkText(boundedCleanText, 500, 100);
-    const totalWords = boundedCleanText.split(/\s+/).length;
+    const totalWords = boundedCleanText.split(/\s+/).filter(Boolean).length;
 
-    // 6. Simpan potongan konteks ke RAG Engine Store
-    const saved = saveModule(moduleId, fileName, chunks, totalWords);
+    // 7. Simpan potongan konteks ke RAG Engine Store
+    const saved = saveModule(moduleId, rawFileName, chunks, totalWords);
 
-    // 7. Hasilkan analisis AI HANYA jika diminta eksplisit (field 'analyze' === 'true')
+    // 8. Hasilkan analisis AI HANYA jika diminta eksplisit (field 'analyze' === 'true')
     const shouldAnalyze = formData.get("analyze") === "true";
     const userFocusField = formData.get("userFocus") || formData.get("userLearningGoal");
     const userFocus =
@@ -199,10 +227,16 @@ export async function POST(request: NextRequest) {
     let analyzedResult = null;
     if (shouldAnalyze) {
       try {
-        analyzedResult = await generateAiModuleAnalysis(boundedCleanText, fileName, undefined, {
-          userFocus,
-          userLearningGoal: userFocus,
-        });
+        analyzedResult = await generateAiModuleAnalysis(
+          boundedCleanText,
+          rawFileName,
+          cleanFileNameWithoutExt,
+          {
+            userFocus,
+            userLearningGoal: userFocus,
+            forceRefresh: true,
+          },
+        );
       } catch (analysisErr) {
         console.warn("AI module analysis warning (fallback applied):", analysisErr);
       }
@@ -211,8 +245,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: `Modul '${fileName}' berhasil diunggah dan diekstrak (${pageCount} halaman, ${chunks.length} potongan konteks).`,
-        filename: saved.filename,
+        filename: cleanFileNameWithoutExt,
+        originalFilename: saved.filename,
         moduleId: saved.moduleId,
         pageCount,
         chunkCount: saved.chunks.length,

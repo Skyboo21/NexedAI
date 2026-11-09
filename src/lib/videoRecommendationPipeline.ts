@@ -572,13 +572,20 @@ export async function resolveValidatedTopicVideos(params: {
           where: { topicKey },
         });
         if (cached && Array.isArray(cached.videos) && cached.videos.length > 0) {
-          const validCachedVideos = (
-            cached.videos as unknown as Array<Partial<ValidatedTopicVideoItem>>
-          )
-            .map((v) => normalizeValidatedVideo(v, effectiveTopic))
-            .filter((v): v is ValidatedTopicVideoItem => v !== null);
+          const lowerSummary = (cached.userNeedsSummary || "").toLowerCase();
+          const isStalePoisonedCache =
+            lowerSummary.includes("vector store") ||
+            lowerSummary.includes("konfirmasi teknis bahwa file") ||
+            lowerSummary.includes("berhasil diindeks") ||
+            lowerSummary.includes("tidak ada konten materi akademik");
 
-          if (validCachedVideos.length > 0) {
+          const validCachedVideos = isStalePoisonedCache
+            ? []
+            : (cached.videos as unknown as Array<Partial<ValidatedTopicVideoItem>>)
+                .map((v) => normalizeValidatedVideo(v, effectiveTopic))
+                .filter((v): v is ValidatedTopicVideoItem => v !== null);
+
+          if (validCachedVideos.length > 0 && !isStalePoisonedCache) {
             const cachedQueries = Array.isArray(cached.recommendedQueries)
               ? cached.recommendedQueries.map((q) => String(q))
               : [];
@@ -624,11 +631,20 @@ export async function resolveValidatedTopicVideos(params: {
 
     const memCached = memoryVideoCache.get(topicKey);
     if (memCached && memCached.videos.length > 0) {
-      return {
-        ...memCached,
-        cacheHit: true,
-        source: "memory-cache",
-      };
+      const lowerMemSummary = (memCached.userNeedsSummary || "").toLowerCase();
+      if (
+        lowerMemSummary.includes("vector store") ||
+        lowerMemSummary.includes("konfirmasi teknis bahwa file") ||
+        lowerMemSummary.includes("berhasil diindeks")
+      ) {
+        memoryVideoCache.delete(topicKey);
+      } else {
+        return {
+          ...memCached,
+          cacheHit: true,
+          source: "memory-cache",
+        };
+      }
     }
   }
 

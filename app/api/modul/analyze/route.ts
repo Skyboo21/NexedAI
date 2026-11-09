@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       title,
       moduleTitle,
       fileName,
+      sourceType,
       forceRefresh,
       userFocus,
       userLearningGoal,
@@ -47,12 +48,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const effectiveTitle =
+    const lowerText = rawTextToAnalyze.toLowerCase();
+    const isPdfSource =
+      sourceType === "pdf" ||
+      (typeof fileName === "string" && fileName.toLowerCase().endsWith(".pdf"));
+
+    if (
+      lowerText.includes("berhasil diindeks ke vector store") ||
+      lowerText.includes("tidak ada konten materi akademik") ||
+      (isPdfSource && rawTextToAnalyze.length < 100)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Isi teks PDF tidak terbaca atau tidak valid. Pastikan file PDF berisi teks materi yang dapat disalin (minimal 100 karakter).",
+        },
+        { status: 400 },
+      );
+    }
+
+    const cleanFileNameBase =
+      typeof fileName === "string" && fileName.trim().length > 0
+        ? fileName
+            .replace(/\.[^/.]+$/, "")
+            .replace(/\s+/g, " ")
+            .trim()
+        : undefined;
+
+    const rawTitleCandidate =
       typeof moduleTitle === "string" && moduleTitle.trim().length > 0
         ? moduleTitle.trim()
         : typeof title === "string" && title.trim().length > 0
           ? title.trim()
-          : undefined;
+          : cleanFileNameBase;
+
+    const isPoisonedTitle =
+      rawTitleCandidate &&
+      (rawTitleCandidate.toLowerCase().includes("berhasil diindeks") ||
+        rawTitleCandidate.toLowerCase().includes("vector store") ||
+        rawTitleCandidate.toLowerCase().includes("berhasil diunggah"));
+
+    const effectiveTitle = isPoisonedTitle ? cleanFileNameBase : rawTitleCandidate;
 
     const effectiveFocus =
       typeof userFocus === "string" && userFocus.trim().length > 0

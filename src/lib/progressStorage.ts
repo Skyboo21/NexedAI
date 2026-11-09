@@ -379,6 +379,16 @@ export function saveActiveModuleSession(session: ActiveModuleSession): void {
   }
 }
 
+function isCorruptedModuleText(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const lower = value.toLowerCase();
+  return (
+    lower.includes("berhasil diindeks ke vector store") ||
+    lower.includes("tidak ada konten materi akademik") ||
+    lower.includes("konfirmasi teknis bahwa file")
+  );
+}
+
 /**
  * Membaca sesi modul aktif terbaru dari localStorage
  */
@@ -389,6 +399,21 @@ export function getActiveModuleSession(): ActiveModuleSession | null {
     if (raw) {
       const parsed = JSON.parse(raw) as ActiveModuleSession;
       if (parsed && typeof parsed === "object" && Array.isArray(parsed.learningStages)) {
+        const isCorrupted =
+          isCorruptedModuleText(parsed.title) ||
+          isCorruptedModuleText(parsed.detectedTopic) ||
+          isCorruptedModuleText(parsed.userNeedsSummary) ||
+          isCorruptedModuleText(parsed.extractedText) ||
+          isCorruptedModuleText(parsed.rawText) ||
+          parsed.learningStages.some(
+            (s) => isCorruptedModuleText(s.title) || isCorruptedModuleText(s.shortSummary),
+          );
+
+        if (isCorrupted) {
+          localStorage.removeItem(ACTIVE_MODULE_SESSION_KEY);
+          localStorage.removeItem(LEGACY_ACTIVE_MODULE_KEY);
+          return null;
+        }
         return parsed;
       }
     }
@@ -398,6 +423,18 @@ export function getActiveModuleSession(): ActiveModuleSession | null {
     if (legacyRaw) {
       const legacy = JSON.parse(legacyRaw);
       const ar = legacy?.analyzedResult;
+      if (
+        isCorruptedModuleText(legacy?.title) ||
+        isCorruptedModuleText(legacy?.rawText) ||
+        isCorruptedModuleText(ar?.title) ||
+        isCorruptedModuleText(ar?.detectedTopic) ||
+        isCorruptedModuleText(ar?.userNeedsSummary) ||
+        isCorruptedModuleText(ar?.summary?.overview)
+      ) {
+        localStorage.removeItem(ACTIVE_MODULE_SESSION_KEY);
+        localStorage.removeItem(LEGACY_ACTIVE_MODULE_KEY);
+        return null;
+      }
       if (ar && typeof ar === "object") {
         const stages: ActiveModuleSessionStage[] = Array.isArray(ar.learningStages) && ar.learningStages.length > 0
           ? ar.learningStages

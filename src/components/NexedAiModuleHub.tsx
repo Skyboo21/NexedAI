@@ -535,16 +535,38 @@ export default function NexedAiModuleHub() {
   // Restore active analyzed module from localStorage on initial mount (survives page refresh)
   useEffect(() => {
     try {
+      const isPoisonedString = (val: unknown) => {
+        if (typeof val !== "string") return false;
+        const lower = val.toLowerCase();
+        return (
+          lower.includes("berhasil diindeks ke vector store") ||
+          lower.includes("tidak ada konten materi akademik") ||
+          lower.includes("konfirmasi teknis bahwa file")
+        );
+      };
+
       const activeRaw = localStorage.getItem("nexed_active_analyzed_module");
       if (activeRaw) {
         const item = JSON.parse(activeRaw);
-        if (item && item.analyzedResult) {
-          const cleanResult = sanitizeAnalyzedResultVideos(item.analyzedResult);
+        const ar = item?.analyzedResult;
+        if (
+          isPoisonedString(item?.title) ||
+          isPoisonedString(item?.rawText) ||
+          isPoisonedString(ar?.title) ||
+          isPoisonedString(ar?.detectedTopic) ||
+          isPoisonedString(ar?.userNeedsSummary) ||
+          isPoisonedString(ar?.summary?.overview)
+        ) {
+          localStorage.removeItem("nexed_active_analyzed_module");
+          clearActiveModuleSession();
+        } else if (item && ar) {
+          const cleanResult = sanitizeAnalyzedResultVideos(ar);
           setAnalyzedResult(cleanResult);
           if (Array.isArray(cleanResult.learningStages) && cleanResult.learningStages.length > 0) {
             setLearningStagesState(cleanResult.learningStages);
           }
           if (item.rawText) {
+            setActiveExtractedText(item.rawText);
             setUploadedDocMeta({
               chunkCount: item.chunkCount || 1,
               totalWords: item.totalWords || item.rawText.split(/\s+/).length,
@@ -645,6 +667,7 @@ export default function NexedAiModuleHub() {
         setAnalyzedResult(restoredResult);
         setLearningStagesState(activeSession.learningStages);
         if (activeSession.extractedText) {
+          setActiveExtractedText(activeSession.extractedText);
           setUploadedDocMeta({
             chunkCount: 1,
             totalWords: activeSession.extractedText.split(/\s+/).length,
@@ -841,6 +864,9 @@ export default function NexedAiModuleHub() {
           : curatedFallback.recommendedDocs;
 
   const getActiveExtractedText = (): string => {
+    if (activeExtractedText && activeExtractedText.trim().length > 0) {
+      return activeExtractedText;
+    }
     if (uploadedDocMeta?.rawText && uploadedDocMeta.rawText.trim().length > 0) {
       return uploadedDocMeta.rawText;
     }
@@ -1159,16 +1185,20 @@ export default function NexedAiModuleHub() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [uploadDocError, setUploadDocError] = useState<string | null>(null);
+  const [activeExtractedText, setActiveExtractedText] = useState<string>("");
   const [uploadedDocMeta, setUploadedDocMeta] = useState<{
     chunkCount: number;
     totalWords: number;
     rawText: string;
+    pageCount?: number;
+    previewSnippet?: string;
   } | null>(null);
 
   const processAndUploadFile = async (file: File) => {
     setSelectedFile(file);
     setUploadDocError(null);
     setUploadedDocMeta(null);
+    setActiveExtractedText("");
     // Bersihkan seluruh state modul lama agar tidak pernah tertukar saat upload PDF baru
     setAnalyzedResult(null);
     setValidatedVideosState(null);
@@ -1222,13 +1252,15 @@ export default function NexedAiModuleHub() {
 
     setIsUploadingDoc(true);
     let extractedContent = "";
+    let previewSnippet = "";
+    let pageCount = 1;
     let chunkCount = 1;
     let totalWords = 0;
 
     let serverAnalyzedResult: AnalyzedModuleResult | null = null;
 
     const uploadController = new AbortController();
-    const uploadTimer = setTimeout(() => uploadController.abort(), 20000);
+    const uploadTimer = setTimeout(() => uploadController.abort(), 30000);
 
     try {
       const formData = new FormData();
@@ -1241,7 +1273,7 @@ export default function NexedAiModuleHub() {
           .replace(/[^a-z0-9-_]/g, "-"),
       );
 
-      // Panggil route Next.js /api/modul/upload (yang meneruskan ke FastAPI /api/modul/extract-text dengan pypdf)
+      // Panggil route Next.js /api/modul/upload (ekstraksi langsung di Node.js dengan unpdf / pdf-parse)
       const res = await fetch("/api/modul/upload", {
         method: "POST",
         body: formData,
@@ -1251,15 +1283,24 @@ export default function NexedAiModuleHub() {
 
       const data = await res.json();
       if (res.ok) {
-        extractedContent =
-          data.extractedText || data.rawText || data.previewSnippet || data.message || file.name;
+        // JANGAN PERNAH menggunakan data.message sebagai extractedContent!
+        extractedContent = String(data.extractedText || data.rawText || "").trim();
+        previewSnippet = String(
+          data.previewSnippet || extractedContent.slice(0, 250).replace(/\s+/g, " "),
+        ).trim();
+        pageCount = typeof data.pageCount === "number" && data.pageCount > 0 ? data.pageCount : 1;
         chunkCount = data.chunkCount || 1;
-        totalWords = data.totalWords || extractedContent.split(/\s+/).length;
+        totalWords = data.totalWords || extractedContent.split(/\s+/).filter(Boolean).length;
         if (data.analyzedResult) {
           serverAnalyzedResult = data.analyzedResult;
         }
       } else {
-        throw new Error(data.error || "Gagal memproses dokumen di server.");
+        setUploadDocError(
+          data.error ||
+            "Isi teks PDF tidak terbaca. Pastikan file PDF berisi teks yang dapat disalin.",
+        );
+        setIsUploadingDoc(false);
+        return;
       }
     } catch (err: unknown) {
       clearTimeout(uploadTimer);
@@ -1278,6 +1319,13 @@ export default function NexedAiModuleHub() {
           const fastData = await fastRes.json();
           if (fastData?.extractedText && String(fastData.extractedText).trim().length >= 20) {
             extractedContent = String(fastData.extractedText).trim();
+            previewSnippet = String(
+              fastData.previewSnippet || extractedContent.slice(0, 250).replace(/\s+/g, " "),
+            ).trim();
+            pageCount =
+              typeof fastData.pageCount === "number" && fastData.pageCount > 0
+                ? fastData.pageCount
+                : 1;
           }
         }
       } catch {
@@ -1289,7 +1337,8 @@ export default function NexedAiModuleHub() {
           if (!file.name.toLowerCase().endsWith(".pdf")) {
             const clientText = await file.text();
             if (clientText && clientText.trim().length > 15) {
-              extractedContent = clientText;
+              extractedContent = clientText.trim();
+              previewSnippet = extractedContent.slice(0, 250).replace(/\s+/g, " ");
             }
           }
         } catch {
@@ -1297,25 +1346,33 @@ export default function NexedAiModuleHub() {
         }
       }
 
-      if (!extractedContent || extractedContent.trim().length < 20) {
-        const prettyTitle = file.name
-          .replace(/\.[^/.]+$/, "")
-          .replace(/[-_]/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-        extractedContent = `Dokumen: ${prettyTitle}`;
+      const isPdfFile = file.name.toLowerCase().endsWith(".pdf");
+      if (
+        !extractedContent ||
+        extractedContent.toLowerCase().includes("berhasil diindeks ke vector store") ||
+        (isPdfFile && extractedContent.trim().length < 150)
+      ) {
+        setUploadDocError(
+          "Isi teks PDF tidak terbaca. Pastikan file PDF berisi teks yang dapat disalin.",
+        );
+        setIsUploadingDoc(false);
+        return;
       }
 
-      totalWords = extractedContent.split(/\s+/).length;
+      totalWords = extractedContent.split(/\s+/).filter(Boolean).length;
       chunkCount = Math.max(1, Math.ceil(totalWords / 450));
     } finally {
       clearTimeout(uploadTimer);
       setIsUploadingDoc(false);
     }
 
+    setActiveExtractedText(extractedContent);
     setUploadedDocMeta({
       chunkCount,
       totalWords,
       rawText: extractedContent,
+      pageCount,
+      previewSnippet: previewSnippet || extractedContent.slice(0, 250).replace(/\s+/g, " "),
     });
 
     // Simpan ke riwayat modul lokal agar muncul di katalog bersama hasil analisis AI
@@ -1353,8 +1410,8 @@ export default function NexedAiModuleHub() {
       // safe fallback
     }
 
-    // Langsung eksekusi analisis AI dengan isi teks asli dokumen (extractedContent)
-    handleStartAnalysis(undefined, file, extractedContent, serverAnalyzedResult);
+    // Langsung eksekusi analisis AI dengan isi teks asli dokumen (extractedContent) dan forceRefresh: true
+    handleStartAnalysis(undefined, file, extractedContent, serverAnalyzedResult, true);
   };
 
   // Dengarkan event nexed_load_module dari katalog modul
@@ -1440,6 +1497,7 @@ export default function NexedAiModuleHub() {
     fileOverride?: File,
     contentOverride?: string,
     resultOverride?: AnalyzedModuleResult | null,
+    forceRefresh = false,
   ) => {
     const activeFile = fileOverride || selectedFile;
     setIsAnalyzing(true);
@@ -1567,6 +1625,7 @@ export default function NexedAiModuleHub() {
     };
 
     const userFocusPayload = customLearningGoal.trim() || undefined;
+    const isPdfFile = Boolean(activeFile?.name.toLowerCase().endsWith(".pdf"));
 
     if (contentOverride) {
       if (resultOverride) {
@@ -1580,10 +1639,12 @@ export default function NexedAiModuleHub() {
             content: contentOverride,
             extractedText: contentOverride,
             fileName: activeFile?.name,
+            sourceType: isPdfFile ? "pdf" : "file",
             title: cleanFileTitle,
             moduleTitle: cleanFileTitle,
             userFocus: userFocusPayload,
             userLearningGoal: userFocusPayload,
+            forceRefresh: Boolean(forceRefresh),
           }),
         })
           .then((res) => res.json())
@@ -1595,30 +1656,33 @@ export default function NexedAiModuleHub() {
           });
       }
     } else if (activeFile) {
-      if (uploadedDocMeta?.rawText) {
+      const effectiveRawText = activeExtractedText || uploadedDocMeta?.rawText || "";
+      if (effectiveRawText) {
         if (resultOverride) {
-          executeAnalysis(uploadedDocMeta.rawText, resultOverride);
+          executeAnalysis(effectiveRawText, resultOverride);
         } else {
           const cleanFileTitle = activeFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
           fetch("/api/modul/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              content: uploadedDocMeta.rawText,
-              extractedText: uploadedDocMeta.rawText,
+              content: effectiveRawText,
+              extractedText: effectiveRawText,
               fileName: activeFile.name,
+              sourceType: isPdfFile ? "pdf" : "file",
               title: cleanFileTitle,
               moduleTitle: cleanFileTitle,
               userFocus: userFocusPayload,
               userLearningGoal: userFocusPayload,
+              forceRefresh: true,
             }),
           })
             .then((res) => res.json())
             .then((data) => {
-              executeAnalysis(uploadedDocMeta.rawText, data.analyzedResult || null);
+              executeAnalysis(effectiveRawText, data.analyzedResult || null);
             })
             .catch(() => {
-              executeAnalysis(uploadedDocMeta.rawText, null);
+              executeAnalysis(effectiveRawText, null);
             });
         }
       } else {
@@ -1640,6 +1704,7 @@ export default function NexedAiModuleHub() {
           .then((data) => {
             const content =
               data.extractedText || data.rawText || data.previewSnippet || activeFile.name;
+            setActiveExtractedText(content);
             executeAnalysis(content, data.analyzedResult || null);
           })
           .catch(() => {
@@ -1653,8 +1718,10 @@ export default function NexedAiModuleHub() {
         body: JSON.stringify({
           content: textInput,
           extractedText: textInput,
+          sourceType: "text",
           userFocus: userFocusPayload,
           userLearningGoal: userFocusPayload,
+          forceRefresh: true,
         }),
       })
         .then((res) => res.json())
@@ -2145,12 +2212,28 @@ export default function NexedAiModuleHub() {
                           Ukuran: {(selectedFile.size / 1024).toFixed(1)} KB
                           {uploadedDocMeta && (
                             <>
-                              {" "}
+                              {uploadedDocMeta.pageCount
+                                ? ` • ${uploadedDocMeta.pageCount} halaman`
+                                : ""}{" "}
                               • {uploadedDocMeta.chunkCount} potongan teks (~
                               {uploadedDocMeta.totalWords} kata)
                             </>
                           )}
                         </span>
+                        {(uploadedDocMeta?.previewSnippet || activeExtractedText) && (
+                          <div className="mt-2.5 max-w-xl mx-auto p-3 rounded-2xl bg-white/90 border border-emerald-200/80 text-left shadow-2xs">
+                            <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold mb-1">
+                              Cuplikan Teks Asli Dokumen Terbaca:
+                            </div>
+                            <p className="text-xs text-neutral-700 line-clamp-2 leading-relaxed italic">
+                              &ldquo;
+                              {(uploadedDocMeta?.previewSnippet || activeExtractedText)
+                                .replace(/\s+/g, " ")
+                                .slice(0, 240)}
+                              ...&rdquo;
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="relative z-20 mt-3 flex flex-wrap items-center justify-center gap-3">
@@ -2327,6 +2410,11 @@ export default function NexedAiModuleHub() {
                   <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full">
                     Tingkat: {analysisResult.difficulty}
                   </span>
+                  {uploadedDocMeta?.pageCount && (
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full">
+                      {uploadedDocMeta.pageCount} Halaman Terbaca
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-base sm:text-lg font-light text-black tracking-tight">
                   {analysisResult.detectedTopic || analysisResult.title}
@@ -2335,6 +2423,20 @@ export default function NexedAiModuleHub() {
                   Estimasi Waktu Belajar: <strong className="text-black">{analysisResult.estimatedTime}</strong> • Potensi
                   Reward: <strong className="text-black font-mono">+{analysisResult.xpReward} XP</strong>
                 </p>
+                {(uploadedDocMeta?.previewSnippet || activeExtractedText) && (
+                  <div className="mt-2 p-2.5 rounded-2xl bg-white border border-black/8 text-left">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold block mb-0.5">
+                      Bukti Pembacaan Teks Asli Dokumen:
+                    </span>
+                    <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed italic">
+                      &ldquo;
+                      {(uploadedDocMeta?.previewSnippet || activeExtractedText)
+                        .replace(/\s+/g, " ")
+                        .slice(0, 240)}
+                      ...&rdquo;
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Quick action badges */}

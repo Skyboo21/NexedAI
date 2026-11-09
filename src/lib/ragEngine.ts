@@ -218,19 +218,55 @@ export async function generateRagResponse(
 }
 
 /**
- * Extract plain text from PDF buffer using pdf-parse with fallback
+ * Extract plain text and page count from PDF buffer using unpdf and pdf-parse with fallback
  */
-export async function extractTextFromPdf(buffer: Buffer | Uint8Array): Promise<string> {
+export async function extractTextAndPagesFromPdf(
+  buffer: Buffer | Uint8Array,
+): Promise<{ text: string; pageCount: number }> {
   const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 
-  // Strategy 1: Use PDFParse from pdf-parse
+  // Strategy 1: Use unpdf (serverless-friendly PDF.js build for Node.js)
+  try {
+    const { extractText, getDocumentProxy } = await import("unpdf");
+    const pdf = await getDocumentProxy(new Uint8Array(uint8));
+    const { totalPages, text } = await extractText(pdf, { mergePages: false });
+    const joined = Array.isArray(text)
+      ? text
+          .map((pageStr, idx) =>
+            pageStr && pageStr.trim().length > 0
+              ? `[Halaman ${idx + 1}]\n${pageStr.trim()}`
+              : "",
+          )
+          .filter(Boolean)
+          .join("\n\n")
+      : String(text || "").trim();
+
+    if (joined.trim().length >= 30) {
+      return {
+        text: joined.trim(),
+        pageCount: typeof totalPages === "number" && totalPages > 0 ? totalPages : 1,
+      };
+    }
+  } catch (unpdfErr) {
+    console.warn("unpdf extraction warning, attempting pdf-parse fallback:", unpdfErr);
+  }
+
+  // Strategy 2: Use PDFParse from pdf-parse
   try {
     const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: uint8 });
+    const parser = new PDFParse({ data: new Uint8Array(uint8) });
     try {
       const textResult = await parser.getText();
       if (textResult?.text && textResult.text.trim().length > 0) {
-        return textResult.text;
+        const totalPages =
+          typeof (textResult as { total?: number }).total === "number" &&
+          (textResult as { total: number }).total > 0
+            ? (textResult as { total: number }).total
+            : 1;
+        return {
+          text: textResult.text.trim(),
+          pageCount: totalPages,
+        };
       }
     } finally {
       await parser.destroy().catch(() => {});
@@ -239,7 +275,7 @@ export async function extractTextFromPdf(buffer: Buffer | Uint8Array): Promise<s
     console.warn("PDFParse library extraction warning, attempting stream fallback:", err);
   }
 
-  // Strategy 2: Raw PDF text stream extraction fallback
+  // Strategy 3: Raw PDF text stream extraction fallback
   const rawString = Buffer.isBuffer(buffer)
     ? buffer.toString("latin1")
     : Buffer.from(buffer).toString("latin1");
@@ -281,10 +317,23 @@ export async function extractTextFromPdf(buffer: Buffer | Uint8Array): Promise<s
   }
 
   if (extractedLines.length > 0) {
-    return extractedLines.join("\n");
+    const pageMatches = rawString.match(/\/Type\s*\/Page\b/g);
+    const estPages = pageMatches ? Math.max(1, pageMatches.length) : 1;
+    return {
+      text: extractedLines.join("\n"),
+      pageCount: estPages,
+    };
   }
 
   throw new Error("Format PDF tidak dapat diekstrak atau dokumen tidak memuat teks.");
+}
+
+/**
+ * Extract plain text from PDF buffer using unpdf and pdf-parse with fallback
+ */
+export async function extractTextFromPdf(buffer: Buffer | Uint8Array): Promise<string> {
+  const res = await extractTextAndPagesFromPdf(buffer);
+  return res.text;
 }
 
 /**
