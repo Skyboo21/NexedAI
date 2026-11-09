@@ -248,12 +248,15 @@ def _extract_video_metadata_sync(
     summary_topic = f"Pembahasan materi dan demonstrasi praktis mengenai {official_title} oleh {official_channel}."
 
     if yt_dlp is not None:
-        ydl_opts: Dict[str, Any] = {
+        base_opts: Dict[str, Any] = {
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
             "ignoreerrors": True,
             "socket_timeout": 5,
+        }
+        ydl_opts_with_comments: Dict[str, Any] = {
+            **base_opts,
             "getcomments": True,
             "extractor_args": {
                 "youtube": {
@@ -262,63 +265,86 @@ def _extract_video_metadata_sync(
                 }
             },
         }
+        ydl_opts_lightweight: Dict[str, Any] = {
+            **base_opts,
+            "getcomments": False,
+        }
+
+        info: Optional[Dict[str, Any]] = None
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(watch_url, download=False)
-                if info and isinstance(info, dict):
-                    availability = str(info.get("availability") or "public").lower()
-                    if availability in {"private", "needs_auth", "subscriber_only", "unavailable"}:
-                        return None
-
-                    duration_sec = int(info.get("duration") or 0)
-                    if 0 < duration_sec < 45:
-                        return None
-                    duration_str = _format_duration(
-                        duration_sec if duration_sec > 0 else info.get("duration_string")
-                    )
-
-                    view_count = int(info.get("view_count") or 0)
-                    like_count = int(info.get("like_count") or 0)
-
-                    yt_title = str(info.get("title") or "").strip()
-                    if yt_title and yt_title.lower() not in {"deleted video", "private video"}:
-                        official_title = yt_title
-
-                    yt_channel = str(info.get("channel") or info.get("uploader") or "").strip()
-                    if yt_channel:
-                        official_channel = yt_channel
-
-                    raw_comments = info.get("comments") or []
-                    if isinstance(raw_comments, list) and len(raw_comments) > 0:
-                        valid_comments = [
-                            c
-                            for c in raw_comments
-                            if isinstance(c, dict) and str(c.get("text") or "").strip()
-                        ]
-                        valid_comments.sort(
-                            key=lambda c: int(c.get("like_count") or 0),
-                            reverse=True,
-                        )
-                        for c in valid_comments[:3]:
-                            text_clean = str(c.get("text") or "").strip()
-                            if len(text_clean) > 220:
-                                text_clean = text_clean[:217] + "..."
-                            top_comments.append(
-                                TopCommentItem(
-                                    author=str(c.get("author") or "@penonton_youtube"),
-                                    text=text_clean,
-                                    likes=int(c.get("like_count") or 0),
-                                )
-                            )
-
-                    description_raw = str(info.get("description") or "").strip()
-                    first_line = (
-                        description_raw.split("\n")[0].strip() if description_raw else ""
-                    )
-                    if len(first_line) > 25:
-                        summary_topic = first_line[:160]
+            with yt_dlp.YoutubeDL(ydl_opts_with_comments) as ydl:
+                extracted = ydl.extract_info(watch_url, download=False)
+                if extracted and isinstance(extracted, dict):
+                    info = extracted
         except Exception as exc:
-            print(f"[youtube_validator_service] Metadata extraction warning for {vid}: {exc}")
+            print(
+                f"[youtube_validator_service] Cloud IP / comments extraction warning for {vid}, falling back to lightweight mode: {exc}"
+            )
+
+        # Fallback ke mode ringan (getcomments: False) jika pengambilan komentar diblokir/timeout di Cloud IP
+        if not info:
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts_lightweight) as ydl:
+                    extracted_light = ydl.extract_info(watch_url, download=False)
+                    if extracted_light and isinstance(extracted_light, dict):
+                        info = extracted_light
+            except Exception as light_exc:
+                print(
+                    f"[youtube_validator_service] Lightweight metadata fallback warning for {vid} (using verified oEmbed data): {light_exc}"
+                )
+
+        if info and isinstance(info, dict):
+            availability = str(info.get("availability") or "public").lower()
+            if availability in {"private", "needs_auth", "subscriber_only", "unavailable"}:
+                return None
+
+            duration_sec = int(info.get("duration") or 0)
+            if 0 < duration_sec < 45:
+                return None
+            duration_str = _format_duration(
+                duration_sec if duration_sec > 0 else info.get("duration_string")
+            )
+
+            view_count = int(info.get("view_count") or 0)
+            like_count = int(info.get("like_count") or 0)
+
+            yt_title = str(info.get("title") or "").strip()
+            if yt_title and yt_title.lower() not in {"deleted video", "private video"}:
+                official_title = yt_title
+
+            yt_channel = str(info.get("channel") or info.get("uploader") or "").strip()
+            if yt_channel:
+                official_channel = yt_channel
+
+            raw_comments = info.get("comments") or []
+            if isinstance(raw_comments, list) and len(raw_comments) > 0:
+                valid_comments = [
+                    c
+                    for c in raw_comments
+                    if isinstance(c, dict) and str(c.get("text") or "").strip()
+                ]
+                valid_comments.sort(
+                    key=lambda c: int(c.get("like_count") or 0),
+                    reverse=True,
+                )
+                for c in valid_comments[:3]:
+                    text_clean = str(c.get("text") or "").strip()
+                    if len(text_clean) > 220:
+                        text_clean = text_clean[:217] + "..."
+                    top_comments.append(
+                        TopCommentItem(
+                            author=str(c.get("author") or "@penonton_youtube"),
+                            text=text_clean,
+                            likes=int(c.get("like_count") or 0),
+                        )
+                    )
+
+            description_raw = str(info.get("description") or "").strip()
+            first_line = (
+                description_raw.split("\n")[0].strip() if description_raw else ""
+            )
+            if len(first_line) > 25:
+                summary_topic = first_line[:160]
 
     matched_kw_count, relevance_score = _compute_keyword_matches(
         title=official_title,

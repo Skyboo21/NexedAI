@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const fastApiBaseUrl = (
       process.env.FASTAPI_URL ||
       process.env.NEXT_PUBLIC_FASTAPI_URL ||
-      "http://127.0.0.1:8000"
+      "https://nexed-backend.vercel.app"
     ).replace(/\/$/, "");
 
     try {

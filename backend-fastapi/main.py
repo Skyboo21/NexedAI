@@ -10,10 +10,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Setup Middleware CORS untuk Next.js Frontend (http://localhost:3000)
+# Setup Middleware CORS untuk Next.js Frontend (http://localhost:3000 & Vercel Deployments)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

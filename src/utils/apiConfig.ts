@@ -8,21 +8,24 @@
  * TANPA delay socket timeout 15-30 detik menghubung ke localhost:8000.
  */
 export function getApiBaseUrl(): string {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const envUrl = (
+    process.env.NEXT_PUBLIC_FASTAPI_URL ||
+    process.env.NEXT_PUBLIC_API_URL
+  )?.trim();
 
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
 
     if (!isLocalhost) {
-      // Jika di production (Vercel) dan NEXT_PUBLIC_API_URL belum diset ke URL backend publik nyata:
-      if (!envUrl || envUrl.includes("localhost") || envUrl.includes("127.0.0.1")) {
-        return "";
+      // Jika di production (Vercel) dan URL masih mengarah ke localhost/127.0.0.1:
+      if (envUrl && (envUrl.includes("localhost") || envUrl.includes("127.0.0.1"))) {
+        return "https://nexed-backend.vercel.app";
       }
     }
   }
 
-  return envUrl || "http://localhost:8000";
+  return (envUrl || "https://nexed-backend.vercel.app").replace(/\/+$/, "");
 }
 
 /**

@@ -652,11 +652,11 @@ export async function resolveValidatedTopicVideos(params: {
     existingLearningStages: params.existingLearningStages,
   });
 
-  // 3. Validasi Video via FastAPI (http://127.0.0.1:8000/api/youtube/validate) dengan timeout 45000ms
+  // 3. Validasi Video via FastAPI (https://nexed-backend.vercel.app/api/youtube/validate) dengan timeout 45000ms
   const fastApiBaseUrl = (
     process.env.FASTAPI_URL ||
     process.env.NEXT_PUBLIC_FASTAPI_URL ||
-    "http://127.0.0.1:8000"
+    "https://nexed-backend.vercel.app"
   ).replace(/\/+$/, "");
 
   let validatedVideos: ValidatedTopicVideoItem[] = [];
