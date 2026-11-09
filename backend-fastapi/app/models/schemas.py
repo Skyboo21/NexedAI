@@ -63,3 +63,47 @@ class AdaptiveRecommendationRequest(BaseModel):
     topic: Optional[str] = None
     summary: Optional[str] = None
 
+
+class TopCommentItem(BaseModel):
+    author: str
+    text: str
+    likes: int = 0
+
+
+class ValidatedYouTubeVideo(BaseModel):
+    videoId: str
+    videoUrl: str
+    embedId: str
+    title: str
+    channelName: str
+    duration: str
+    viewCount: int
+    likeCount: int
+    qualityScore: float
+    relevanceScore: float = 0.0
+    summaryTopic: str
+    topComments: List[TopCommentItem] = []
+    isValidated: bool = True
+
+
+class VideoValidateRequest(BaseModel):
+    topic: str = "Algoritma & Pemrograman"
+    userNeedsSummary: Optional[str] = None
+    queries: List[str] = []
+    core_keywords: List[str] = []
+    coreKeywords: List[str] = []
+    candidateUrls: List[str] = []
+    maxResults: int = 4
+
+
+YouTubeValidateSearchRequest = VideoValidateRequest
+
+
+class YouTubeValidateSearchResponse(BaseModel):
+    topic: str
+    userNeedsSummary: str
+    recommendedQueries: List[str]
+    videos: List[ValidatedYouTubeVideo]
+    source: str = "yt-dlp"
+
+

@@ -184,11 +184,17 @@ function getBadgeIcon(iconName: string, tier: string) {
 }
 
 export default function NexedLeaderboard() {
-  const { user: activeAuthUser } = useAuthStore();
+  const { user: storeAuthUser } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const activeAuthUser = mounted ? storeAuthUser : null;
   const [activeTab, setActiveTab] = useState<"leaderboard" | "badges">("leaderboard");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(FALLBACK_LEADERBOARD);
   const [badges, setBadges] = useState<BadgeItem[]>(FALLBACK_BADGES);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isRowCurrentUser = (entry: LeaderboardEntry): boolean => {
     if (activeAuthUser) {

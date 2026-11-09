@@ -1,7 +1,7 @@
 // src/views/AdminDashboardView.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type Role, useAuthStore } from "../store/authStore";
 
 interface UserRecord {
@@ -21,8 +21,14 @@ interface BuildMetric {
 }
 
 export default function AdminDashboardView() {
-  const { user } = useAuthStore();
+  const { user: storeUser } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const user = mounted ? storeUser : null;
   const [renderCount, setRenderCount] = useState<number>(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [users, setUsers] = useState<UserRecord[]>([
     {

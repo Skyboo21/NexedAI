@@ -25,6 +25,8 @@ import {
   Check,
   RotateCcw,
   ArrowLeft,
+  Terminal,
+  HelpCircle,
 } from "lucide-react";
 import {
   getCompletedTopicIds,
@@ -32,12 +34,17 @@ import {
   getTotalUserXp,
   onProgressUpdate,
   markModuleCompleted,
+  getActiveModuleSession,
+  onActiveModuleSessionUpdate,
+  saveActiveModuleSession,
+  type ActiveModuleSession,
 } from "../../../src/lib/progressStorage";
 
 interface CurriculumChapter {
   id: string; // e.g. "algo-1"
   numericId: number;
   chapterNumber: number;
+  phaseLabel?: string;
   title: string;
   subtitle: string;
   duration: string;
@@ -46,6 +53,12 @@ interface CurriculumChapter {
   prerequisiteTitle?: string;
   learningOutcomes: string[];
   keyTopics: string[];
+  selfAction?: string;
+  detailedMaterial?: string;
+  practiceScenario?: string;
+  comprehensionQuestion?: string;
+  searchQuery?: string;
+  understood?: boolean;
   suggestedPreset?: string;
 }
 
@@ -57,6 +70,11 @@ interface CourseCurriculum {
   totalSks: number;
   instructor: string;
   description: string;
+  userFocus?: string;
+  userNeedsSummary?: string;
+  coreKeywords?: string[];
+  validatedVideos?: ActiveModuleSession["validatedVideos"];
+  webReferences?: ActiveModuleSession["webReferences"];
   chapters: CurriculumChapter[];
 }
 
@@ -450,6 +468,8 @@ export default function PetaBelajarPage() {
 
   // Dynamic Uploaded Modules mapped as Course Curricula
   const [uploadedCourses, setUploadedCourses] = useState<Record<string, CourseCurriculum>>({});
+  const [activeSessionState, setActiveSessionState] = useState<ActiveModuleSession | null>(null);
+  const [showStandardCurricula, setShowStandardCurricula] = useState<boolean>(false);
 
   // Interactive Detail Drawer / Modal
   const [selectedChapter, setSelectedChapter] = useState<CurriculumChapter | null>(null);
@@ -471,6 +491,9 @@ export default function PetaBelajarPage() {
 
     const loadUploadedModules = () => {
       try {
+        const activeSession = getActiveModuleSession();
+        setActiveSessionState(activeSession);
+
         const rawUploaded = localStorage.getItem("nexed_uploaded_modules");
         const rawActive = localStorage.getItem("nexed_active_analyzed_module");
 
@@ -483,7 +506,26 @@ export default function PetaBelajarPage() {
           totalWords?: number;
           analyzedResult?: {
             title?: string;
+            detectedTopic?: string;
+            coreKeywords?: string[];
+            userNeedsSummary?: string;
             summary?: { overview?: string };
+            validatedVideos?: ActiveModuleSession["validatedVideos"];
+            videos?: ActiveModuleSession["validatedVideos"];
+            webReferences?: ActiveModuleSession["webReferences"];
+            learningStages?: Array<{
+              stageNumber: number;
+              phaseLabel: string;
+              title: string;
+              shortSummary: string;
+              selfAction: string;
+              detailedMaterial: string;
+              keyConcepts: string[];
+              practiceScenario: string;
+              comprehensionQuestion: string;
+              searchQuery: string;
+              understood?: boolean;
+            }>;
             roadmap?: Array<{
               step: number;
               stage: string;
@@ -491,6 +533,9 @@ export default function PetaBelajarPage() {
               description: string;
               actionItem?: string;
               keyConcepts?: string[];
+              detailedGuide?: string;
+              practiceScenario?: string;
+              checkQuestion?: string;
             }>;
           };
         }> = rawUploaded ? JSON.parse(rawUploaded) : [];
@@ -508,48 +553,132 @@ export default function PetaBelajarPage() {
 
         const newUploadedMap: Record<string, CourseCurriculum> = {};
 
+        // 1. Prioritaskan ActiveModuleSession (Single Source of Truth dari upload terbaru / Sesuaikan Rekomendasi)
+        let activeSessionCourseId: string | null = null;
+        if (activeSession && Array.isArray(activeSession.learningStages) && activeSession.learningStages.length > 0) {
+          const cleanModId = (activeSession.moduleId || "modul-aktif").replace(/^dok-/, "");
+          activeSessionCourseId = `dok-${cleanModId}`;
+          newUploadedMap[activeSessionCourseId] = {
+            id: activeSessionCourseId,
+            name: activeSession.detectedTopic || activeSession.title || "Modul Aktif Anda",
+            code: "MOD-AI",
+            semester: "Modul Dokumen Aktif",
+            totalSks: 3,
+            instructor: "Asisten Akademik Adaptif NexedAI",
+            description:
+              activeSession.userNeedsSummary ||
+              `Peta belajar dinamis yang disusun langsung dari isi dokumen "${activeSession.detectedTopic || activeSession.title}".`,
+            userFocus: activeSession.userFocus,
+            userNeedsSummary: activeSession.userNeedsSummary,
+            coreKeywords: activeSession.coreKeywords,
+            validatedVideos: activeSession.validatedVideos,
+            webReferences: activeSession.webReferences,
+            chapters: activeSession.learningStages.map((stage, idx) => ({
+              id: `${activeSessionCourseId}-step-${stage.stageNumber || idx + 1}`,
+              numericId: 5000 + idx,
+              chapterNumber: stage.stageNumber || idx + 1,
+              phaseLabel: stage.phaseLabel || `Tahap ${idx + 1}`,
+              title: stage.title || `Tahap ${idx + 1}`,
+              subtitle: stage.shortSummary || "Substansi materi tahap ini.",
+              duration: "45 Menit",
+              xpReward: 150,
+              prerequisiteChapterId:
+                idx > 0
+                  ? `${activeSessionCourseId}-step-${activeSession.learningStages[idx - 1]?.stageNumber || idx}`
+                  : undefined,
+              prerequisiteTitle:
+                idx > 0
+                  ? `${activeSession.learningStages[idx - 1]?.phaseLabel || `Tahap ${idx}`}: ${(activeSession.learningStages[idx - 1]?.title || "").slice(0, 35)}`
+                  : undefined,
+              learningOutcomes: [
+                stage.selfAction,
+                stage.shortSummary,
+              ].filter((x): x is string => Boolean(x && x.trim())),
+              keyTopics:
+                Array.isArray(stage.keyConcepts) && stage.keyConcepts.length > 0
+                  ? stage.keyConcepts
+                  : activeSession.coreKeywords?.slice(0, 4) || [stage.title],
+              selfAction: stage.selfAction,
+              detailedMaterial: stage.detailedMaterial,
+              practiceScenario: stage.practiceScenario,
+              comprehensionQuestion: stage.comprehensionQuestion,
+              searchQuery: stage.searchQuery,
+              understood: Boolean(stage.understood),
+              suggestedPreset: undefined,
+            })),
+          };
+        }
+
+        // 2. Muat modul lain dari riwayat unggahan
         parsedUploaded.forEach((mod) => {
-          if (
-            !mod.analyzedResult ||
-            !Array.isArray(mod.analyzedResult.roadmap) ||
-            mod.analyzedResult.roadmap.length === 0
-          ) {
-            return;
-          }
-          const courseId = `dok-${mod.id}`;
-          const roadmap = mod.analyzedResult.roadmap;
+          const courseId = `dok-${mod.id.replace(/^dok-/, "")}`;
+          if (newUploadedMap[courseId]) return;
+          const ar = mod.analyzedResult;
+          if (!ar) return;
+
+          const stages =
+            Array.isArray(ar.learningStages) && ar.learningStages.length > 0
+              ? ar.learningStages
+              : Array.isArray(ar.roadmap) && ar.roadmap.length > 0
+                ? ar.roadmap.map((r, idx) => ({
+                    stageNumber: r.step || idx + 1,
+                    phaseLabel: r.stage || `Tahap ${idx + 1}`,
+                    title: r.title,
+                    shortSummary: r.description,
+                    selfAction: r.actionItem || `Pelajari dan terapkan "${r.title}".`,
+                    detailedMaterial: r.detailedGuide || r.description,
+                    keyConcepts: r.keyConcepts || [],
+                    practiceScenario:
+                      r.practiceScenario || `Latihan mandiri untuk "${r.title}".`,
+                    comprehensionQuestion:
+                      r.checkQuestion || `Apa konsep kunci dari "${r.title}"?`,
+                    searchQuery: `${r.title} tutorial`,
+                    understood: false,
+                  }))
+                : [];
+
+          if (stages.length === 0) return;
 
           newUploadedMap[courseId] = {
             id: courseId,
-            name: mod.analyzedResult.title || mod.title || "Modul Unggahan",
+            name: ar.detectedTopic || ar.title || mod.title || "Modul Unggahan",
             code: "MOD-AI",
             semester: "Modul Dokumen Unggahan",
             totalSks: 2,
             instructor: "AI Curriculum Architect NexedAI",
             description:
-              mod.analyzedResult.summary?.overview ||
+              ar.userNeedsSummary ||
+              ar.summary?.overview ||
               "Kurikulum adaptif yang diekstraksi secara presisi dari dokumen yang Anda unggah.",
-            chapters: roadmap.map((step, idx) => ({
-              id: `${courseId}-step-${step.step}`,
-              numericId: 5000 + idx,
-              chapterNumber: step.step,
-              title: step.title || `Tahap ${step.step}`,
-              subtitle: step.description || "Substansi materi tahap ini.",
+            userNeedsSummary: ar.userNeedsSummary,
+            coreKeywords: ar.coreKeywords,
+            validatedVideos: ar.validatedVideos || ar.videos || [],
+            webReferences: ar.webReferences || [],
+            chapters: stages.map((stage, idx) => ({
+              id: `${courseId}-step-${stage.stageNumber || idx + 1}`,
+              numericId: 5100 + idx,
+              chapterNumber: stage.stageNumber || idx + 1,
+              phaseLabel: stage.phaseLabel || `Tahap ${idx + 1}`,
+              title: stage.title || `Tahap ${idx + 1}`,
+              subtitle: stage.shortSummary || "Substansi materi tahap ini.",
               duration: "45 Menit",
               xpReward: 130,
               prerequisiteChapterId: idx > 0 ? `${courseId}-step-${idx}` : undefined,
               prerequisiteTitle:
                 idx > 0
-                  ? `Tahap ${idx}: ${(roadmap[idx - 1]?.title || "").slice(0, 30)}`
+                  ? `Tahap ${idx}: ${(stages[idx - 1]?.title || "").slice(0, 30)}`
                   : undefined,
-              learningOutcomes:
-                Array.isArray(step.keyConcepts) && step.keyConcepts.length > 0
-                  ? step.keyConcepts
-                  : [step.actionItem || "Penguasaan konsep dan metodologi tahap ini."],
+              learningOutcomes: [stage.selfAction, stage.shortSummary].filter(Boolean),
               keyTopics:
-                Array.isArray(step.keyConcepts) && step.keyConcepts.length > 0
-                  ? step.keyConcepts
-                  : [step.title || "Konsep Inti"],
+                Array.isArray(stage.keyConcepts) && stage.keyConcepts.length > 0
+                  ? stage.keyConcepts
+                  : [stage.title || "Konsep Inti"],
+              selfAction: stage.selfAction,
+              detailedMaterial: stage.detailedMaterial,
+              practiceScenario: stage.practiceScenario,
+              comprehensionQuestion: stage.comprehensionQuestion,
+              searchQuery: stage.searchQuery,
+              understood: Boolean(stage.understood),
               suggestedPreset: undefined,
             })),
           };
@@ -562,11 +691,13 @@ export default function PetaBelajarPage() {
           const courseParam = params.get("course");
           if (courseParam && (newUploadedMap[courseParam] || COURSE_CURRICULA[courseParam])) {
             setActiveCourseId(courseParam);
+          } else if (activeSessionCourseId && newUploadedMap[activeSessionCourseId]) {
+            setActiveCourseId(activeSessionCourseId);
           } else if (rawActive) {
             try {
               const parsedActive = JSON.parse(rawActive);
               if (parsedActive && parsedActive.id) {
-                const activeId = `dok-${parsedActive.id}`;
+                const activeId = `dok-${String(parsedActive.id).replace(/^dok-/, "")}`;
                 if (newUploadedMap[activeId]) {
                   setActiveCourseId(activeId);
                 }
@@ -583,30 +714,39 @@ export default function PetaBelajarPage() {
     loadUploadedModules();
 
     const cleanup = onProgressUpdate(refreshData);
+    const cleanupSession = onActiveModuleSessionUpdate(() => {
+      loadUploadedModules();
+    });
     if (typeof window !== "undefined") {
       window.addEventListener("nexed_modules_updated", loadUploadedModules);
     }
 
     return () => {
       cleanup();
+      cleanupSession();
       if (typeof window !== "undefined") {
         window.removeEventListener("nexed_modules_updated", loadUploadedModules);
       }
     };
   }, []);
 
-  const allCourses: Record<string, CourseCurriculum> = {
-    ...COURSE_CURRICULA,
-    ...uploadedCourses,
-  };
+  const hasUploadedCourses = Object.keys(uploadedCourses).length > 0;
+  const allCourses: Record<string, CourseCurriculum> = hasUploadedCourses && !showStandardCurricula
+    ? uploadedCourses
+    : {
+        ...uploadedCourses,
+        ...COURSE_CURRICULA,
+      };
 
-  const defaultCourse = COURSE_CURRICULA["algoritma-pemrograman"]!;
+  const defaultCourse =
+    Object.values(uploadedCourses)[0] ?? COURSE_CURRICULA["algoritma-pemrograman"]!;
   const activeCourse: CourseCurriculum = allCourses[activeCourseId] ?? defaultCourse;
 
   // Helper to determine node status for a chapter
   const getChapterStatus = (chapter: CurriculumChapter, index: number): NodeStatus => {
-    // Check if directly completed in storage
+    // Check if directly completed in storage or marked understood in ActiveModuleSession
     const isCompleted =
+      Boolean(chapter.understood) ||
       completedTopicIds.includes(chapter.numericId) ||
       (chapter.id === "algo-1" && completedTopicIds.includes(1)) ||
       (chapter.id === "algo-2" && completedTopicIds.includes(2));
@@ -624,7 +764,8 @@ export default function PetaBelajarPage() {
     const prevChapter = activeCourse.chapters[index - 1];
     const prevCompleted =
       prevChapter &&
-      (completedTopicIds.includes(prevChapter.numericId) ||
+      (Boolean(prevChapter.understood) ||
+        completedTopicIds.includes(prevChapter.numericId) ||
         (prevChapter.id === "algo-1" && completedTopicIds.includes(1)) ||
         (prevChapter.id === "algo-2" && completedTopicIds.includes(2)));
 
@@ -686,6 +827,15 @@ export default function PetaBelajarPage() {
       if (!existing.includes(chapter.numericId)) {
         const next = [...existing, chapter.numericId];
         localStorage.setItem("completed_topics", JSON.stringify(next));
+      }
+      if (activeSessionState && activeCourseId.startsWith("dok-")) {
+        saveActiveModuleSession({
+          ...activeSessionState,
+          learningStages: activeSessionState.learningStages.map((s) =>
+            s.stageNumber === chapter.chapterNumber ? { ...s, understood: true } : s,
+          ),
+          updatedAt: new Date().toISOString(),
+        });
       }
     } catch {}
     setCompletedTopicIds(getCompletedTopicIds());
@@ -839,7 +989,7 @@ export default function PetaBelajarPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
               {Object.values(allCourses).map((course) => {
-                const isActive = course.id === activeCourseId;
+                const isActive = course.id === activeCourse.id;
                 const isCustom = course.id.startsWith("dok-");
                 return (
                   <button
@@ -867,11 +1017,23 @@ export default function PetaBelajarPage() {
                           : "bg-white text-neutral-600 border border-black/5"
                       }`}
                     >
-                      {isCustom ? "Dokumen Anda" : `${course.chapters.length} Bab`}
+                      {isCustom ? "Dokumen Aktif" : `${course.chapters.length} Bab`}
                     </span>
                   </button>
                 );
               })}
+
+              {hasUploadedCourses && (
+                <button
+                  type="button"
+                  onClick={() => setShowStandardCurricula((prev) => !prev)}
+                  className="min-h-[44px] px-4 py-2 rounded-2xl text-xs font-mono font-medium border border-black/10 bg-white hover:bg-neutral-100 text-neutral-700 transition-colors whitespace-nowrap cursor-pointer"
+                >
+                  {showStandardCurricula
+                    ? "Sembunyikan Kurikulum Umum"
+                    : "+ Tampilkan Kurikulum Umum"}
+                </button>
+              )}
             </div>
 
             {/* STATUS LEGEND TRACKER */}
@@ -981,7 +1143,7 @@ export default function PetaBelajarPage() {
                                   : "bg-slate-200 text-slate-700 border border-slate-300"
                             }`}
                           >
-                            Bab {chapter.chapterNumber}
+                            {chapter.phaseLabel || `Bab ${chapter.chapterNumber}`}
                           </span>
 
                           <span className="text-[11px] font-mono text-neutral-500 flex items-center gap-1">
@@ -1087,7 +1249,7 @@ export default function PetaBelajarPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2.5 py-0.5 rounded-md bg-black text-white text-[11px] font-mono font-bold uppercase tracking-wider">
-                      Bab {selectedChapter.chapterNumber}
+                      {selectedChapter.phaseLabel || `Bab ${selectedChapter.chapterNumber}`}
                     </span>
                     <span className="text-xs font-mono text-neutral-500">
                       {activeCourse.name}
@@ -1127,6 +1289,62 @@ export default function PetaBelajarPage() {
                 <p className="text-neutral-600 leading-relaxed">
                   {selectedChapter.subtitle}
                 </p>
+
+                {/* Detailed Material from Document */}
+                {selectedChapter.detailedMaterial && (
+                  <div className="p-4 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-2">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Uraian Materi Mendalam (Berdasarkan Dokumen)</span>
+                    </h4>
+                    <p className="text-xs text-neutral-700 leading-relaxed whitespace-pre-line">
+                      {selectedChapter.detailedMaterial}
+                    </p>
+                  </div>
+                )}
+
+                {/* Self Action & Practice Scenario */}
+                {(selectedChapter.selfAction || selectedChapter.practiceScenario) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedChapter.selfAction && (
+                      <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-200/70 space-y-1">
+                        <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                          <Target className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Aksi Mandiri:</span>
+                        </div>
+                        <p className="text-xs text-neutral-800 leading-relaxed">
+                          {selectedChapter.selfAction}
+                        </p>
+                      </div>
+                    )}
+                    {selectedChapter.practiceScenario && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50/50 border border-emerald-200/70 space-y-1">
+                        <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                          <Terminal className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Skenario Praktik:</span>
+                        </div>
+                        <p className="text-xs text-neutral-800 leading-relaxed">
+                          {selectedChapter.practiceScenario}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Comprehension Question */}
+                {selectedChapter.comprehensionQuestion && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-start gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-900 block">
+                        Pertanyaan Uji Pemahaman Tahap Ini:
+                      </span>
+                      <p className="text-xs text-neutral-800 mt-0.5 leading-relaxed">
+                        {selectedChapter.comprehensionQuestion}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Meta Attributes Bento Row */}
                 <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-[#F8FAFC] border border-black/5 text-center">
@@ -1213,6 +1431,37 @@ export default function PetaBelajarPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Video YouTube Tervalidasi dari Sesi Modul Aktif */}
+                {activeCourse.validatedVideos && activeCourse.validatedVideos.length > 0 && (
+                  <div className="space-y-2.5 pt-2 border-t border-black/8">
+                    <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+                      <PlayCircle className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Video YouTube Tervalidasi untuk Modul Ini ({activeCourse.validatedVideos.length})</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {activeCourse.validatedVideos.slice(0, 4).map((vid, vIdx) => (
+                        <a
+                          key={`modal-vid-${vIdx}-${vid.videoId}`}
+                          href={vid.videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-3 rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 transition-all flex items-start justify-between gap-2 group"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-black line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                              {vid.title}
+                            </div>
+                            <div className="text-[10px] font-mono text-neutral-500 mt-1">
+                              {vid.channelName || vid.channel} • ⏱ {vid.duration}
+                            </div>
+                          </div>
+                          <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black shrink-0 mt-0.5" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Drawer Footer Actions */}

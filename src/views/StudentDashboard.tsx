@@ -32,6 +32,7 @@ interface TopBadge {
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   const [totalXp, setTotalXp] = useState<number>(225);
@@ -81,6 +82,7 @@ export default function StudentDashboard() {
 
   // Sync with persistent progress storage & backend database
   useEffect(() => {
+    setMounted(true);
     setTotalXp(getTotalUserXp());
     setCompletedCount(getCompletedModulesCount());
     fetchLiveGamificationStats();
@@ -105,7 +107,7 @@ export default function StudentDashboard() {
     }
   }, [user, router]);
 
-  const activeUser = user ?? {
+  const activeUser = (mounted ? user : null) ?? {
     email: "mahasiswa@nexed.ai",
     role: "mahasiswa" as const,
     name: "Muhammad Hariz",

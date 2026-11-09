@@ -2,6 +2,7 @@
 import Groq from "groq-sdk";
 import type {
   AnalyzedModuleResult,
+  LearningStageItem,
   RecommendedDoc,
   RecommendedVideo,
 } from "../components/NexedAiModuleHub";
@@ -14,8 +15,12 @@ import {
 import {
   resolveCuratedResources,
   sanitizeDocumentation,
-  sanitizeYoutubeVideo,
 } from "./curatedResources";
+import {
+  normalizeLearningStages,
+  resolveValidatedTopicVideos,
+} from "./videoRecommendationPipeline";
+
 
 /**
  * Server-side AI Module Analysis using Groq LLM
@@ -27,14 +32,21 @@ export async function generateAiModuleAnalysis(
   content: string,
   fileName?: string,
   fallbackTitle?: string,
+  options?: {
+    forceRefresh?: boolean;
+    userLearningGoal?: string;
+    userFocus?: string;
+    strictGrounded?: boolean;
+  },
 ): Promise<AnalyzedModuleResult> {
   const apiKey = process.env.GROQ_API_KEY;
+  const userFocus = (options?.userFocus || options?.userLearningGoal || "").trim() || undefined;
   // Bersihkan teks modul sebelum diproses
   const cleanContent = cleanModuleRawText(content);
 
-  // Jika API key tidak ada, gunakan fallback cerdas lokal
+  // Jika API key tidak ada, gunakan fallback cerdas lokal + pipeline validasi video (Prisma Cache + yt-dlp)
   if (!apiKey) {
-    return analyzeModuleContent({
+    const localResult = analyzeModuleContent({
       title:
         fallbackTitle ||
         fileName?.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ") ||
@@ -42,7 +54,70 @@ export async function generateAiModuleAnalysis(
       content: cleanContent,
       fileName,
       sourceType: "file",
+      userFocus,
     });
+
+    const videoPipeline = await resolveValidatedTopicVideos({
+      topic: localResult.title,
+      detectedTopic: localResult.detectedTopic,
+      extractedText: cleanContent,
+      contentSample: cleanContent.slice(0, 2000),
+      userFocus,
+      userLearningGoal: userFocus,
+      coreKeywords: localResult.coreKeywords,
+      existingNeedsSummary: localResult.userNeedsSummary,
+      existingQueries: localResult.recommendedQueries,
+      existingWebReferences: localResult.webReferences || localResult.recommendedDocs,
+      existingLearningStages: localResult.learningStages,
+      forceRefresh: options?.forceRefresh,
+    });
+
+    const finalStages =
+      videoPipeline.learningStages && videoPipeline.learningStages.length > 0
+        ? videoPipeline.learningStages
+        : localResult.learningStages || [];
+
+    const syncedRoadmap =
+      finalStages.length > 0
+        ? finalStages.map((s, idx) => ({
+            step: idx + 1,
+            stage: s.phaseLabel,
+            title: s.title,
+            description: s.shortSummary,
+            actionItem: s.selfAction,
+            understood: false,
+            keyConcepts: s.keyConcepts,
+            detailedGuide: s.detailedMaterial,
+            practiceScenario: s.practiceScenario,
+            checkQuestion: s.comprehensionQuestion,
+          }))
+        : localResult.roadmap;
+
+    return {
+      ...localResult,
+      detectedTopic: videoPipeline.detectedTopic || localResult.detectedTopic,
+      coreKeywords:
+        videoPipeline.coreKeywords.length > 0
+          ? videoPipeline.coreKeywords
+          : localResult.coreKeywords,
+      learningStages: finalStages,
+      roadmap: syncedRoadmap,
+      videos: videoPipeline.videos,
+      validatedVideos: videoPipeline.videos,
+      recommendedVideos: videoPipeline.videos,
+      webReferences:
+        videoPipeline.webReferences.length > 0
+          ? videoPipeline.webReferences
+          : localResult.webReferences || localResult.recommendedDocs,
+      recommendedDocs:
+        videoPipeline.webReferences.length > 0
+          ? videoPipeline.webReferences
+          : localResult.recommendedDocs,
+      userNeedsSummary: videoPipeline.userNeedsSummary,
+      recommendedQueries: videoPipeline.recommendedQueries,
+      videoCacheHit: videoPipeline.cacheHit,
+      videoValidationSource: videoPipeline.source,
+    };
   }
 
   try {
@@ -50,42 +125,48 @@ export async function generateAiModuleAnalysis(
     // Ambil sampel representatif dokumen (hingga 12.000 karakter)
     const textSample = cleanContent.slice(0, 12000);
 
-    const prompt = `Kamu adalah Principal Academic Curriculum Architect di NEXED AI.
-Tugasmu adalah membedah dokumen modul pembelajaran yang diunggah dan menyusun modul digital interaktif 4 TAHAP yang mendalam dan fungsional.
+    const prompt = `Kamu adalah Asisten Akademik Adaptif dan Principal Academic Curriculum Architect di NEXED AI.
+Susun 'detectedTopic', 'userNeedsSummary', dan 'learningStages' (4-5 tahap) HANYA berdasarkan fakta, istilah, langkah kerja, dan konsep yang benar-benar tertulis di dalam 'extractedText', serta sesuaikan penekanannya dengan 'userFocus' dari user.
+DILARANG KERAS menggunakan contoh materi umum di luar dokumen (seperti tipe data integer/float/boolean jika tidak ada di dokumen) dan DILARANG menebak dari singkatan nama file.
+
+ATURAN MUTLAK (STRICT GROUNDING):
+- DILARANG MENEBAK TOPIK DARI SINGKATAN NAMA FILE. Seluruh analisis, kata kunci, tahapan belajar ('learningStages'), kueri YouTube, dan referensi web WAJIB 100% bersumber dari isi teks materi (extractedText) dan fokus kebutuhan belajar yang diminta user.
+- Contoh: Jika nama file memuat singkatan "PMI" namun isi teks membahas Unity, Vuforia, dan Augmented Reality, topik adalah Pemrograman Multimedia Interaktif (Unity & Vuforia AR), BUKAN Project Management atau Palang Merah!
+- Fokus Kebutuhan Belajar User (userFocus): "${userFocus || "Memahami konsep inti dan langkah praktik sesuai isi modul secara menyeluruh"}"
 
 PRINSIP UTAMA:
-1. ZERO IRRELEVANT BIAS: Dilarang keras memunculkan konsep JavaScript, Flowchart, atau Pemrograman Web jika dokumen membahas topik lain (seperti Game Engine Unity, Pertolongan Pertama PMI, Sistem Tertanam, dsb).
+1. ZERO IRRELEVANT BIAS: Dilarang keras memunculkan konsep Tipe Data Numerik/Karakter/Logika, JavaScript, Flowchart, atau Pemrograman Web jika dokumen membahas topik lain (seperti Game Engine Unity, Vuforia AR, Sistem Tertanam, dsb).
 2. PEMBAHASAN MENDALAM (DEEP-DIVE): Tahap 1 Konseptual TIDAK BOLEH berupa ringkasan dangkal. Wajib mencakup:
    - Intisari & Konteks Industri: Mengapa materi ini penting dan bagaimana penerapannya di dunia nyata.
    - Terminologi & Konsep Inti (minimal 4-6 konsep): Berikan definisi teknis mendalam dan analogi yang jelas dari dokumen.
    - Prosedur Teknis / Best Practices: Langkah-langkah atau protokol penting sesuai isi modul.
    - Analisis Kesalahan Umum (Common Pitfalls): 2-3 kesalahan yang sering dilakukan pemula pada materi ini.
-3. PETA BELAJAR DINAMIS (DYNAMIC ROADMAP):
-   - Ekstrak 4 hingga 6 simpul (nodes) pembelajaran berurutan yang merepresentasikan alur belajar modul secara logis dari dasar hingga mahir.
-   - Judul setiap simpul WAJIB berasal dari sub-bab/materi spesifik modul (misal untuk Unity: "Instalasi & Editor Workspace", "GameObject, Component & Transform", "C# Scripting Lifecycle", "Physics & Collision Detection").
-4. PENCARIAN REFERENSI RELEVAN:
-   - Ekstrak domain topik utama (misal: "Game Engine / Unity", "Kesehatan / Medis", "Web Development", "Embedded Systems").
-   - Buat 2 rekomendasi video YouTube yang sangat relevan dengan topik dokumen (cantumkan query pencarian presisi dan kanal referensi terpercaya di bidang tersebut).
-   - Buat 2 rekomendasi dokumentasi teknis otoritatif yang sesuai domain (misal: Unity Manual, MDN, Kemenkes/PMI, atau repositori resmi).
-
-PEDOMAN RINCI ELEMEN JSON:
-1. 'title': Judul modul/materi pembelajaran sesungguhnya yang rapi, profesional, dan bersumber langsung dari teks dokumen. DILARANG KERAS menggunakan nama universitas, fakultas, jurusan, prodi, atau header slide (seperti 'D3 Teknik Informatika', 'Universitas Sebelas Maret', 'Sekolah Vokasi', 'Halaman 1').
-2. 'domain': Domain topik utama modul (misal: "Game Development / Unity 3D & C#", "Kesehatan & Kemanusiaan / Pertolongan Pertama (PMI)", "Sistem Tertanam & IoT / Mikrokontroler", "Web Development", "Artificial Intelligence & Data Science").
-3. 'summary.overview': Ringkasan eksekutif komprehensif dan mendalam (minimal 3-5 kalimat terstruktur rapi) yang menjelaskan substansi materi dokumen dan klasifikasi pokok bahasan utama. DILARANG memotong teks dengan '...'.
-4. 'summary.industryContext': Penjelasan mendalam (2-3 kalimat) mengenai urgensi materi ini di industri dan bagaimana penerapannya di dunia kerja profesional nyata.
-5. 'summary.keyTakeaways': Array berisi 3-4 poin pokok penting / capaian utama dari materi ini (tiap poin 1-2 kalimat lugas).
-6. 'summary.keyPoints': Array berisi 4-6 konsep/istilah esensial dari dokumen. Setiap item wajib memiliki 'term', 'definition', 'category', dan 'analogy' (analogi konkret yang mempermudah pemahaman).
-7. 'summary.technicalProcedures': Array berisi 3-4 langkah/protokol kerja praktis berdasarkan modul, dengan format: [{"step": 1, "title": "Nama Langkah", "description": "Uraian prosedur"}]
-8. 'summary.commonPitfalls': Array berisi 2-3 kesalahan umum pemula beserta pencegahannya, dengan format: [{"pitfall": "Kesalahan umum / jebakan", "prevention": "Langkah mitigasi / pencegahan"}]
-9. 'summary.proTips': Tips belajar praktis dan prinsip kunci untuk menghindari error dalam materi ini.
-10. 'roadmap': 4 hingga 6 simpul belajar adaptif yang 100% SESUAI DENGAN MATERI MODUL!
-    - Setiap item tahap WAJIB menyertakan: 'step', 'stage', 'title', 'description', 'keyConcepts', 'detailedGuide', 'actionItem', 'practiceScenario', dan 'checkQuestion'.
-11. 'recommendedVideos': Array berisi 2 video edukasi terpercaya spesifik yang selaras 100% dengan topik materi dokumen (misal kanal resmi Unity, Palang Merah Indonesia, Arduino, dsb). Wajib menyertakan URL video spesifik (https://www.youtube.com/watch?v=VIDEO_ID) dan 'embedId' 11 karakter yang valid.
-12. 'recommendedDocs': Array berisi 2 rujukan dokumentasi teknis atau pustaka resmi yang membahas materi ini secara spesifik (Unity Docs, PMI/WHO, Arduino Docs, MDN, dsb).
+3. LEARNING STAGES & PETA BELAJAR DINAMIS ('learningStages'):
+   - Wajibkan mengembalikan array 'learningStages' (4 sampai 5 tahapan belajar berurutan) yang disusun murni dari 'extractedText' dokumen dan diarahkan oleh 'userFocus'.
+   - Setiap item di dalam 'learningStages' wajib memiliki:
+     - stageNumber (number: 1, 2, 3, 4, ...)
+     - phaseLabel (string: misal "Tahap 1: Fondasi Konseptual", "Tahap 2: Implementasi Teknis", dst.)
+     - title (string: Judul spesifik sesuai isi dokumen & permintaan user)
+     - shortSummary (string: 1-2 kalimat ringkasan tujuan tahap ini)
+     - selfAction (string: Instruksi aksi mandiri konkret berdasarkan isi dokumen)
+     - detailedMaterial (string: Penjelasan mendalam 1-2 paragraf dari isi dokumen)
+     - keyConcepts (string[]: 3-4 istilah teknis dari dokumen pada tahap ini)
+     - practiceScenario (string: Skenario latihan mandiri yang relevan dengan isi dokumen)
+     - comprehensionQuestion (string: Pertanyaan uji pemahaman spesifik tahap ini)
+     - searchQuery (string: Kueri pencarian video YouTube spesifik untuk tahap ini)
+4. ANALISIS KEBUTUHAN VIDEO, CORE KEYWORDS & WEB REFERENCES DINAMIS:
+   - Hasilkan 'detectedTopic': Topik spesifik hasil pembacaan isi dokumen.
+   - Hasilkan 'coreKeywords': Array 5–8 istilah teknis utama yang benar-benar ada di dalam teks materi.
+   - Hasilkan 'userNeedsSummary': Penjelasan personal mengenai apa yang dibutuhkan user untuk menguasai materi ini, disesuaikan dengan userFocus jika diisi.
+   - Hasilkan 'recommendedQueries': 3–4 kueri pencarian YouTube spesifik yang menyertakan istilah teknis utama dari 'coreKeywords' (DILARANG KERAS menebak 'videoId', 'embedId', atau 'videoUrl' YouTube).
+   - Hasilkan 'webReferences': Array 3 referensi bacaan/dokumentasi web yang relevan dengan 'coreKeywords' berisi { title, source, url, description }.
+   - Hasilkan 'moduleChapters': Ringkasan bab/langkah praktik yang sesuai dengan isi asli dokumen.
 
 Struktur JSON yang WAJIB dipatuhi:
 {
-  "title": "Judul materi yang spesifik dan jelas dari dokumen",
+  "title": "Judul materi yang spesifik dan jelas dari isi dokumen",
+  "detectedTopic": "Topik spesifik hasil pembacaan isi dokumen",
+  "coreKeywords": ["Keyword1", "Keyword2", "Keyword3", "Keyword4", "Keyword5"],
   "domain": "Domain topik materi",
   "difficulty": "Dasar" ATAU "Menengah" ATAU "Lanjut",
   "estimatedTime": "45 Menit",
@@ -158,54 +239,54 @@ Struktur JSON yang WAJIB dipatuhi:
       "quiz": "10 Menit"
     }
   },
-  "roadmap": [
+  "learningStages": [
     {
-      "step": 1,
-      "stage": "Tahap 1: Fondasi Konseptual",
-      "title": "Judul materi langkah 1 yang diambil langsung dari sub-topik modul",
-      "description": "Deskripsi materi yang harus dikuasai di langkah 1 (2-3 kalimat lugas)",
-      "keyConcepts": ["Konsep Kunci 1A", "Konsep Kunci 1B"],
-      "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 1 berdasarkan dokumen",
-      "actionItem": "Aksi latihan konkret untuk mahasiswa di langkah 1",
-      "practiceScenario": "Skenario studi kasus atau contoh konkret penerapan materi tahap 1",
-      "checkQuestion": "Pertanyaan refleksi diri untuk menguji pemahaman tahap 1",
-      "understood": false
+      "stageNumber": 1,
+      "phaseLabel": "Tahap 1: Fondasi Konseptual",
+      "title": "Judul spesifik tahap 1 sesuai isi dokumen & permintaan user",
+      "shortSummary": "1-2 kalimat ringkasan tujuan tahap 1",
+      "selfAction": "Instruksi aksi mandiri konkret berdasarkan isi dokumen pada tahap 1",
+      "detailedMaterial": "Penjelasan mendalam 1-2 paragraf dari isi dokumen untuk tahap 1",
+      "keyConcepts": ["Istilah Teknis 1A", "Istilah Teknis 1B", "Istilah Teknis 1C"],
+      "practiceScenario": "Skenario latihan mandiri yang relevan dengan isi dokumen pada tahap 1",
+      "comprehensionQuestion": "Pertanyaan uji pemahaman spesifik tahap 1?",
+      "searchQuery": "Kueri pencarian video YouTube spesifik untuk tahap 1"
     },
     {
-      "step": 2,
-      "stage": "Tahap 2: Struktur Komponen & Logika",
-      "title": "Judul materi langkah 2 yang diambil langsung dari sub-topik modul",
-      "description": "Deskripsi materi yang harus dikuasai di langkah 2 (2-3 kalimat lugas)",
-      "keyConcepts": ["Konsep Kunci 2A", "Konsep Kunci 2B"],
-      "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 2 berdasarkan dokumen",
-      "actionItem": "Aksi latihan konkret untuk mahasiswa di langkah 2",
-      "practiceScenario": "Skenario studi kasus atau contoh konkret penerapan materi tahap 2",
-      "checkQuestion": "Pertanyaan refleksi diri untuk menguji pemahaman tahap 2",
-      "understood": false
+      "stageNumber": 2,
+      "phaseLabel": "Tahap 2: Implementasi Teknis",
+      "title": "Judul spesifik tahap 2 sesuai isi dokumen & permintaan user",
+      "shortSummary": "1-2 kalimat ringkasan tujuan tahap 2",
+      "selfAction": "Instruksi aksi mandiri konkret berdasarkan isi dokumen pada tahap 2",
+      "detailedMaterial": "Penjelasan mendalam 1-2 paragraf dari isi dokumen untuk tahap 2",
+      "keyConcepts": ["Istilah Teknis 2A", "Istilah Teknis 2B", "Istilah Teknis 2C"],
+      "practiceScenario": "Skenario latihan mandiri yang relevan dengan isi dokumen pada tahap 2",
+      "comprehensionQuestion": "Pertanyaan uji pemahaman spesifik tahap 2?",
+      "searchQuery": "Kueri pencarian video YouTube spesifik untuk tahap 2"
     },
     {
-      "step": 3,
-      "stage": "Tahap 3: Praktik & Implementasi Kasus",
-      "title": "Judul materi langkah 3 yang diambil langsung dari sub-topik modul",
-      "description": "Deskripsi materi yang harus dikuasai di langkah 3 (2-3 kalimat lugas)",
-      "keyConcepts": ["Konsep Kunci 3A", "Konsep Kunci 3B"],
-      "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 3 berdasarkan dokumen",
-      "actionItem": "Aksi latihan konkret untuk mahasiswa di langkah 3",
-      "practiceScenario": "Skenario studi kasus atau contoh konkret penerapan materi tahap 3",
-      "checkQuestion": "Pertanyaan refleksi diri untuk menguji pemahaman tahap 3",
-      "understood": false
+      "stageNumber": 3,
+      "phaseLabel": "Tahap 3: Praktik & Skenario Terapan",
+      "title": "Judul spesifik tahap 3 sesuai isi dokumen & permintaan user",
+      "shortSummary": "1-2 kalimat ringkasan tujuan tahap 3",
+      "selfAction": "Instruksi aksi mandiri konkret berdasarkan isi dokumen pada tahap 3",
+      "detailedMaterial": "Penjelasan mendalam 1-2 paragraf dari isi dokumen untuk tahap 3",
+      "keyConcepts": ["Istilah Teknis 3A", "Istilah Teknis 3B", "Istilah Teknis 3C"],
+      "practiceScenario": "Skenario latihan mandiri yang relevan dengan isi dokumen pada tahap 3",
+      "comprehensionQuestion": "Pertanyaan uji pemahaman spesifik tahap 3?",
+      "searchQuery": "Kueri pencarian video YouTube spesifik untuk tahap 3"
     },
     {
-      "step": 4,
-      "stage": "Tahap 4: Pengujian & Validasi Integritas",
-      "title": "Judul materi langkah 4 yang diambil langsung dari sub-topik modul",
-      "description": "Deskripsi materi yang harus dikuasai di langkah 4 (2-3 kalimat lugas)",
-      "keyConcepts": ["Konsep Kunci 4A", "Konsep Kunci 4B"],
-      "detailedGuide": "Uraian materi mendalam dan panduan belajar langkah demi langkah untuk tahap 4 berdasarkan dokumen",
-      "actionItem": "Aksi latihan konkret untuk mahasiswa di langkah 4",
-      "practiceScenario": "Skenario studi kasus atau contoh konkret penerapan materi tahap 4",
-      "checkQuestion": "Pertanyaan refleksi diri untuk menguji pemahaman tahap 4",
-      "understood": false
+      "stageNumber": 4,
+      "phaseLabel": "Tahap 4: Evaluasi & Validasi",
+      "title": "Judul spesifik tahap 4 sesuai isi dokumen & permintaan user",
+      "shortSummary": "1-2 kalimat ringkasan tujuan tahap 4",
+      "selfAction": "Instruksi aksi mandiri konkret berdasarkan isi dokumen pada tahap 4",
+      "detailedMaterial": "Penjelasan mendalam 1-2 paragraf dari isi dokumen untuk tahap 4",
+      "keyConcepts": ["Istilah Teknis 4A", "Istilah Teknis 4B", "Istilah Teknis 4C"],
+      "practiceScenario": "Skenario latihan mandiri yang relevan dengan isi dokumen pada tahap 4",
+      "comprehensionQuestion": "Pertanyaan uji pemahaman spesifik tahap 4?",
+      "searchQuery": "Kueri pencarian video YouTube spesifik untuk tahap 4"
     }
   ],
   "quiz": [
@@ -231,36 +312,56 @@ Struktur JSON yang WAJIB dipatuhi:
       "explanation": "Penjelasan mengapa jawaban tersebut benar berdasarkan materi dokumen"
     }
   ],
-  "recommendedVideos": [
+  "moduleChapters": [
     {
-      "title": "Judul Video Tutorial Terverifikasi",
-      "channel": "Nama Kreator / Channel Resmi",
-      "duration": "20 Menit",
-      "videoUrl": "https://www.youtube.com/watch?v=1NigbK3Jk7Q",
-      "embedId": "1NigbK3Jk7Q",
-      "summaryTopic": "Uraian materi yang dibahas dalam video"
+      "step": 1,
+      "title": "Judul Bab / Langkah Praktik 1 dari dokumen",
+      "summary": "Ringkasan isi bab atau langkah praktik 1"
+    },
+    {
+      "step": 2,
+      "title": "Judul Bab / Langkah Praktik 2 dari dokumen",
+      "summary": "Ringkasan isi bab atau langkah praktik 2"
     }
   ],
-  "recommendedDocs": [
+  "userNeedsSummary": "Penjelasan personal mengenai apa yang dibutuhkan user untuk menguasai materi ini, disesuaikan dengan userFocus jika diisi",
+  "recommendedQueries": [
+    "Kueri pencarian YouTube spesifik 1 yang menyertakan istilah teknis utama dari coreKeywords",
+    "Kueri pencarian YouTube spesifik 2 sesuai fokus kebutuhan user",
+    "Kueri pencarian YouTube spesifik 3 tutorial praktis"
+  ],
+  "webReferences": [
     {
-      "title": "Judul Bab Dokumentasi Resmi",
-      "source": "Sumber Resmi (Unity Docs / PMI / Arduino / MDN / dll)",
+      "title": "Judul Referensi / Dokumentasi Resmi 1",
+      "source": "Sumber Resmi (misal: Unity Docs / Vuforia Developer Library / MDN)",
       "url": "https://docs.unity3d.com/Manual/index.html",
-      "description": "Deskripsi konten bab dokumentasi spesifik"
+      "description": "Deskripsi konten dokumentasi yang relevan dengan coreKeywords"
+    },
+    {
+      "title": "Judul Referensi / Dokumentasi Resmi 2",
+      "source": "Sumber Resmi",
+      "url": "https://developer.vuforia.com/library",
+      "description": "Deskripsi konten dokumentasi yang relevan dengan coreKeywords"
+    },
+    {
+      "title": "Judul Referensi / Dokumentasi Resmi 3",
+      "source": "Sumber Resmi",
+      "url": "https://learn.microsoft.com/en-us/dotnet/csharp/",
+      "description": "Deskripsi konten dokumentasi yang relevan dengan coreKeywords"
     }
   ]
 }
 
-Teks Dokumen Modul yang Diunggah Mahasiswa:
+Teks Dokumen Modul Asli (extractedText) yang Diunggah Mahasiswa:
 ${textSample}`;
 
     // Model cascading: Utamakan model berkecepatan tinggi dengan token limit memadai
     const preferredModel = process.env.GROQ_MODEL?.trim();
     const candidateModels = [
-      ...(preferredModel ? [{ name: preferredModel, maxTokens: 3200 }] : []),
-      { name: "qwen/qwen3.8-27b", maxTokens: 2800 },
-      { name: "openai/gpt-oss-20b", maxTokens: 2800 },
-      { name: "openai/gpt-oss-120b", maxTokens: 3200 },
+      ...(preferredModel ? [{ name: preferredModel, maxTokens: 3600 }] : []),
+      { name: "qwen/qwen3.8-27b", maxTokens: 3200 },
+      { name: "openai/gpt-oss-20b", maxTokens: 3200 },
+      { name: "openai/gpt-oss-120b", maxTokens: 3600 },
     ];
 
     let rawReply = "";
@@ -272,7 +373,7 @@ ${textSample}`;
             {
               role: "system",
               content:
-                "Kamu adalah Principal Academic Curriculum Architect di NEXED AI. ATURAN MUTLAK (STRICT GROUNDING): Dilarang keras memunculkan konsep JavaScript, Flowchart, atau Pemrograman Web jika dokumen membahas topik lain (seperti Game Engine Unity, Pertolongan Pertama PMI, Sistem Tertanam, dsb). Tahap 1 Konseptual TIDAK BOLEH berupa ringkasan dangkal; wajib mencakup Konteks Industri, 4-6 Terminologi dengan Analogi, Prosedur Teknis, dan Common Pitfalls. Roadmap harus terdiri dari 4 hingga 6 simpul berurutan dari sub-bab dokumen asli. Berikan respons HANYA dalam format JSON valid tanpa tanda markdown (tanpa ```json).",
+                "Kamu adalah Asisten Akademik Adaptif. Susun `detectedTopic`, `userNeedsSummary`, dan `learningStages` (4-5 tahap) HANYA berdasarkan fakta, istilah, langkah kerja, dan konsep yang benar-benar tertulis di dalam `extractedText`, serta sesuaikan penekanannya dengan `userFocus` dari user. DILARANG KERAS menggunakan contoh materi umum di luar dokumen (seperti tipe data integer/float/boolean jika tidak ada di dokumen) dan DILARANG menebak dari singkatan nama file. Berikan respons HANYA dalam format JSON valid tanpa tanda markdown (tanpa ```json).",
             },
             { role: "user", content: prompt },
           ],
@@ -424,17 +525,59 @@ ${textSample}`;
     const isContentWeb = /html|css|javascript|react|dom|web/i.test(cleanContent);
     const isContentSql = /sql|database|basis\s+data|tabel\s+relasi/i.test(cleanContent);
     const isContentFlowchart = /flowchart|dfd|diagram\s+alir/i.test(cleanContent);
+    const isContentDataType = /\btipe\s+data\b|\binteger\b|\bboolean\b/i.test(cleanContent);
 
-    const roadmapStr = JSON.stringify(parsed.roadmap || {}).toLowerCase();
+    const detectedTopic =
+      typeof parsed.detectedTopic === "string" && parsed.detectedTopic.trim().length > 4
+        ? cleanModuleRawText(parsed.detectedTopic.trim())
+        : `${domain || "Kurikulum"}: ${sanitizedTitle}`;
+
+    const coreKeywords: string[] =
+      Array.isArray(parsed.coreKeywords) && parsed.coreKeywords.length > 0
+        ? parsed.coreKeywords
+            .map((k) => String(k || "").trim())
+            .filter((k) => k.length >= 2)
+            .slice(0, 8)
+        : keyPoints.map((kp) => kp.term).slice(0, 6);
+
+    const normalizedStagesFromAi = normalizeLearningStages(
+      parsed.learningStages,
+      detectedTopic,
+      coreKeywords,
+    );
+
+    const stagesAndRoadmapStr = JSON.stringify(
+      parsed.learningStages || parsed.roadmap || {},
+    ).toLowerCase();
 
     const isHallucinated =
-      (!cleanContent.toLowerCase().includes("java") && roadmapStr.includes("java")) ||
-      (!isContentWeb && (roadmapStr.includes("javascript") || roadmapStr.includes("html5") || roadmapStr.includes("css grid"))) ||
-      (!isContentSql && roadmapStr.includes("kueri sql")) ||
-      (!isContentFlowchart && roadmapStr.includes("simbol ansi flowchart"));
+      (!cleanContent.toLowerCase().includes("java") && stagesAndRoadmapStr.includes("java")) ||
+      (!isContentWeb &&
+        (stagesAndRoadmapStr.includes("javascript") ||
+          stagesAndRoadmapStr.includes("html5") ||
+          stagesAndRoadmapStr.includes("css grid"))) ||
+      (!isContentSql && stagesAndRoadmapStr.includes("kueri sql")) ||
+      (!isContentFlowchart && stagesAndRoadmapStr.includes("simbol ansi flowchart")) ||
+      (!isContentDataType && stagesAndRoadmapStr.includes("klasifikasi tipe data numerik"));
 
-    let roadmap: AnalyzedModuleResult["roadmap"];
-    if (
+    let learningStages: LearningStageItem[] = [];
+    let roadmap: AnalyzedModuleResult["roadmap"] = [];
+
+    if (normalizedStagesFromAi.length >= 3 && !isHallucinated) {
+      learningStages = normalizedStagesFromAi;
+      roadmap = learningStages.map((s, idx) => ({
+        step: idx + 1,
+        stage: s.phaseLabel,
+        title: s.title,
+        description: s.shortSummary,
+        actionItem: s.selfAction,
+        understood: false,
+        keyConcepts: s.keyConcepts,
+        detailedGuide: s.detailedMaterial,
+        practiceScenario: s.practiceScenario,
+        checkQuestion: s.comprehensionQuestion,
+      }));
+    } else if (
       Array.isArray(parsed.roadmap) &&
       parsed.roadmap.length >= 4 &&
       parsed.roadmap.length <= 6 &&
@@ -467,14 +610,31 @@ ${textSample}`;
             ? cleanModuleRawText(item.checkQuestion.trim())
             : undefined,
       }));
+      learningStages = roadmap.map((r, idx) => ({
+        stageNumber: idx + 1,
+        phaseLabel: r.stage,
+        title: r.title,
+        shortSummary: r.description,
+        selfAction: r.actionItem,
+        detailedMaterial: r.detailedGuide || r.description,
+        keyConcepts: r.keyConcepts && r.keyConcepts.length > 0 ? r.keyConcepts : coreKeywords.slice(0, 3),
+        practiceScenario:
+          r.practiceScenario ||
+          `Terapkan konsep "${r.title}" sesuai materi pada ${detectedTopic}.`,
+        comprehensionQuestion:
+          r.checkQuestion || `Apa konsep kunci pada tahap "${r.title}"?`,
+        searchQuery: `${r.title} ${coreKeywords.slice(0, 2).join(" ")} tutorial`.trim(),
+      }));
     } else {
       const fallbackData = analyzeModuleContent({
         title: sanitizedTitle,
         content: cleanContent,
         fileName,
         sourceType: "file",
+        userFocus,
       });
       roadmap = fallbackData.roadmap;
+      learningStages = fallbackData.learningStages || [];
     }
 
     const quiz =
@@ -507,31 +667,96 @@ ${textSample}`;
             },
           ];
 
-    // Sanitasi & Resolusi Rekomendasi Video YouTube & Dokumentasi (Direct Deep-Links)
-    const curatedResources = resolveCuratedResources(cleanContent.slice(0, 1000), sanitizedTitle);
+    // Sanitasi & Resolusi Rekomendasi Video YouTube Tervalidasi (yt-dlp + oEmbed + Prisma Cache) & Web References Dinamis
+    const curatedResources = resolveCuratedResources(
+      `${detectedTopic} ${coreKeywords.join(" ")} ${cleanContent.slice(0, 1500)}`,
+      detectedTopic,
+    );
 
-    let recommendedVideos: RecommendedVideo[] = [];
-    if (Array.isArray(parsed.recommendedVideos) && parsed.recommendedVideos.length > 0) {
-      recommendedVideos = parsed.recommendedVideos
-        .map((v) => sanitizeYoutubeVideo(v as Partial<RecommendedVideo>, sanitizedTitle))
-        .filter((v) => v.videoUrl.startsWith("https://www.youtube.com/watch?v="));
-    }
-    if (recommendedVideos.length < 2) {
-      recommendedVideos = curatedResources.videos;
-    }
+    const parsedQueries = Array.isArray(parsed.recommendedQueries)
+      ? parsed.recommendedQueries
+          .map((q) => String(q || "").trim())
+          .filter((q) => q.length >= 3)
+          .slice(0, 4)
+      : [];
 
-    let recommendedDocs: RecommendedDoc[] = [];
-    if (Array.isArray(parsed.recommendedDocs) && parsed.recommendedDocs.length > 0) {
-      recommendedDocs = parsed.recommendedDocs
-        .map((d) => sanitizeDocumentation(d as Partial<RecommendedDoc>, sanitizedTitle))
-        .filter((d) => d.url.startsWith("http"));
-    }
+    const parsedNeedsSummary =
+      typeof parsed.userNeedsSummary === "string" && parsed.userNeedsSummary.trim().length > 10
+        ? cleanModuleRawText(parsed.userNeedsSummary.trim())
+        : undefined;
+
+    const rawWebRefs =
+      Array.isArray(parsed.webReferences) && parsed.webReferences.length > 0
+        ? parsed.webReferences
+        : Array.isArray(parsed.recommendedDocs) && parsed.recommendedDocs.length > 0
+          ? parsed.recommendedDocs
+          : [];
+
+    let recommendedDocs: RecommendedDoc[] = rawWebRefs
+      .map((d) => sanitizeDocumentation(d as Partial<RecommendedDoc>, detectedTopic))
+      .filter((d) => d.url.startsWith("http"));
+
     if (recommendedDocs.length < 2) {
       recommendedDocs = curatedResources.docs;
     }
 
+    const moduleChapters =
+      Array.isArray(parsed.moduleChapters) && parsed.moduleChapters.length > 0
+        ? parsed.moduleChapters
+        : roadmap.map((r) => ({
+            step: r.step,
+            title: r.title,
+            summary: r.description,
+          }));
+
+    const videoPipeline = await resolveValidatedTopicVideos({
+      topic: sanitizedTitle,
+      detectedTopic,
+      extractedText: cleanContent,
+      contentSample: cleanContent.slice(0, 2000),
+      userFocus,
+      userLearningGoal: userFocus,
+      coreKeywords,
+      existingNeedsSummary: parsedNeedsSummary,
+      existingQueries:
+        parsedQueries.length > 0 ? parsedQueries : curatedResources.recommendedQueries,
+      existingWebReferences: recommendedDocs,
+      existingLearningStages: learningStages,
+      forceRefresh: options?.forceRefresh,
+    });
+
+    const finalLearningStages =
+      videoPipeline.learningStages && videoPipeline.learningStages.length > 0
+        ? videoPipeline.learningStages
+        : learningStages;
+
+    const finalRoadmap =
+      finalLearningStages.length > 0
+        ? finalLearningStages.map((s, idx) => ({
+            step: idx + 1,
+            stage: s.phaseLabel,
+            title: s.title,
+            description: s.shortSummary,
+            actionItem: s.selfAction,
+            understood: false,
+            keyConcepts: s.keyConcepts,
+            detailedGuide: s.detailedMaterial,
+            practiceScenario: s.practiceScenario,
+            checkQuestion: s.comprehensionQuestion,
+          }))
+        : roadmap;
+
+    const recommendedVideos: RecommendedVideo[] = videoPipeline.videos;
+    const finalWebReferences: RecommendedDoc[] =
+      videoPipeline.webReferences && videoPipeline.webReferences.length > 0
+        ? videoPipeline.webReferences
+        : recommendedDocs;
+
     return {
       title: sanitizedTitle,
+      detectedTopic: videoPipeline.detectedTopic || detectedTopic,
+      coreKeywords:
+        videoPipeline.coreKeywords.length > 0 ? videoPipeline.coreKeywords : coreKeywords,
       domain,
       sourceType: "file",
       fileName,
@@ -548,14 +773,23 @@ ${textSample}`;
         proTips,
         breakdownTime,
       },
-      roadmap,
+      learningStages: finalLearningStages,
+      roadmap: finalRoadmap,
+      moduleChapters,
       quiz,
+      videos: recommendedVideos,
+      validatedVideos: recommendedVideos,
       recommendedVideos,
-      recommendedDocs,
+      recommendedDocs: finalWebReferences,
+      webReferences: finalWebReferences,
+      userNeedsSummary: videoPipeline.userNeedsSummary,
+      recommendedQueries: videoPipeline.recommendedQueries,
+      videoCacheHit: videoPipeline.cacheHit,
+      videoValidationSource: videoPipeline.source,
     };
   } catch (error) {
-    console.warn("Gagal mengeksekusi analisis AI Groq, menggunakan fallback lokal:", error);
-    return analyzeModuleContent({
+    console.warn("Gagal mengeksekusi analisis AI Groq, menggunakan ekstraksi dokumen langsung + validasi yt-dlp:", error);
+    const localResult = analyzeModuleContent({
       title:
         fallbackTitle ||
         fileName?.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ") ||
@@ -563,7 +797,70 @@ ${textSample}`;
       content: cleanContent,
       fileName,
       sourceType: "file",
+      userFocus,
     });
+
+    const videoPipeline = await resolveValidatedTopicVideos({
+      topic: localResult.title,
+      detectedTopic: localResult.detectedTopic,
+      extractedText: cleanContent,
+      contentSample: cleanContent.slice(0, 2000),
+      userFocus,
+      userLearningGoal: userFocus,
+      coreKeywords: localResult.coreKeywords,
+      existingNeedsSummary: localResult.userNeedsSummary,
+      existingQueries: localResult.recommendedQueries,
+      existingWebReferences: localResult.webReferences || localResult.recommendedDocs,
+      existingLearningStages: localResult.learningStages,
+      forceRefresh: options?.forceRefresh,
+    });
+
+    const finalStages =
+      videoPipeline.learningStages && videoPipeline.learningStages.length > 0
+        ? videoPipeline.learningStages
+        : localResult.learningStages || [];
+
+    const syncedRoadmap =
+      finalStages.length > 0
+        ? finalStages.map((s, idx) => ({
+            step: idx + 1,
+            stage: s.phaseLabel,
+            title: s.title,
+            description: s.shortSummary,
+            actionItem: s.selfAction,
+            understood: false,
+            keyConcepts: s.keyConcepts,
+            detailedGuide: s.detailedMaterial,
+            practiceScenario: s.practiceScenario,
+            checkQuestion: s.comprehensionQuestion,
+          }))
+        : localResult.roadmap;
+
+    return {
+      ...localResult,
+      detectedTopic: videoPipeline.detectedTopic || localResult.detectedTopic,
+      coreKeywords:
+        videoPipeline.coreKeywords.length > 0
+          ? videoPipeline.coreKeywords
+          : localResult.coreKeywords,
+      learningStages: finalStages,
+      roadmap: syncedRoadmap,
+      videos: videoPipeline.videos,
+      validatedVideos: videoPipeline.videos,
+      recommendedVideos: videoPipeline.videos,
+      webReferences:
+        videoPipeline.webReferences.length > 0
+          ? videoPipeline.webReferences
+          : localResult.webReferences || localResult.recommendedDocs,
+      recommendedDocs:
+        videoPipeline.webReferences.length > 0
+          ? videoPipeline.webReferences
+          : localResult.recommendedDocs,
+      userNeedsSummary: videoPipeline.userNeedsSummary,
+      recommendedQueries: videoPipeline.recommendedQueries,
+      videoCacheHit: videoPipeline.cacheHit,
+      videoValidationSource: videoPipeline.source,
+    };
   }
 }
 

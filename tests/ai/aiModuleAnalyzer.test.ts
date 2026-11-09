@@ -313,11 +313,12 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
     expect(result.summary.commonPitfalls!.length).toBeGreaterThanOrEqual(2);
     expect(result.summary.keyPoints.some((k) => Boolean(k.analogy))).toBe(true);
 
-    // Recommended resources must be specific to Unity/C#, NOT Web Programming UNPAS HTML
-    expect(result.recommendedVideos).toBeDefined();
-    expect(result.recommendedVideos!.length).toBeGreaterThanOrEqual(2);
-    const videoChannels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
-    expect(videoChannels).toMatch(/brackeys|code monkey|akadem/i);
+    // Recommended queries & docs must be specific to Unity/C#, with 0 unvalidated/fake video IDs
+    expect(result.recommendedVideos).toEqual([]);
+    expect(result.recommendedQueries).toBeDefined();
+    expect(result.recommendedQueries!.length).toBeGreaterThanOrEqual(3);
+    const queryStr = result.recommendedQueries!.join(" ").toLowerCase();
+    expect(queryStr).toMatch(/unity|c#/i);
 
     expect(result.recommendedDocs).toBeDefined();
     const docSources = result.recommendedDocs!.map((d) => d.source.toLowerCase()).join(" ");
@@ -373,9 +374,12 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
     expect(roadmapText).not.toContain("database");
     expect(roadmapText).not.toContain("flowchart");
 
-    // Resources must be PMI / Kemenkes / WHO
-    const videoChannels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
-    expect(videoChannels).toMatch(/palang merah|kementerian kesehatan|akadem/i);
+    // Queries & Docs must be PMI / Kemenkes / WHO with 0 fake video IDs
+    expect(result.recommendedVideos).toEqual([]);
+    const pmiQueries = result.recommendedQueries!.join(" ").toLowerCase();
+    expect(pmiQueries).toMatch(/pertolongan pertama|pmi|rjp/i);
+    const pmiDocs = result.recommendedDocs!.map((d) => d.source.toLowerCase()).join(" ");
+    expect(pmiDocs).toMatch(/palang merah|who|kemenkes/i);
   });
 
   it("should analyze IoT and Embedded Systems module with Arduino/ESP32 references and zero web bias", () => {
@@ -425,10 +429,10 @@ describe("Nexed AI Module Analyzer & Reasoning Engine", () => {
     expect(roadmapText).not.toContain("html5");
     expect(roadmapText).not.toContain("css grid");
 
-    // Recommended resources must be Arduino/ESP32 specific
-    expect(result.recommendedVideos).toBeDefined();
-    const channels = result.recommendedVideos!.map((v) => v.channel.toLowerCase()).join(" ");
-    expect(channels).toMatch(/kelas robot|random nerd tutorials|akadem/i);
+    // Recommended queries & docs must be Arduino/ESP32 specific with 0 fake video IDs
+    expect(result.recommendedVideos).toEqual([]);
+    const iotQueries = result.recommendedQueries!.join(" ").toLowerCase();
+    expect(iotQueries).toMatch(/arduino|esp32|iot/i);
 
     expect(result.recommendedDocs).toBeDefined();
     const docs = result.recommendedDocs!.map((d) => d.source.toLowerCase()).join(" ");

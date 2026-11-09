@@ -184,22 +184,13 @@ export async function getAdaptiveRecommendations(
   const cleanTitle = topicTitle || moduleId.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const curated = resolveCuratedResources(`${cleanTitle} ${summary || ""}`);
 
-  const fallbackResources: ExternalResource[] = [
-    ...curated.recommendedVideos.map((v: RecommendedVideo) => ({
-      title: `${v.title} (${v.channel})`,
-      type: "YouTube",
-      url: v.videoUrl,
-      duration: v.duration,
-      description: v.summaryTopic,
-    })),
-    ...curated.recommendedDocs.map((d: RecommendedDoc) => ({
-      title: `${d.title} - ${d.source}`,
-      type: "Dokumentasi",
-      url: d.url,
-      duration: "15 Min Read",
-      description: d.description,
-    })),
-  ];
+  const fallbackResources: ExternalResource[] = curated.recommendedDocs.map((d: RecommendedDoc) => ({
+    title: `${d.title} - ${d.source}`,
+    type: "Dokumentasi",
+    url: d.url,
+    duration: "15 Min Read",
+    description: d.description,
+  }));
 
   const defaultFallback: AdaptiveLearningResponse = {
     topic: cleanTitle,
@@ -228,25 +219,9 @@ export async function getAdaptiveRecommendations(
     if (res.ok) {
       const data = (await res.json()) as AdaptiveLearningResponse;
       if (data && Array.isArray(data.external_resources)) {
-        data.external_resources = data.external_resources.map((item) => {
-          if (!item.url || item.url.includes("results?search_query") || item.url.includes("/search")) {
-            const isVid = item.type.toLowerCase().includes("youtube") || item.type.toLowerCase().includes("video");
-            if (isVid && curated.recommendedVideos[0]) {
-              return {
-                ...item,
-                url: curated.recommendedVideos[0].videoUrl,
-                title: item.title || curated.recommendedVideos[0].title,
-              };
-            }
-            if (curated.recommendedDocs[0]) {
-              return {
-                ...item,
-                url: curated.recommendedDocs[0].url,
-                title: item.title || curated.recommendedDocs[0].title,
-              };
-            }
-          }
-          return item;
+        data.external_resources = data.external_resources.filter((item) => {
+          const isVid = item.type.toLowerCase().includes("youtube") || item.type.toLowerCase().includes("video");
+          return !isVid;
         });
         return data;
       }

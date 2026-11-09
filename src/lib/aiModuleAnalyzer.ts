@@ -3,6 +3,7 @@ import type {
   AnalyzedModuleResult,
   CommonPitfall,
   KeyPointItem,
+  LearningStageItem,
   TechnicalProcedure,
 } from "../components/NexedAiModuleHub";
 import { resolveCuratedResources } from "./curatedResources";
@@ -13,6 +14,57 @@ export interface AnalysisInput {
   fileName?: string;
   sourceType: "file" | "text";
   presetKey?: string;
+  userFocus?: string;
+}
+
+/**
+ * Mengonversi array roadmap menjadi LearningStageItem[] yang lengkap dan sinkron
+ */
+export function buildLearningStagesFromRoadmap(
+  roadmap: AnalyzedModuleResult["roadmap"],
+  topicTitle: string,
+  coreKeywords: string[] = [],
+  userFocus?: string,
+): LearningStageItem[] {
+  return roadmap.map((item, idx) => {
+    const stageNumber = typeof item.step === "number" ? item.step : idx + 1;
+    const phaseLabel = item.stage || `Tahap ${stageNumber}: Pendalaman Materi`;
+    const title = item.title || `Tahap ${stageNumber}`;
+    const shortSummary = item.description || `Memahami konsep dan implementasi ${title}.`;
+    const selfAction =
+      item.actionItem || `Pelajari dan praktikkan tahapan "${title}" sesuai panduan dokumen.`;
+    const detailedMaterial =
+      item.detailedGuide ||
+      `${item.description} Fokuskan pemahaman pada langkah kerja dan prinsip teknis dari dokumen "${topicTitle}".`;
+    const keyConcepts =
+      Array.isArray(item.keyConcepts) && item.keyConcepts.length > 0
+        ? item.keyConcepts
+        : coreKeywords.slice(0, 3).length > 0
+          ? coreKeywords.slice(0, 3)
+          : [title];
+    const practiceScenario =
+      item.practiceScenario ||
+      `Terapkan materi "${title}" ke dalam skenario latihan praktis dari dokumen "${topicTitle}".`;
+    const comprehensionQuestion =
+      item.checkQuestion ||
+      `Bagaimana konsep "${title}" berkontribusi pada penyelesaian studi kasus di modul "${topicTitle}"?`;
+    const focusPart = userFocus ? ` ${userFocus}` : "";
+    const searchQuery =
+      item.searchQuery || `${topicTitle} ${title}${focusPart} tutorial`.trim();
+
+    return {
+      stageNumber,
+      phaseLabel,
+      title,
+      shortSummary,
+      selfAction,
+      detailedMaterial,
+      keyConcepts,
+      practiceScenario,
+      comprehensionQuestion,
+      searchQuery,
+    };
+  });
 }
 
 /**
@@ -201,14 +253,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
   // Deteksi Domain Spesifik dari Dokumen
   // ATURAN MUTLAK: Hanya aktif jika dokumen secara eksplisit membahas topik tersebut sebagai topik primer,
   // BUKAN jika hanya memuat kata umum seperti "string" atau "variabel" dalam skrip Unity atau teks umum.
-  const isDataTypeModule =
-    (/\btipe\s+data\b/i.test(cleanTitle) ||
-      /\bdata\s+types?\b/i.test(cleanTitle) ||
-      (/\btipe\s+data\b/i.test(cleanContent) &&
-        /\bvariabel\b/i.test(cleanContent) &&
-        !/unity|game|c#|csharp|pmi|pertolongan|bisnis|manajemen|jaringan|pohon|tree|graf|database|basis\s+data/i.test(
-          cleanContent,
-        )));
+  const isDataTypeModule = false;
 
   const isDfdModule =
     (/\b(flowchart|dfd|data\s+flow\s+diagram)\b/i.test(cleanTitle) ||
@@ -216,11 +261,13 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
       (/\bflowchart\b/i.test(cleanContent) && /\bdfd\b/i.test(cleanContent))) &&
     !/unity|game|c#|csharp|pmi|pertolongan/i.test(cleanContent);
 
-  // 0. Deteksi Domain Topik Utama dari Dokumen
+  // 0. Deteksi Domain Topik Utama dari Isi Teks Dokumen (DILARANG MENEBAK DARI SINGKATAN NAMA FILE SEPERTI 'PMI')
   let domain = "Umum / Interdisipliner";
-  if (/unity|game\s*engine|c#|csharp|rigidbody|gameobject/i.test(cleanContent)) {
+  if (/vuforia|augmented\s*reality|ar\s*camera|image\s*target|multimedia\s*interaktif/i.test(cleanContent)) {
+    domain = "Pemrograman Multimedia Interaktif / Unity & Vuforia Augmented Reality (AR)";
+  } else if (/unity|game\s*engine|c#|csharp|rigidbody|gameobject/i.test(cleanContent)) {
     domain = "Game Development / Unity 3D & C#";
-  } else if (/pmi|palang\s*merah|pertolongan\s*pertama|first\s*aid|rjp|cpr|bhd|fraktur|balut\s*bidai/i.test(cleanContent)) {
+  } else if (/palang\s*merah|pertolongan\s*pertama|first\s*aid|rjp|cpr|bhd|fraktur|balut\s*bidai|p3k/i.test(cleanContent)) {
     domain = "Kesehatan & Kemanusiaan / Pertolongan Pertama (PMI)";
   } else if (/iot|arduino|esp32|mikrokontroler|microcontroller|sensor|aktuator|actuator|embedded/i.test(cleanContent)) {
     domain = "Sistem Tertanam & IoT / Mikrokontroler";
@@ -236,7 +283,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     domain = "Arsitektur Basis Data Relasional & SQL";
   } else if (/jaringan|network|tcp|ip|osi|router|switch|subnet/i.test(cleanContent)) {
     domain = "Jaringan Komputer & Infrastruktur";
-  } else if (/manajemen|proyek|agile|scrum|bisnis|keuangan/i.test(cleanContent)) {
+  } else if (/manajemen\s*proyek|project\s*management|agile|scrum|sprint|organisasi/i.test(cleanContent)) {
     domain = "Manajemen & Bisnis / Rekayasa Proyek";
   } else {
     domain = `Kurikulum Akademik / ${formattedTitle.slice(0, 35)}`;
@@ -668,6 +715,7 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
       /^#{1,3}\s+([^\n\r]+)/.test(l) ||
       /^(?:BAB|Bab|Bagian|Pertemuan|Modul)\s+\d+[:.\s]+([^\n\r]+)/i.test(l) ||
       /^(?:I|II|III|IV|V|VI|VII|VIII|IX|X)\.\s+([A-Za-z0-9\s/()–—]{4,60})/.test(l) ||
+      /^[A-Z]\.\s+([A-Z][A-Za-z0-9\s/()–—]{3,60})/.test(l) ||
       /^\d+\.\s+([A-Z][A-Za-z0-9\s/()–—]{4,55})/.test(l);
 
     if (isHeading && l.length < 80) {
@@ -959,10 +1007,92 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
     },
   ];
 
-  const curated = resolveCuratedResources(cleanContent.slice(0, 1000), formattedTitle);
+  const curated = resolveCuratedResources(cleanContent.slice(0, 2500), formattedTitle);
+
+  // Ekstraksi coreKeywords (5-8 istilah teknis utama yang benar-benar ada di dalam teks materi)
+  const candidateTechTerms = [
+    "Unity",
+    "Vuforia",
+    "Augmented Reality",
+    "ARCamera",
+    "Image Target",
+    "C#",
+    "GameObject",
+    "Transform",
+    "Rigidbody",
+    "Collider",
+    "MonoBehaviour",
+    "Prefab",
+    "Scene",
+    "Tata Surya",
+    "Arduino",
+    "ESP32",
+    "GPIO",
+    "MQTT",
+    "DHT22",
+    "Python",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Next.js",
+    "SQL",
+    "PostgreSQL",
+    "Flowchart",
+    "DFD",
+    "Flutter",
+    "Dart",
+    "Pertolongan Pertama",
+    "RJP",
+    "Pembidaian",
+  ];
+  const matchedTechTerms = candidateTechTerms.filter((t) =>
+    cleanContent.toLowerCase().includes(t.toLowerCase()),
+  );
+  const keyPointTerms = enhancedKeyPoints
+    .map((kp) => kp.term.trim())
+    .filter((t) => t.length >= 2 && t.length <= 35);
+
+  const coreKeywords = Array.from(
+    new Set([...matchedTechTerms, ...keyPointTerms]),
+  ).slice(0, 8);
+
+  const userFocusClean = input.userFocus?.trim();
+  const detectedTopic = `${domain}: ${formattedTitle}`;
+  const dynamicNeedsSummary = userFocusClean
+    ? `Berdasarkan materi "${formattedTitle}" dan fokus kebutuhan belajar Anda ("${userFocusClean}"), Anda memerlukan panduan visual langkah demi langkah dan demonstrasi teknis terkait ${coreKeywords.slice(0, 4).join(", ") || formattedTitle}.`
+    : `Mahasiswa memerlukan visualisasi konsep inti, demonstrasi langkah teknis (${coreKeywords.slice(0, 4).join(", ") || formattedTitle}), serta pencegahan kesalahan umum pada materi ${formattedTitle}.`;
+
+  const dynamicQueries = userFocusClean
+    ? [
+        `${coreKeywords.slice(0, 2).join(" ") || formattedTitle} ${userFocusClean} tutorial`.trim(),
+        `${formattedTitle} ${userFocusClean} bahasa indonesia`.trim(),
+        ...curated.recommendedQueries.slice(0, 2),
+      ].slice(0, 4)
+    : curated.recommendedQueries.length > 0
+      ? curated.recommendedQueries
+      : [
+          `${formattedTitle} ${coreKeywords.slice(0, 2).join(" ")} tutorial indonesia`.trim(),
+          `${formattedTitle} practical tutorial`,
+          `${coreKeywords.slice(0, 3).join(" ")} tutorial`.trim(),
+        ];
+
+  const moduleChapters = roadmap.map((r) => ({
+    step: r.step,
+    title: r.title,
+    summary: r.description,
+  }));
+
+  const learningStages = buildLearningStagesFromRoadmap(
+    roadmap,
+    detectedTopic,
+    coreKeywords,
+    userFocusClean,
+  );
 
   return {
     title: formattedTitle,
+    detectedTopic,
+    coreKeywords,
     domain,
     sourceType: input.sourceType,
     fileName: input.fileName,
@@ -984,10 +1114,17 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
         quiz: "10 Menit",
       },
     },
+    learningStages,
     roadmap,
     quiz,
-    recommendedVideos: curated.videos,
+    videos: [],
+    validatedVideos: [],
+    recommendedVideos: [],
     recommendedDocs: curated.docs,
+    webReferences: curated.docs,
+    moduleChapters,
+    userNeedsSummary: dynamicNeedsSummary,
+    recommendedQueries: dynamicQueries,
   };
 }
 
@@ -999,6 +1136,19 @@ function extractDynamicModule(input: AnalysisInput, _combinedText: string): Anal
  * dengan modul yang diunggah mahasiswa.
  */
 export function analyzeModuleContent(input: AnalysisInput): AnalyzedModuleResult {
+  const rawResult = analyzeModuleContentInternal(input);
+  if (!rawResult.learningStages || rawResult.learningStages.length === 0) {
+    rawResult.learningStages = buildLearningStagesFromRoadmap(
+      rawResult.roadmap,
+      rawResult.detectedTopic || rawResult.title,
+      rawResult.coreKeywords || [],
+      input.userFocus,
+    );
+  }
+  return rawResult;
+}
+
+function analyzeModuleContentInternal(input: AnalysisInput): AnalyzedModuleResult {
   const combinedText = `${input.title} ${input.content} ${input.fileName || ""}`.toLowerCase();
 
   // =========================================================================

@@ -22,18 +22,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { content, title, fileName } = body;
+    const {
+      content,
+      extractedText,
+      title,
+      moduleTitle,
+      fileName,
+      forceRefresh,
+      userFocus,
+      userLearningGoal,
+    } = body;
 
-    if (!content || typeof content !== "string" || content.trim().length === 0) {
-      return NextResponse.json({ error: "Konten materi tidak boleh kosong." }, { status: 400 });
+    const rawTextToAnalyze =
+      typeof extractedText === "string" && extractedText.trim().length > 0
+        ? extractedText.trim()
+        : typeof content === "string"
+          ? content.trim()
+          : "";
+
+    if (!rawTextToAnalyze) {
+      return NextResponse.json(
+        { error: "Konten materi (extractedText) tidak boleh kosong." },
+        { status: 400 },
+      );
     }
 
-    const result = await generateAiModuleAnalysis(content, fileName, title);
+    const effectiveTitle =
+      typeof moduleTitle === "string" && moduleTitle.trim().length > 0
+        ? moduleTitle.trim()
+        : typeof title === "string" && title.trim().length > 0
+          ? title.trim()
+          : undefined;
+
+    const effectiveFocus =
+      typeof userFocus === "string" && userFocus.trim().length > 0
+        ? userFocus.trim()
+        : typeof userLearningGoal === "string" && userLearningGoal.trim().length > 0
+          ? userLearningGoal.trim()
+          : undefined;
+
+    const result = await generateAiModuleAnalysis(
+      rawTextToAnalyze,
+      typeof fileName === "string" ? fileName : undefined,
+      effectiveTitle,
+      {
+        forceRefresh: Boolean(forceRefresh),
+        userFocus: effectiveFocus,
+        userLearningGoal: effectiveFocus,
+        strictGrounded: true,
+      },
+    );
+
+    if (!result.learningStages || result.learningStages.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Gagal mengekstrak tahapan belajar spesifik dari isi dokumen. Pastikan teks dokumen terbaca dengan jelas dan coba lagi.",
+        },
+        { status: 422 },
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
         analyzedResult: result,
+        detectedTopic: result.detectedTopic ?? result.title ?? "",
+        coreKeywords: result.coreKeywords ?? [],
+        learningStages: result.learningStages ?? [],
+        moduleChapters: result.moduleChapters ?? [],
+        webReferences: result.webReferences ?? result.recommendedDocs ?? [],
+        videos: result.videos ?? result.recommendedVideos ?? [],
+        validatedVideos: result.validatedVideos ?? result.recommendedVideos ?? [],
+        userNeedsSummary: result.userNeedsSummary ?? "",
+        recommendedQueries: result.recommendedQueries ?? [],
+        videoCacheHit: Boolean(result.videoCacheHit),
+        videoValidationSource: result.videoValidationSource ?? "empty",
       },
       { status: 200 },
     );

@@ -95,8 +95,14 @@ function getBadgeIcon(iconName: string, tier: string) {
 }
 
 export default function UserProfile() {
-  const { user, logout, updateProfile } = useAuthStore();
+  const { user: storeUser, logout, updateProfile } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const user = mounted ? storeUser : null;
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Active Tab: overview | edit_profile | security | preferences
   const [activeTab, setActiveTab] = useState<

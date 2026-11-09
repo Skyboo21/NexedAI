@@ -265,3 +265,222 @@ function syncLegacyCompletedTopic(moduleId: string) {
     }
   } catch {}
 }
+
+// =========================================================================
+// SINGLE SOURCE OF TRUTH UNTUK SESI MODUL & PETA BELAJAR AKTIF
+// =========================================================================
+
+export interface ActiveModuleSessionStage {
+  stageNumber: number;
+  phaseLabel: string;
+  title: string;
+  shortSummary: string;
+  selfAction: string;
+  detailedMaterial: string;
+  keyConcepts: string[];
+  practiceScenario: string;
+  comprehensionQuestion: string;
+  searchQuery: string;
+  understood?: boolean;
+}
+
+export interface ActiveModuleSessionVideo {
+  videoId?: string;
+  embedId: string;
+  videoUrl: string;
+  title: string;
+  channel: string;
+  channelName?: string;
+  duration: string;
+  summaryTopic: string;
+  viewCount?: number;
+  likeCount?: number;
+  qualityScore?: number;
+  isValidated?: boolean;
+  topComments?: Array<{ author: string; text: string; likes?: number }>;
+}
+
+export interface ActiveModuleSessionDoc {
+  title: string;
+  source: string;
+  url: string;
+  description: string;
+}
+
+export interface ActiveModuleSession {
+  id?: string;
+  moduleId?: string;
+  title: string;
+  detectedTopic: string;
+  filename?: string;
+  fileName?: string;
+  userFocus?: string;
+  extractedText?: string;
+  rawText?: string;
+  chunkCount?: number;
+  totalWords?: number;
+  coreKeywords: string[];
+  userNeedsSummary: string;
+  recommendedQueries: string[];
+  learningStages: ActiveModuleSessionStage[];
+  validatedVideos: ActiveModuleSessionVideo[];
+  webReferences: ActiveModuleSessionDoc[];
+  analyzedResult?: unknown;
+  updatedAt: string;
+}
+
+const ACTIVE_MODULE_SESSION_KEY = "nexedai_active_module_session_v1";
+const LEGACY_ACTIVE_MODULE_KEY = "nexed_active_analyzed_module";
+export const MODULE_UPDATED_EVENT = "nexedai-module-updated";
+
+/**
+ * Menyimpan sesi modul aktif terbaru sebagai Single Source of Truth
+ * antara halaman /modul (NexedAiModuleHub) dan /peta-belajar.
+ */
+export function saveActiveModuleSession(session: ActiveModuleSession): void {
+  if (typeof window === "undefined") return;
+  try {
+    const resolvedId = session.id || session.moduleId || "modul-aktif";
+    const resolvedFilename = session.filename || session.fileName;
+    const normalized: ActiveModuleSession = {
+      ...session,
+      id: resolvedId,
+      moduleId: resolvedId,
+      filename: resolvedFilename,
+      fileName: resolvedFilename,
+      updatedAt: session.updatedAt || new Date().toISOString(),
+    };
+    localStorage.setItem(ACTIVE_MODULE_SESSION_KEY, JSON.stringify(normalized));
+
+    // Sinkronkan juga ke key legacy agar komponen katalog lama tetap kompatibel
+    if (normalized.analyzedResult) {
+      const legacyPayload = {
+        id: resolvedId,
+        title: normalized.detectedTopic || normalized.title,
+        filename: resolvedFilename || `${normalized.title}.pdf`,
+        chunkCount: normalized.chunkCount || 1,
+        totalWords:
+          normalized.totalWords ||
+          (normalized.extractedText || normalized.rawText || "").split(/\s+/).filter(Boolean).length ||
+          100,
+        rawText: normalized.extractedText || normalized.rawText || "",
+        analyzedResult: normalized.analyzedResult,
+        savedAt: normalized.updatedAt,
+      };
+      localStorage.setItem(LEGACY_ACTIVE_MODULE_KEY, JSON.stringify(legacyPayload));
+    }
+
+    window.dispatchEvent(
+      new CustomEvent(MODULE_UPDATED_EVENT, { detail: normalized }),
+    );
+    window.dispatchEvent(new Event("nexed_modules_updated"));
+  } catch (err) {
+    console.warn("[saveActiveModuleSession] Gagal menyimpan sesi modul aktif:", err);
+  }
+}
+
+/**
+ * Membaca sesi modul aktif terbaru dari localStorage
+ */
+export function getActiveModuleSession(): ActiveModuleSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(ACTIVE_MODULE_SESSION_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as ActiveModuleSession;
+      if (parsed && typeof parsed === "object" && Array.isArray(parsed.learningStages)) {
+        return parsed;
+      }
+    }
+
+    // Fallback migrasi dari key legacy jika ada
+    const legacyRaw = localStorage.getItem(LEGACY_ACTIVE_MODULE_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw);
+      const ar = legacy?.analyzedResult;
+      if (ar && typeof ar === "object") {
+        const stages: ActiveModuleSessionStage[] = Array.isArray(ar.learningStages) && ar.learningStages.length > 0
+          ? ar.learningStages
+          : Array.isArray(ar.roadmap)
+            ? ar.roadmap.map((r: Record<string, unknown>, idx: number) => ({
+                stageNumber: typeof r.step === "number" ? r.step : idx + 1,
+                phaseLabel: String(r.stage || `Tahap ${idx + 1}`),
+                title: String(r.title || `Tahap ${idx + 1}`),
+                shortSummary: String(r.description || ""),
+                selfAction: String(r.actionItem || ""),
+                detailedMaterial: String(r.detailedGuide || r.description || ""),
+                keyConcepts: Array.isArray(r.keyConcepts) ? r.keyConcepts.map(String) : [],
+                practiceScenario: String(r.practiceScenario || ""),
+                comprehensionQuestion: String(r.checkQuestion || ""),
+                searchQuery: String(r.searchQuery || `${ar.detectedTopic || ar.title || ""} ${r.title || ""}`.trim()),
+              }))
+            : [];
+        if (stages.length > 0) {
+          return {
+            id: String(legacy.id || "active-module"),
+            title: String(ar.title || legacy.title || "Modul Aktif"),
+            detectedTopic: String(ar.detectedTopic || ar.title || legacy.title || "Modul Aktif"),
+            filename: legacy.filename,
+            extractedText: legacy.rawText,
+            rawText: legacy.rawText,
+            chunkCount: legacy.chunkCount,
+            totalWords: legacy.totalWords,
+            coreKeywords: Array.isArray(ar.coreKeywords) ? ar.coreKeywords : [],
+            userNeedsSummary: String(ar.userNeedsSummary || ar.summary?.overview || ""),
+            recommendedQueries: Array.isArray(ar.recommendedQueries) ? ar.recommendedQueries : [],
+            learningStages: stages,
+            validatedVideos: Array.isArray(ar.validatedVideos)
+              ? ar.validatedVideos
+              : Array.isArray(ar.videos)
+                ? ar.videos
+                : [],
+            webReferences: Array.isArray(ar.webReferences)
+              ? ar.webReferences
+              : Array.isArray(ar.recommendedDocs)
+                ? ar.recommendedDocs
+                : [],
+            analyzedResult: ar,
+            updatedAt: String(legacy.savedAt || new Date().toISOString()),
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[getActiveModuleSession] Gagal membaca sesi modul aktif:", err);
+  }
+  return null;
+}
+
+/**
+ * Menghapus sesi modul aktif dari localStorage
+ */
+export function clearActiveModuleSession(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(ACTIVE_MODULE_SESSION_KEY);
+    localStorage.removeItem(LEGACY_ACTIVE_MODULE_KEY);
+    window.dispatchEvent(new CustomEvent(MODULE_UPDATED_EVENT, { detail: null }));
+    window.dispatchEvent(new Event("nexed_modules_updated"));
+  } catch {}
+}
+
+/**
+ * Berlangganan event perubahan sesi modul aktif (nexedai-module-updated)
+ */
+export function onActiveModuleSessionUpdate(
+  callback: (session: ActiveModuleSession | null) => void,
+): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => {
+    callback(getActiveModuleSession());
+  };
+  window.addEventListener(MODULE_UPDATED_EVENT, handler);
+  window.addEventListener("nexed_modules_updated", handler);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener(MODULE_UPDATED_EVENT, handler);
+    window.removeEventListener("nexed_modules_updated", handler);
+    window.removeEventListener("storage", handler);
+  };
+}
+

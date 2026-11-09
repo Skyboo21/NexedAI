@@ -85,3 +85,17 @@ model ModuleProgress {
   @@unique([userId, moduleId])
   @@map("module_progress")
 }
+
+model TopicVideoCache {
+  id                  String   @id @default(cuid())
+  topicKey            String   @unique
+  userNeedsSummary    String   @db.Text
+  recommendedQueries  Json
+  videos              Json     // Menyimpan array: [{ videoId, videoUrl, title, channelName, duration, viewCount, likeCount, qualityScore, topComments: [{ author, text, likes }] }]
+  learningStages      Json?    // Menyimpan array LearningStageItem (4-5 tahap belajar dari isi dokumen & userFocus)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([topicKey])
+}
+

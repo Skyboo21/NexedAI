@@ -25,8 +25,12 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
+  AlertCircle,
+  PlayCircle,
 } from "lucide-react";
 import ModuleRagChat from "../../../../src/components/ModuleRagChat";
+import type { RecommendedVideo } from "../../../../src/components/NexedAiModuleHub";
 import { LEARNING_TOPICS, type LearningTopic } from "../../../../src/data/learningTopics";
 import {
   fetchAIExplanationApi,
@@ -107,9 +111,12 @@ export default function DynamicModulReaderPage() {
   // Sub-tab inside Stage 3 (Implementasi & Pengayaan: 'resources' | 'rag' | 'ai')
   const [stage3Tab, setStage3Tab] = useState<"resources" | "rag" | "ai">("resources");
 
-  // Adaptive recommendations state
+  // Adaptive recommendations & Validated Videos state
   const [adaptiveRecs, setAdaptiveRecs] = useState<AdaptiveLearningResponse | null>(null);
   const [isLoadingRecs, setIsLoadingRecs] = useState<boolean>(true);
+  const [validatedVideos, setValidatedVideos] = useState<RecommendedVideo[]>([]);
+  const [isValidatingVideos, setIsValidatingVideos] = useState<boolean>(true);
+  const [videoNeedsSummary, setVideoNeedsSummary] = useState<string>("");
 
   // Code runner & copy state
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
@@ -204,10 +211,53 @@ export default function DynamicModulReaderPage() {
     setRunCodeIndex(null);
   }, [currentTopic]);
 
-  // Load Adaptive Recommendations from FastAPI
+  const fetchValidatedTopicVideos = async (forceRefresh = false) => {
+    setIsValidatingVideos(true);
+    try {
+      const res = await fetch("/api/modul/video-recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: currentTopic.title,
+          contentSample: currentTopic.keyConcepts.map((k) => `${k.subtitle}: ${k.explanation}`).join(" "),
+          forceRefresh,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const incoming = Array.isArray(data.validatedVideos)
+          ? data.validatedVideos
+          : Array.isArray(data.videos)
+            ? data.videos
+            : [];
+        setValidatedVideos(
+          incoming.filter(
+            (v: RecommendedVideo) =>
+              v &&
+              typeof v.embedId === "string" &&
+              /^[A-Za-z0-9_-]{11}$/.test(v.embedId) &&
+              v.embedId !== "U81_m5-lUqQ" &&
+              v.embedId !== "1NigbK3Jk7Q",
+          ),
+        );
+        if (typeof data.userNeedsSummary === "string") {
+          setVideoNeedsSummary(data.userNeedsSummary);
+        }
+      } else {
+        setValidatedVideos([]);
+      }
+    } catch {
+      setValidatedVideos([]);
+    } finally {
+      setIsValidatingVideos(false);
+    }
+  };
+
+  // Load Adaptive Recommendations & Validated Videos from FastAPI
   useEffect(() => {
     let isMounted = true;
     setIsLoadingRecs(true);
+    fetchValidatedTopicVideos(false);
     getAdaptiveRecommendations(
       `modul-${currentTopic.id}`,
       currentTopic.title,
@@ -1056,16 +1106,16 @@ export default function DynamicModulReaderPage() {
 
               {/* SUB-VIEW 1: REKOMENDASI MATERI PENGAYAAN */}
               {stage3Tab === "resources" && (
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 space-y-5">
+                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/8 shadow-xs hover:border-black/20 transition-all duration-300 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/8">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="bg-[#F4F4F6] text-black border border-black/10 font-mono text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                           AI Adaptive Learning
                         </span>
                         <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-800 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                          <span>Direct Deep-Links Terverifikasi</span>
+                          <span>yt-dlp + YouTube oEmbed Verified</span>
                         </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-bold text-black flex items-center gap-2">
@@ -1073,57 +1123,154 @@ export default function DynamicModulReaderPage() {
                         <span>Rekomendasi Materi Pengayaan (AI Curated)</span>
                       </h3>
                       <p className="text-xs text-neutral-500">
-                        Deep-link video tutorial spesifik dan dokumentasi teknis resmi yang dikurasi langsung untuk topik &ldquo;{currentTopic.title}&rdquo;.
+                        {videoNeedsSummary ||
+                          `Deep-link video tutorial aktif terverifikasi dan dokumentasi teknis resmi untuk topik "${currentTopic.title}".`}
                       </p>
                     </div>
+                    <button
+                      type="button"
+                      disabled={isValidatingVideos}
+                      onClick={() => fetchValidatedTopicVideos(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-black hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-semibold transition-all cursor-pointer self-start sm:self-center shrink-0"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isValidatingVideos ? "animate-spin" : ""}`} />
+                      <span>Validasi Ulang Video</span>
+                    </button>
                   </div>
 
-                  {/* Cards Grid */}
-                  {isLoadingRecs ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
-                      <div className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3">
-                        <div className="h-4 bg-neutral-200 rounded w-1/3" />
-                        <div className="h-5 bg-neutral-200 rounded w-3/4" />
-                        <div className="h-3 bg-neutral-200 rounded w-full" />
-                      </div>
-                      <div className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] animate-pulse space-y-3">
-                        <div className="h-4 bg-neutral-200 rounded w-1/3" />
-                        <div className="h-5 bg-neutral-200 rounded w-3/4" />
-                        <div className="h-3 bg-neutral-200 rounded w-full" />
+                  {/* Validated YouTube Videos Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Video className="w-4 h-4 text-rose-600" />
+                        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                          Video Tutorial YouTube Terverifikasi ({validatedVideos.length})
+                        </h4>
                       </div>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {adaptiveRecs?.external_resources.map((item, rIdx) => {
-                        const isVideo =
-                          item.type.toLowerCase().includes("youtube") ||
-                          item.type.toLowerCase().includes("video");
 
-                        return (
+                    {isValidatingVideos ? (
+                      <div className="p-8 rounded-2xl border border-black/10 bg-[#FAFAFA] text-center space-y-2.5">
+                        <RefreshCw className="w-6 h-6 text-black animate-spin mx-auto" />
+                        <div className="text-xs font-semibold text-black">
+                          Sedang memverifikasi video YouTube aktif via FastAPI (yt-dlp + oEmbed)...
+                        </div>
+                        <p className="text-[11px] text-neutral-500 max-w-md mx-auto">
+                          Memastikan 100% video tersedia dan mengambil judul asli, likes, serta komentar teratas.
+                        </p>
+                      </div>
+                    ) : validatedVideos.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {validatedVideos.map((video, vIdx) => (
+                          <div
+                            key={`val-vid-${vIdx}-${video.embedId}`}
+                            className="rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between"
+                          >
+                            <a
+                              href={video.videoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative aspect-video w-full bg-slate-900 overflow-hidden block group"
+                            >
+                              <img
+                                src={`https://img.youtube.com/vi/${video.embedId}/hqdefault.jpg`}
+                                alt={video.title}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors flex items-center justify-center">
+                                <div className="w-11 h-11 rounded-full bg-black/80 group-hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-md">
+                                  <PlayCircle className="w-5 h-5" />
+                                </div>
+                              </div>
+                              <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono font-bold bg-black/85 text-white px-2 py-0.5 rounded-md">
+                                  ⏱ {video.duration}
+                                </span>
+                                {typeof video.qualityScore === "number" && (
+                                  <span className="text-[10px] font-mono font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md">
+                                    ★ {video.qualityScore}%
+                                  </span>
+                                )}
+                              </div>
+                            </a>
+                            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-500">
+                                  <span className="truncate font-semibold text-neutral-700">
+                                    {video.channelName || video.channel}
+                                  </span>
+                                  {typeof video.viewCount === "number" && (
+                                    <span>{(video.viewCount / 1000).toFixed(1)}K views</span>
+                                  )}
+                                </div>
+                                <h5 className="text-xs sm:text-sm font-bold text-black line-clamp-2">
+                                  {video.title}
+                                </h5>
+                                {Array.isArray(video.topComments) && video.topComments.length > 0 && (
+                                  <div className="pt-2 border-t border-black/6 space-y-1">
+                                    {video.topComments.slice(0, 1).map((c, cIdx) => (
+                                      <div
+                                        key={`tc-${vIdx}-${cIdx}`}
+                                        className="bg-white border border-black/6 rounded-xl px-2.5 py-1.5 text-[10.5px] text-neutral-700"
+                                      >
+                                        <span className="font-semibold text-black">{c.author}: </span>
+                                        <span className="line-clamp-1">{c.text}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="pt-2 border-t border-black/8 flex items-center justify-between">
+                                <span className="text-[10px] font-mono text-emerald-700 font-semibold">
+                                  ✓ YouTube oEmbed Verified
+                                </span>
+                                <a
+                                  href={video.videoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3.5 py-1.5 rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-medium transition-colors"
+                                >
+                                  Tonton Video &nearr;
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-6 rounded-2xl border border-amber-200/80 bg-amber-50/40 text-center space-y-2.5">
+                        <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />
+                        <div className="text-xs sm:text-sm font-semibold text-neutral-900">
+                          Server validator video (FastAPI) sedang tidak aktif atau tidak ditemukan video yang lolos filter kualitas
+                        </div>
+                        <p className="text-[11px] text-neutral-600 max-w-lg mx-auto">
+                          Pastikan server FastAPI aktif pada port 8000 lalu klik tombol &ldquo;Validasi Ulang Video&rdquo; di pojok kanan atas.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dokumentasi Resmi Section */}
+                  {!isLoadingRecs && adaptiveRecs && adaptiveRecs.external_resources.length > 0 && (
+                    <div className="space-y-3 pt-3 border-t border-black/8">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-slate-700" />
+                        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                          Dokumentasi Resmi & Referensi Teknis
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {adaptiveRecs.external_resources.map((item, rIdx) => (
                           <div
                             key={`ext-resource-${rIdx}`}
                             className="p-5 rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all flex flex-col justify-between space-y-4"
                           >
                             <div className="space-y-2.5">
                               <div className="flex items-center justify-between gap-2">
-                                <span
-                                  className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
-                                    isVideo
-                                      ? "bg-rose-50 text-rose-700 border-rose-200"
-                                      : "bg-[#F4F4F6] text-black border-black/10"
-                                  }`}
-                                >
-                                  {isVideo ? (
-                                    <>
-                                      <Video className="w-3.5 h-3.5 text-rose-600" />
-                                      <span>YouTube</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <BookOpen className="w-3.5 h-3.5 text-slate-700" />
-                                      <span>Dokumentasi</span>
-                                    </>
-                                  )}
+                                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 bg-[#F4F4F6] text-black border-black/10">
+                                  <BookOpen className="w-3.5 h-3.5 text-slate-700" />
+                                  <span>Dokumentasi</span>
                                 </span>
                                 <span className="flex items-center gap-1 text-[10px] font-mono text-neutral-500">
                                   <Clock className="w-3 h-3 text-neutral-400" />
@@ -1153,8 +1300,8 @@ export default function DynamicModulReaderPage() {
                               </a>
                             </div>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
                   )}
 

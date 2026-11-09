@@ -10,6 +10,7 @@ import { useAuthStore } from "../store/authStore";
 
 export default function DosenDashboard() {
   const { user } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   const [selectedStudentForLog, setSelectedStudentForLog] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export default function DosenDashboard() {
   };
 
   useEffect(() => {
+    setMounted(true);
     if (user?.role && user.role !== "dosen") {
       if (user.role === "mahasiswa") {
         router.push("/dashboard");
@@ -50,7 +52,7 @@ export default function DosenDashboard() {
     }
   }, [user, router]);
 
-  const activeUser = user ?? {
+  const activeUser = (mounted ? user : null) ?? {
     email: "dosen@nexed.ai",
     role: "dosen" as const,
     name: "Dr. Ir. Hendra Wijaya, M.T.",

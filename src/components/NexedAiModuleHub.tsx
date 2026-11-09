@@ -61,16 +61,33 @@ import {
   markModuleCompleted,
   saveModuleProgress,
   getModuleProgress,
+  saveActiveModuleSession,
+  getActiveModuleSession,
+  clearActiveModuleSession,
+  onActiveModuleSessionUpdate,
 } from "../lib/progressStorage";
 import { useAuthStore } from "../store/authStore";
+
+export interface VideoTopComment {
+  author: string;
+  text: string;
+  likes?: number;
+}
 
 export interface RecommendedVideo {
   title: string;
   channel: string;
+  channelName?: string;
   duration: string;
   videoUrl: string; // URL video spesifik (misal: https://www.youtube.com/watch?v=VIDEO_ID)
   embedId: string; // ID video 11 karakter untuk pemutar embed langsung
+  videoId?: string;
   summaryTopic: string;
+  viewCount?: number;
+  likeCount?: number;
+  qualityScore?: number;
+  topComments?: VideoTopComment[];
+  isValidated?: boolean;
 }
 
 export interface RecommendedDoc {
@@ -98,8 +115,25 @@ export interface KeyPointItem {
   analogy?: string;
 }
 
+export interface LearningStageItem {
+  stageNumber: number;
+  phaseLabel: string;        // misal: "Tahap 1: Fondasi Konseptual", "Tahap 2: Implementasi Teknis", dst.
+  title: string;             // Judul spesifik sesuai isi dokumen & permintaan user
+  shortSummary: string;      // 1-2 kalimat ringkasan tujuan tahap ini
+  selfAction: string;        // Instruksi aksi mandiri konkret berdasarkan isi dokumen
+  detailedMaterial: string;  // Penjelasan materi mendalam 1-2 paragraf dari isi dokumen
+  keyConcepts: string[];     // 3-4 istilah teknis asli dari dokumen untuk tahap ini
+  practiceScenario: string;  // Skenario praktik mandiri yang relevan dengan isi dokumen
+  comprehensionQuestion: string; // Pertanyaan uji pemahaman spesifik sesuai materi tahap ini
+  searchQuery: string;       // Kueri YouTube spesifik untuk tahap ini
+}
+
+export type AnalyzeModuleResponse = AnalyzedModuleResult;
+
 export interface AnalyzedModuleResult {
   title: string;
+  detectedTopic?: string;
+  coreKeywords?: string[];
   domain?: string;
   sourceType: "file" | "text";
   fileName?: string;
@@ -120,6 +154,7 @@ export interface AnalyzedModuleResult {
       quiz: string;
     };
   };
+  learningStages?: LearningStageItem[];
   roadmap: Array<{
     step: number;
     stage: string;
@@ -131,6 +166,7 @@ export interface AnalyzedModuleResult {
     detailedGuide?: string;
     practiceScenario?: string;
     checkQuestion?: string;
+    searchQuery?: string;
   }>;
   quiz: Array<{
     id: number;
@@ -139,13 +175,99 @@ export interface AnalyzedModuleResult {
     correctIndex: number;
     explanation: string;
   }>;
+  videos?: RecommendedVideo[];
+  validatedVideos?: RecommendedVideo[];
   recommendedVideos?: RecommendedVideo[];
   recommendedDocs?: RecommendedDoc[];
+  webReferences?: RecommendedDoc[];
+  moduleChapters?: Array<{ step?: number; title: string; summary: string } | string>;
+  userNeedsSummary?: string;
+  recommendedQueries?: string[];
+  videoCacheHit?: boolean;
+  videoValidationSource?: string;
 }
 
 import { analyzeModuleContent, generateChatResponse } from "../lib/aiModuleAnalyzer";
 import { getAdaptiveRecommendations, type AdaptiveLearningResponse } from "../services/apiService";
 import { resolveCuratedResources, extractYoutubeId } from "../lib/curatedResources";
+
+const BANNED_LEGACY_VIDEO_IDS = new Set<string>([
+  "U81_m5-lUqQ",
+  "1NigbK3Jk7Q",
+  "tXlZgwYp5V0",
+  "PkZNo7MFNFg",
+  "HXV3zeQKqGY",
+  "G3e-cpL7ofc",
+  "BGTx91t8q50",
+  "rfscVS0vtbw",
+  "SqcY0GlETPk",
+  "Oe421EPjeBE",
+  "mU6anWqZJcc",
+  "wRNinF7YQqQ",
+  "7S_tz1z_5bA",
+  "qz0aGYrrlhU",
+  "W6NZfCO5SIk",
+  "gQojMIhELvM",
+  "bMknfKXIFA8",
+  "wm5gMKuwSYk",
+  "Fdf5aTYRW0E",
+  "ER9SspLe4Hg",
+  "2ZLl8GAk1X4",
+  "8hly31xKli0",
+  "RBSGKlAvoiM",
+  "ztHopE5Wnpc",
+  "3c-iBn73dDE",
+  "f4fB1K1sN9A",
+  "impZ75ba9I0",
+  "fL9G_4q_y5k",
+  "gA8W6xI22j4",
+  "rLf3jnHxSmU",
+  "jS4aFq5-91M",
+]);
+
+function filterStrictlyValidatedVideos(
+  list?: RecommendedVideo[] | null,
+): RecommendedVideo[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const valid: RecommendedVideo[] = [];
+
+  for (const v of list) {
+    if (!v || typeof v !== "object") continue;
+    const rawId =
+      extractYoutubeId(v.videoId || v.embedId || v.videoUrl) ||
+      (typeof v.videoId === "string" ? v.videoId.trim() : "") ||
+      (typeof v.embedId === "string" ? v.embedId.trim() : "");
+    if (!rawId || !/^[A-Za-z0-9_-]{11}$/.test(rawId)) continue;
+    if (BANNED_LEGACY_VIDEO_IDS.has(rawId)) continue;
+    if (v.isValidated !== true && typeof v.qualityScore !== "number") continue;
+    if (seen.has(rawId)) continue;
+    seen.add(rawId);
+    valid.push({
+      ...v,
+      videoId: rawId,
+      embedId: rawId,
+      videoUrl: `https://www.youtube.com/watch?v=${rawId}`,
+      isValidated: true,
+    });
+  }
+
+  return valid;
+}
+
+function sanitizeAnalyzedResultVideos(
+  result: AnalyzedModuleResult,
+): AnalyzedModuleResult {
+  const cleanVideos = filterStrictlyValidatedVideos(
+    result.validatedVideos || result.videos || result.recommendedVideos,
+  );
+  return {
+    ...result,
+    videos: cleanVideos,
+    validatedVideos: cleanVideos,
+    recommendedVideos: cleanVideos,
+  };
+}
 
 const ANALYSIS_STEPS = [
   { percent: 25, label: "Membaca dan mengekstraksi konten materi...", icon: FileText },
@@ -417,30 +539,117 @@ export default function NexedAiModuleHub() {
       if (activeRaw) {
         const item = JSON.parse(activeRaw);
         if (item && item.analyzedResult) {
-          setAnalyzedResult(item.analyzedResult);
+          const cleanResult = sanitizeAnalyzedResultVideos(item.analyzedResult);
+          setAnalyzedResult(cleanResult);
+          if (Array.isArray(cleanResult.learningStages) && cleanResult.learningStages.length > 0) {
+            setLearningStagesState(cleanResult.learningStages);
+          }
           if (item.rawText) {
             setUploadedDocMeta({
               chunkCount: item.chunkCount || 1,
               totalWords: item.totalWords || item.rawText.split(/\s+/).length,
               rawText: item.rawText,
             });
-            const dummyFile = new File([item.rawText], item.filename || `${item.analyzedResult.title}.txt`, {
+            const dummyFile = new File([item.rawText], item.filename || `${cleanResult.title}.txt`, {
               type: "text/plain",
             });
             setSelectedFile(dummyFile);
           }
           const initialRoadmap: Record<number, boolean> = {};
-          for (const stepItem of item.analyzedResult.roadmap || []) {
-            initialRoadmap[stepItem.step] = false;
+          const stageCount =
+            (cleanResult.learningStages && cleanResult.learningStages.length) ||
+            cleanResult.roadmap?.length ||
+            4;
+          for (let i = 1; i <= stageCount; i++) {
+            initialRoadmap[i] = false;
           }
           setRoadmapStatus(initialRoadmap);
           setChatMessages([
             {
               id: "init",
               sender: "ai",
-              text: `Halo! Saya Nexed AI Tutor. Modul **"${item.analyzedResult.title}"** telah dimuat dari sesi belajar Anda sebelumnya. Silakan pelajari materinya atau ajukan pertanyaan!`,
+              text: `Halo! Saya Nexed AI Tutor. Modul **"${cleanResult.detectedTopic || cleanResult.title}"** telah dimuat dari sesi belajar Anda sebelumnya. Silakan pelajari materinya atau ajukan pertanyaan!`,
             },
           ]);
+          return;
+        }
+      }
+
+      const activeSession = getActiveModuleSession();
+      if (activeSession && activeSession.learningStages.length > 0) {
+        const restoredRoadmap = activeSession.learningStages.map((s) => ({
+          step: s.stageNumber,
+          stage: s.phaseLabel,
+          title: s.title,
+          description: s.shortSummary,
+          actionItem: s.selfAction,
+          understood: Boolean(s.understood),
+          keyConcepts: s.keyConcepts,
+          detailedGuide: s.detailedMaterial,
+          practiceScenario: s.practiceScenario,
+          checkQuestion: s.comprehensionQuestion,
+          searchQuery: s.searchQuery,
+        }));
+        const restoredResult: AnalyzedModuleResult = sanitizeAnalyzedResultVideos({
+          title: activeSession.title || activeSession.detectedTopic,
+          detectedTopic: activeSession.detectedTopic,
+          coreKeywords: activeSession.coreKeywords,
+          sourceType: "file",
+          fileName: activeSession.fileName,
+          estimatedTime: "45 Menit",
+          difficulty: "Menengah",
+          xpReward: 150,
+          summary: {
+            overview: activeSession.userNeedsSummary || activeSession.detectedTopic,
+            keyPoints: (activeSession.coreKeywords || []).slice(0, 4).map((kw) => ({
+              term: kw,
+              definition: `Konsep esensial ${kw} dalam materi ${activeSession.detectedTopic}.`,
+              category: "Konsep Inti",
+            })),
+            proTips: "Pelajari setiap tahapan secara berurutan dari konsep hingga praktik.",
+            breakdownTime: {
+              concept: "15 Menit",
+              practice: "20 Menit",
+              quiz: "10 Menit",
+            },
+          },
+          learningStages: activeSession.learningStages,
+          roadmap: restoredRoadmap,
+          quiz: [
+            {
+              id: 1,
+              question:
+                activeSession.learningStages[0]?.comprehensionQuestion ||
+                `Apa fokus utama dalam materi "${activeSession.detectedTopic}"?`,
+              options: [
+                activeSession.learningStages[0]?.shortSummary ||
+                  `Penguasaan konsep dan implementasi ${activeSession.detectedTopic}`,
+                "Menghafal teori tanpa memahami alur kerja",
+                "Melewatkan konfigurasi komponen inti",
+                "Menghapus parameter pengujian sistem",
+              ],
+              correctIndex: 0,
+              explanation:
+                activeSession.learningStages[0]?.detailedMaterial ||
+                `Materi ini berfokus pada ${activeSession.detectedTopic}.`,
+            },
+          ],
+          videos: activeSession.validatedVideos,
+          validatedVideos: activeSession.validatedVideos,
+          recommendedVideos: activeSession.validatedVideos,
+          webReferences: activeSession.webReferences,
+          recommendedDocs: activeSession.webReferences,
+          userNeedsSummary: activeSession.userNeedsSummary,
+          recommendedQueries: activeSession.recommendedQueries,
+        });
+        setAnalyzedResult(restoredResult);
+        setLearningStagesState(activeSession.learningStages);
+        if (activeSession.extractedText) {
+          setUploadedDocMeta({
+            chunkCount: 1,
+            totalWords: activeSession.extractedText.split(/\s+/).length,
+            rawText: activeSession.extractedText,
+          });
         }
       }
     } catch (err) {
@@ -493,22 +702,312 @@ export default function NexedAiModuleHub() {
     };
   }, [activeVideoModal]);
 
-  // Curated Fallback & Deep-Linked Video / Docs Resolution (Fail-Safe 100%)
+  // Curated Docs Resolution (Tanpa Video Statis/Tebakan AI)
   const curatedFallback = resolveCuratedResources(
     analysisResult
-      ? `${analysisResult.title} ${analysisResult.summary?.overview || ""}`
+      ? `${analysisResult.detectedTopic || analysisResult.title} ${(analysisResult.coreKeywords || []).join(" ")} ${analysisResult.summary?.overview || ""}`
       : "Algoritma Pemrograman Basis Data Pemrograman Web",
   );
 
+  // Pipeline Validasi Video YouTube (yt-dlp + oEmbed + Prisma TopicVideoCache) & Dynamic Web References
+  const [validatedVideosState, setValidatedVideosState] = useState<RecommendedVideo[] | null>(null);
+  const [userNeedsSummaryState, setUserNeedsSummaryState] = useState<string>("");
+  const [recommendedQueriesState, setRecommendedQueriesState] = useState<string[]>([]);
+  const [webReferencesState, setWebReferencesState] = useState<RecommendedDoc[] | null>(null);
+  const [learningStagesState, setLearningStagesState] = useState<LearningStageItem[] | null>(null);
+  const [videoCacheHitState, setVideoCacheHitState] = useState<boolean>(false);
+  const [customLearningGoal, setCustomLearningGoal] = useState<string>("");
+  const [isValidatingVideos, setIsValidatingVideos] = useState<boolean>(false);
+
+  const activeLearningStages: LearningStageItem[] =
+    learningStagesState && learningStagesState.length > 0
+      ? learningStagesState
+      : analysisResult?.learningStages && analysisResult.learningStages.length > 0
+        ? analysisResult.learningStages
+        : (analysisResult?.roadmap || []).map((r, idx) => ({
+            stageNumber: r.step || idx + 1,
+            phaseLabel: r.stage || `Tahap ${idx + 1}`,
+            title: r.title,
+            shortSummary: r.description,
+            selfAction: r.actionItem,
+            detailedMaterial: r.detailedGuide || r.description,
+            keyConcepts:
+              r.keyConcepts && r.keyConcepts.length > 0
+                ? r.keyConcepts
+                : (analysisResult?.coreKeywords || []).slice(0, 3),
+            practiceScenario:
+              r.practiceScenario ||
+              `Terapkan konsep "${r.title}" sesuai materi pada ${analysisResult?.detectedTopic || analysisResult?.title || "modul ini"}.`,
+            comprehensionQuestion:
+              r.checkQuestion || `Apa konsep kunci pada tahap "${r.title}"?`,
+            searchQuery:
+              r.searchQuery ||
+              `${r.title} ${(analysisResult?.coreKeywords || []).slice(0, 2).join(" ")} tutorial`.trim(),
+          }));
+
+  const persistActiveSessionToSingleSource = (params: {
+    result: AnalyzedModuleResult;
+    stages?: LearningStageItem[];
+    videos?: RecommendedVideo[];
+    docs?: RecommendedDoc[];
+    needsSummary?: string;
+    queries?: string[];
+    userFocus?: string;
+    rawText?: string;
+    fileName?: string;
+  }) => {
+    const {
+      result,
+      stages,
+      videos,
+      docs,
+      needsSummary,
+      queries,
+      userFocus,
+      rawText,
+      fileName,
+    } = params;
+    const effectiveStages: LearningStageItem[] =
+      stages && stages.length > 0
+        ? stages
+        : result.learningStages && result.learningStages.length > 0
+          ? result.learningStages
+          : (result.roadmap || []).map((r, idx) => ({
+              stageNumber: r.step || idx + 1,
+              phaseLabel: r.stage || `Tahap ${idx + 1}`,
+              title: r.title,
+              shortSummary: r.description,
+              selfAction: r.actionItem,
+              detailedMaterial: r.detailedGuide || r.description,
+              keyConcepts: r.keyConcepts || [],
+              practiceScenario: r.practiceScenario || r.actionItem,
+              comprehensionQuestion:
+                r.checkQuestion || `Jelaskan konsep inti dari "${r.title}"!`,
+              searchQuery:
+                r.searchQuery || `${r.title} ${(result.coreKeywords || []).slice(0, 2).join(" ")} tutorial`.trim(),
+            }));
+
+    const effectiveVideos = filterStrictlyValidatedVideos(
+      videos ?? result.validatedVideos ?? result.videos ?? result.recommendedVideos,
+    );
+    const effectiveDocs =
+      docs && docs.length > 0
+        ? docs
+        : result.webReferences && result.webReferences.length > 0
+          ? result.webReferences
+          : result.recommendedDocs || [];
+
+    const modId = (fileName || result.fileName || result.detectedTopic || result.title || "modul-aktif")
+      .replace(/\.[^/.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]/g, "-");
+
+    saveActiveModuleSession({
+      moduleId: modId,
+      title: result.title,
+      fileName: fileName || result.fileName,
+      detectedTopic: result.detectedTopic || result.title,
+      coreKeywords: result.coreKeywords || [],
+      userFocus: userFocus ?? (customLearningGoal.trim() || undefined),
+      userNeedsSummary: needsSummary ?? result.userNeedsSummary ?? "",
+      learningStages: effectiveStages.map((s) => ({
+        ...s,
+        understood: Boolean(roadmapStatus[s.stageNumber]),
+      })),
+      validatedVideos: effectiveVideos,
+      webReferences: effectiveDocs,
+      recommendedQueries: queries ?? result.recommendedQueries ?? [],
+      extractedText: rawText ?? uploadedDocMeta?.rawText ?? textInput,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   const activeRecommendedVideos: RecommendedVideo[] =
-    analysisResult?.recommendedVideos && analysisResult.recommendedVideos.length >= 2
-      ? analysisResult.recommendedVideos
-      : curatedFallback.recommendedVideos;
+    validatedVideosState !== null
+      ? filterStrictlyValidatedVideos(validatedVideosState)
+      : filterStrictlyValidatedVideos(
+          analysisResult?.validatedVideos ||
+            analysisResult?.videos ||
+            analysisResult?.recommendedVideos,
+        );
 
   const activeRecommendedDocs: RecommendedDoc[] =
-    analysisResult?.recommendedDocs && analysisResult.recommendedDocs.length >= 2
-      ? analysisResult.recommendedDocs
-      : curatedFallback.recommendedDocs;
+    webReferencesState && webReferencesState.length > 0
+      ? webReferencesState
+      : analysisResult?.webReferences && analysisResult.webReferences.length > 0
+        ? analysisResult.webReferences
+        : analysisResult?.recommendedDocs && analysisResult.recommendedDocs.length >= 2
+          ? analysisResult.recommendedDocs
+          : curatedFallback.recommendedDocs;
+
+  const getActiveExtractedText = (): string => {
+    if (uploadedDocMeta?.rawText && uploadedDocMeta.rawText.trim().length > 0) {
+      return uploadedDocMeta.rawText;
+    }
+    if (textInput && textInput.trim().length > 0) {
+      return textInput;
+    }
+    if (analysisResult) {
+      return [
+        analysisResult.detectedTopic || analysisResult.title,
+        analysisResult.summary?.overview || "",
+        ...(analysisResult.summary?.keyPoints || []),
+        ...(analysisResult.roadmap || []).map((r) => `${r.title}: ${r.description}`),
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }
+    return "";
+  };
+
+  const fetchValidatedTopicVideos = async (goalOverride?: string, forceRefresh = false) => {
+    if (!analysisResult?.title) return;
+    const effectiveFocus =
+      goalOverride !== undefined ? goalOverride.trim() : customLearningGoal.trim();
+    const shouldForceRefresh = forceRefresh || Boolean(effectiveFocus);
+    const activeExtractedText = getActiveExtractedText();
+
+    setIsValidatingVideos(true);
+    if (shouldForceRefresh) {
+      // Kosongkan sementara stages & video lama saat menyesuaikan rekomendasi baru agar user tidak bingung
+      setLearningStagesState([]);
+    }
+    try {
+      const res = await fetch("/api/modul/video-recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: analysisResult.detectedTopic || analysisResult.title,
+          detectedTopic: analysisResult.detectedTopic || analysisResult.title,
+          extractedText: activeExtractedText,
+          contentSample: activeExtractedText,
+          coreKeywords: analysisResult.coreKeywords || [],
+          userFocus: effectiveFocus || undefined,
+          userLearningGoal: effectiveFocus || undefined,
+          forceRefresh: shouldForceRefresh,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const incomingVideos = Array.isArray(data.validatedVideos)
+          ? data.validatedVideos
+          : Array.isArray(data.videos)
+            ? data.videos
+            : [];
+        const cleanIncomingVideos = filterStrictlyValidatedVideos(incomingVideos);
+        setValidatedVideosState(cleanIncomingVideos);
+
+        const nextNeeds =
+          typeof data.userNeedsSummary === "string"
+            ? data.userNeedsSummary
+            : userNeedsSummaryState;
+        if (typeof data.userNeedsSummary === "string") {
+          setUserNeedsSummaryState(data.userNeedsSummary);
+        }
+
+        const nextQueries = Array.isArray(data.recommendedQueries)
+          ? data.recommendedQueries
+          : recommendedQueriesState;
+        if (Array.isArray(data.recommendedQueries)) {
+          setRecommendedQueriesState(data.recommendedQueries);
+        }
+
+        const nextDocs =
+          Array.isArray(data.webReferences) && data.webReferences.length > 0
+            ? data.webReferences
+            : webReferencesState || analysisResult.webReferences || [];
+        if (Array.isArray(data.webReferences) && data.webReferences.length > 0) {
+          setWebReferencesState(data.webReferences);
+        }
+
+        const nextStages: LearningStageItem[] =
+          Array.isArray(data.learningStages) && data.learningStages.length > 0
+            ? data.learningStages
+            : analysisResult.learningStages || [];
+
+        if (nextStages.length > 0) {
+          setLearningStagesState(nextStages);
+        } else {
+          setLearningStagesState(analysisResult.learningStages || null);
+        }
+
+        const nextDetectedTopic =
+          typeof data.detectedTopic === "string" && data.detectedTopic.trim().length > 3
+            ? data.detectedTopic.trim()
+            : analysisResult.detectedTopic || analysisResult.title;
+
+        const nextCoreKeywords =
+          Array.isArray(data.coreKeywords) && data.coreKeywords.length > 0
+            ? data.coreKeywords
+            : analysisResult.coreKeywords || [];
+
+        const updatedRoadmap =
+          nextStages.length > 0
+            ? nextStages.map((s, idx) => ({
+                step: s.stageNumber || idx + 1,
+                stage: s.phaseLabel,
+                title: s.title,
+                description: s.shortSummary,
+                actionItem: s.selfAction,
+                understood: Boolean(roadmapStatus[s.stageNumber || idx + 1]),
+                keyConcepts: s.keyConcepts,
+                detailedGuide: s.detailedMaterial,
+                practiceScenario: s.practiceScenario,
+                checkQuestion: s.comprehensionQuestion,
+                searchQuery: s.searchQuery,
+              }))
+            : analysisResult.roadmap;
+
+        const updatedResult: AnalyzedModuleResult = {
+          ...analysisResult,
+          detectedTopic: nextDetectedTopic,
+          coreKeywords: nextCoreKeywords,
+          learningStages: nextStages.length > 0 ? nextStages : analysisResult.learningStages,
+          roadmap: updatedRoadmap,
+          videos: cleanIncomingVideos,
+          validatedVideos: cleanIncomingVideos,
+          recommendedVideos: cleanIncomingVideos,
+          webReferences: nextDocs,
+          recommendedDocs: nextDocs,
+          userNeedsSummary: nextNeeds,
+          recommendedQueries: nextQueries,
+          videoCacheHit: Boolean(data.cacheHit),
+        };
+
+        setAnalyzedResult(updatedResult);
+        setVideoCacheHitState(Boolean(data.cacheHit));
+
+        persistActiveSessionToSingleSource({
+          result: updatedResult,
+          stages: nextStages,
+          videos: cleanIncomingVideos,
+          docs: nextDocs,
+          needsSummary: nextNeeds,
+          queries: nextQueries,
+          userFocus: effectiveFocus,
+          rawText: activeExtractedText,
+        });
+
+        try {
+          const activeRaw = localStorage.getItem("nexed_active_analyzed_module");
+          if (activeRaw) {
+            const parsedActive = JSON.parse(activeRaw);
+            parsedActive.title = updatedResult.detectedTopic || updatedResult.title;
+            parsedActive.analyzedResult = updatedResult;
+            parsedActive.savedAt = new Date().toISOString();
+            localStorage.setItem("nexed_active_analyzed_module", JSON.stringify(parsedActive));
+          }
+        } catch {}
+      } else {
+        setLearningStagesState(analysisResult.learningStages || null);
+      }
+    } catch {
+      // Safe fallback: jangan pernah menyuntikkan video statis palsu
+      setLearningStagesState(analysisResult.learningStages || null);
+    } finally {
+      setIsValidatingVideos(false);
+    }
+  };
 
   // Adaptive Learning & External Recommendations
   const [adaptiveRecs, setAdaptiveRecs] = useState<AdaptiveLearningResponse | null>(null);
@@ -517,10 +1016,110 @@ export default function NexedAiModuleHub() {
   useEffect(() => {
     if (!analysisResult?.title) {
       setAdaptiveRecs(null);
+      setValidatedVideosState(null);
+      setWebReferencesState(null);
       return;
     }
     let isCancelled = false;
     setLoadingAdaptiveRecs(true);
+
+    if (analysisResult.userNeedsSummary) {
+      setUserNeedsSummaryState(analysisResult.userNeedsSummary);
+    }
+    if (analysisResult.recommendedQueries) {
+      setRecommendedQueriesState(analysisResult.recommendedQueries);
+    }
+    if (analysisResult.webReferences && analysisResult.webReferences.length > 0) {
+      setWebReferencesState(analysisResult.webReferences);
+    } else if (analysisResult.recommendedDocs && analysisResult.recommendedDocs.length > 0) {
+      setWebReferencesState(analysisResult.recommendedDocs);
+    }
+    if (typeof analysisResult.videoCacheHit === "boolean") {
+      setVideoCacheHitState(analysisResult.videoCacheHit);
+    }
+
+    const existingValidated = filterStrictlyValidatedVideos(
+      analysisResult.validatedVideos ||
+        analysisResult.videos ||
+        analysisResult.recommendedVideos,
+    );
+    if (existingValidated.length > 0) {
+      setValidatedVideosState(existingValidated);
+    } else {
+      setIsValidatingVideos(true);
+    }
+
+    const activeExtractedText = getActiveExtractedText();
+
+    // Sinkronkan video tervalidasi & referensi web dari Prisma TopicVideoCache / FastAPI yt-dlp
+    fetch("/api/modul/video-recommendations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic: analysisResult.detectedTopic || analysisResult.title,
+        detectedTopic: analysisResult.detectedTopic || analysisResult.title,
+        extractedText: activeExtractedText,
+        contentSample: activeExtractedText,
+        coreKeywords: analysisResult.coreKeywords || [],
+        userFocus: customLearningGoal.trim() || undefined,
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!isCancelled && data) {
+          const incomingVideos = Array.isArray(data.validatedVideos)
+            ? data.validatedVideos
+            : Array.isArray(data.videos)
+              ? data.videos
+              : [];
+          const cleanIncoming = filterStrictlyValidatedVideos(incomingVideos);
+          if (cleanIncoming.length > 0 || existingValidated.length === 0) {
+            setValidatedVideosState(cleanIncoming);
+          }
+          if (typeof data.userNeedsSummary === "string") {
+            setUserNeedsSummaryState(data.userNeedsSummary);
+          }
+          if (Array.isArray(data.recommendedQueries)) {
+            setRecommendedQueriesState(data.recommendedQueries);
+          }
+          if (Array.isArray(data.webReferences) && data.webReferences.length > 0) {
+            setWebReferencesState(data.webReferences);
+          }
+          if (Array.isArray(data.learningStages) && data.learningStages.length > 0) {
+            setLearningStagesState(data.learningStages);
+          }
+          setVideoCacheHitState(Boolean(data.cacheHit));
+          persistActiveSessionToSingleSource({
+            result: analysisResult,
+            stages:
+              Array.isArray(data.learningStages) && data.learningStages.length > 0
+                ? data.learningStages
+                : analysisResult.learningStages,
+            videos: cleanIncoming.length > 0 ? cleanIncoming : existingValidated,
+            docs:
+              Array.isArray(data.webReferences) && data.webReferences.length > 0
+                ? data.webReferences
+                : analysisResult.webReferences,
+            needsSummary:
+              typeof data.userNeedsSummary === "string"
+                ? data.userNeedsSummary
+                : analysisResult.userNeedsSummary,
+            queries: Array.isArray(data.recommendedQueries)
+              ? data.recommendedQueries
+              : analysisResult.recommendedQueries,
+            rawText: activeExtractedText,
+          });
+        }
+      })
+      .catch(() => {
+        // Fallback aman: kosongkan jika tidak ada video tervalidasi
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsValidatingVideos(false);
+        }
+      });
+
     const modId = analysisResult.title.toLowerCase().replace(/[^a-z0-9-_]/g, "-") || "modul-studi";
     getAdaptiveRecommendations(modId, analysisResult.title, analysisResult.summary?.overview || "")
       .then((data) => {
@@ -538,7 +1137,7 @@ export default function NexedAiModuleHub() {
     return () => {
       isCancelled = true;
     };
-  }, [analysisResult?.title]);
+  }, [analysisResult?.title, analysisResult?.detectedTopic]);
 
   // Quiz state
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
@@ -570,6 +1169,14 @@ export default function NexedAiModuleHub() {
     setSelectedFile(file);
     setUploadDocError(null);
     setUploadedDocMeta(null);
+    // Bersihkan seluruh state modul lama agar tidak pernah tertukar saat upload PDF baru
+    setAnalyzedResult(null);
+    setValidatedVideosState(null);
+    setLearningStagesState(null);
+    setUserNeedsSummaryState("");
+    setRecommendedQueriesState([]);
+    setWebReferencesState(null);
+    setVideoCacheHitState(false);
 
     const validExtensions = [
       ".pdf",
@@ -621,7 +1228,7 @@ export default function NexedAiModuleHub() {
     let serverAnalyzedResult: AnalyzedModuleResult | null = null;
 
     const uploadController = new AbortController();
-    const uploadTimer = setTimeout(() => uploadController.abort(), 12000);
+    const uploadTimer = setTimeout(() => uploadController.abort(), 20000);
 
     try {
       const formData = new FormData();
@@ -634,7 +1241,8 @@ export default function NexedAiModuleHub() {
           .replace(/[^a-z0-9-_]/g, "-"),
       );
 
-      const res = await apiFetch("/api/modul/upload", {
+      // Panggil route Next.js /api/modul/upload (yang meneruskan ke FastAPI /api/modul/extract-text dengan pypdf)
+      const res = await fetch("/api/modul/upload", {
         method: "POST",
         body: formData,
         signal: uploadController.signal,
@@ -643,9 +1251,10 @@ export default function NexedAiModuleHub() {
 
       const data = await res.json();
       if (res.ok) {
-        extractedContent = data.rawText || data.message || file.name;
+        extractedContent =
+          data.extractedText || data.rawText || data.previewSnippet || data.message || file.name;
         chunkCount = data.chunkCount || 1;
-        totalWords = data.totalWords || 0;
+        totalWords = data.totalWords || extractedContent.split(/\s+/).length;
         if (data.analyzedResult) {
           serverAnalyzedResult = data.analyzedResult;
         }
@@ -654,17 +1263,38 @@ export default function NexedAiModuleHub() {
       }
     } catch (err: unknown) {
       clearTimeout(uploadTimer);
-      console.warn("Server upload warning, attempting client-side extraction fallback:", err);
-      // Fallback sisi client agar alur belajar mahasiswa tidak pernah terhenti
+      console.warn(
+        "Next.js /api/modul/upload warning, mencoba langsung ke FastAPI /api/modul/extract-text:",
+        err,
+      );
       try {
-        if (!file.name.toLowerCase().endsWith(".pdf")) {
-          const clientText = await file.text();
-          if (clientText && clientText.trim().length > 15) {
-            extractedContent = clientText;
+        const fastForm = new FormData();
+        fastForm.append("file", file);
+        const fastRes = await apiFetch("/api/modul/extract-text", {
+          method: "POST",
+          body: fastForm,
+        });
+        if (fastRes.ok) {
+          const fastData = await fastRes.json();
+          if (fastData?.extractedText && String(fastData.extractedText).trim().length >= 20) {
+            extractedContent = String(fastData.extractedText).trim();
           }
         }
       } catch {
-        // Abaikan kegagalan file.text()
+        // Fallback ke pembacaan client jika non-PDF
+      }
+
+      if (!extractedContent || extractedContent.trim().length < 20) {
+        try {
+          if (!file.name.toLowerCase().endsWith(".pdf")) {
+            const clientText = await file.text();
+            if (clientText && clientText.trim().length > 15) {
+              extractedContent = clientText;
+            }
+          }
+        } catch {
+          // Abaikan kegagalan file.text()
+        }
       }
 
       if (!extractedContent || extractedContent.trim().length < 20) {
@@ -672,15 +1302,7 @@ export default function NexedAiModuleHub() {
           .replace(/\.[^/.]+$/, "")
           .replace(/[-_]/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase());
-        extractedContent = `Modul Pembelajaran Mandiri: ${prettyTitle}
-
-Topik Kajian: Materi studi komprehensif, ringkasan konsep inti, dan panduan latihan terstruktur untuk ${prettyTitle}.
-
-Silabus & Fokus Pembahasan:
-1. Konseptual & Landasan Teori: Pemahaman dasar arsitektur dan prinsip kerja utama ${prettyTitle}.
-2. Praktik Implementasi: Penulisan kode, pemecahan masalah (problem solving), dan metodologi efektif.
-3. Analisis Studi Kasus: Penanganan kasus nyata (real-world scenarios) dan optimasi efisiensi.
-4. Active Recall & Uji Kompetensi: Evaluasi pemahaman mandiri melalui kuis interaktif dan pendampingan tutor AI.`;
+        extractedContent = `Dokumen: ${prettyTitle}`;
       }
 
       totalWords = extractedContent.split(/\s+/).length;
@@ -705,7 +1327,9 @@ Silabus & Fokus Pembahasan:
           .toLowerCase()
           .replace(/[^a-z0-9-_]/g, "-"),
         title:
-          serverAnalyzedResult?.title || file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+          serverAnalyzedResult?.detectedTopic ||
+          serverAnalyzedResult?.title ||
+          file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
         filename: file.name,
         chunkCount,
         totalWords,
@@ -729,7 +1353,7 @@ Silabus & Fokus Pembahasan:
       // safe fallback
     }
 
-    // Langsung eksekusi analisis AI agar modul segera terbuka
+    // Langsung eksekusi analisis AI dengan isi teks asli dokumen (extractedContent)
     handleStartAnalysis(undefined, file, extractedContent, serverAnalyzedResult);
   };
 
@@ -754,10 +1378,11 @@ Silabus & Fokus Pembahasan:
           rawText: item.rawText || "",
         });
         if (item.analyzedResult) {
-          setAnalyzedResult(item.analyzedResult);
+          const cleanResult = sanitizeAnalyzedResultVideos(item.analyzedResult);
+          setAnalyzedResult(cleanResult);
           setIsAnalyzing(false);
           const initialRoadmap: Record<number, boolean> = {};
-          for (const stepItem of item.analyzedResult.roadmap) {
+          for (const stepItem of cleanResult.roadmap) {
             initialRoadmap[stepItem.step] = false;
           }
           setRoadmapStatus(initialRoadmap);
@@ -765,7 +1390,7 @@ Silabus & Fokus Pembahasan:
             {
               id: "init",
               sender: "ai",
-              text: `Halo! Saya Nexed AI Tutor. Materi **"${item.analyzedResult.title}"** telah dimuat dari arsip Anda. Silakan tanyakan hal apa pun seputar modul ini!`,
+              text: `Halo! Saya Nexed AI Tutor. Materi **"${cleanResult.title}"** telah dimuat dari arsip Anda. Silakan tanyakan hal apa pun seputar modul ini!`,
             },
           ]);
         } else {
@@ -848,31 +1473,64 @@ Silabus & Fokus Pembahasan:
                 textInput.split("\n")[0]?.substring(0, 60) || "Modul Pembelajaran Mandiri";
             }
 
-            const chosenData =
+            const chosenData = sanitizeAnalyzedResultVideos(
               specificResult ||
-              resultOverride ||
-              analyzeModuleContent({
-                title: derivedTitle,
-                content,
-                fileName: activeFile?.name,
-                sourceType: activeFile ? "file" : "text",
-                presetKey,
-              });
+                resultOverride ||
+                analyzeModuleContent({
+                  title: derivedTitle,
+                  content,
+                  fileName: activeFile?.name,
+                  sourceType: activeFile ? "file" : "text",
+                  presetKey,
+                }),
+            );
 
             setAnalyzedResult(chosenData);
+            if (Array.isArray(chosenData.learningStages) && chosenData.learningStages.length > 0) {
+              setLearningStagesState(chosenData.learningStages);
+            } else {
+              setLearningStagesState(null);
+            }
+            const cleanVideos = filterStrictlyValidatedVideos(
+              chosenData.validatedVideos || chosenData.videos || chosenData.recommendedVideos,
+            );
+            setValidatedVideosState(cleanVideos);
+            setUserNeedsSummaryState(chosenData.userNeedsSummary || "");
+            setRecommendedQueriesState(chosenData.recommendedQueries || []);
+            const nextDocs =
+              chosenData.webReferences && chosenData.webReferences.length > 0
+                ? chosenData.webReferences
+                : chosenData.recommendedDocs || null;
+            setWebReferencesState(nextDocs);
+            setVideoCacheHitState(Boolean(chosenData.videoCacheHit));
             setHubCurrentStage(1);
             setHubStageProgress({ 1: false, 2: false, 3: false, 4: false });
             const initialRoadmap: Record<number, boolean> = {};
-            for (const stepItem of chosenData.roadmap) {
-              initialRoadmap[stepItem.step] = false;
+            const totalSteps =
+              (chosenData.learningStages && chosenData.learningStages.length) ||
+              chosenData.roadmap.length;
+            for (let i = 1; i <= totalSteps; i++) {
+              initialRoadmap[i] = false;
             }
             setRoadmapStatus(initialRoadmap);
+
+            persistActiveSessionToSingleSource({
+              result: chosenData,
+              stages: chosenData.learningStages,
+              videos: cleanVideos,
+              docs: nextDocs || [],
+              needsSummary: chosenData.userNeedsSummary,
+              queries: chosenData.recommendedQueries,
+              userFocus: customLearningGoal.trim() || undefined,
+              rawText: content,
+              fileName: activeFile?.name,
+            });
 
             // Persist module data so refresh won't lose analysis
             try {
               const activePayload = {
                 id: (activeFile?.name || chosenData.title).toLowerCase().replace(/[^a-z0-9-_]/g, "-"),
-                title: chosenData.title,
+                title: chosenData.detectedTopic || chosenData.title,
                 filename: activeFile?.name || `${chosenData.title}.txt`,
                 chunkCount: uploadedDocMeta?.chunkCount || 1,
                 totalWords: uploadedDocMeta?.totalWords || content.split(/\s+/).length,
@@ -898,7 +1556,7 @@ Silabus & Fokus Pembahasan:
               {
                 id: "init",
                 sender: "ai",
-                text: `Halo! Saya Nexed AI Tutor. Materi **"${chosenData.title}"** telah selesai diproses secara komprehensif ke dalam silabus adaptif lengkap (Ringkasan Inti, Peta Belajar 4 Tahap, Kuis Active Recall, dan Bimbingan Dialogis). Silakan tanyakan hal apa pun seputar modul ini!`,
+                text: `Halo! Saya Nexed AI Tutor. Materi **"${chosenData.detectedTopic || chosenData.title}"** telah selesai diproses secara komprehensif dari teks asli dokumen ke dalam silabus adaptif lengkap (Ringkasan Inti, Peta Belajar 4 Tahap, Video YouTube Terverifikasi, Referensi Web Dinamis, dan Kuis Active Recall). Silakan tanyakan hal apa pun seputar modul ini!`,
               },
             ]);
 
@@ -908,17 +1566,24 @@ Silabus & Fokus Pembahasan:
       }, 600);
     };
 
+    const userFocusPayload = customLearningGoal.trim() || undefined;
+
     if (contentOverride) {
       if (resultOverride) {
         executeAnalysis(contentOverride, resultOverride);
       } else {
-        apiFetch("/api/modul/analyze", {
+        const cleanFileTitle = activeFile?.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        fetch("/api/modul/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             content: contentOverride,
+            extractedText: contentOverride,
             fileName: activeFile?.name,
-            title: activeFile?.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+            title: cleanFileTitle,
+            moduleTitle: cleanFileTitle,
+            userFocus: userFocusPayload,
+            userLearningGoal: userFocusPayload,
           }),
         })
           .then((res) => res.json())
@@ -934,13 +1599,18 @@ Silabus & Fokus Pembahasan:
         if (resultOverride) {
           executeAnalysis(uploadedDocMeta.rawText, resultOverride);
         } else {
-          apiFetch("/api/modul/analyze", {
+          const cleanFileTitle = activeFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+          fetch("/api/modul/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               content: uploadedDocMeta.rawText,
+              extractedText: uploadedDocMeta.rawText,
               fileName: activeFile.name,
-              title: activeFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+              title: cleanFileTitle,
+              moduleTitle: cleanFileTitle,
+              userFocus: userFocusPayload,
+              userLearningGoal: userFocusPayload,
             }),
           })
             .then((res) => res.json())
@@ -954,6 +1624,10 @@ Silabus & Fokus Pembahasan:
       } else {
         const formData = new FormData();
         formData.append("file", activeFile);
+        formData.append("analyze", "true");
+        if (userFocusPayload) {
+          formData.append("userFocus", userFocusPayload);
+        }
         formData.append(
           "moduleId",
           activeFile.name
@@ -961,10 +1635,11 @@ Silabus & Fokus Pembahasan:
             .toLowerCase()
             .replace(/[^a-z0-9-_]/g, "-"),
         );
-        apiFetch("/api/modul/upload", { method: "POST", body: formData })
+        fetch("/api/modul/upload", { method: "POST", body: formData })
           .then((res) => res.json())
           .then((data) => {
-            const content = data.rawText || data.message || activeFile.name;
+            const content =
+              data.extractedText || data.rawText || data.previewSnippet || activeFile.name;
             executeAnalysis(content, data.analyzedResult || null);
           })
           .catch(() => {
@@ -972,10 +1647,15 @@ Silabus & Fokus Pembahasan:
           });
       }
     } else if (textInput.trim()) {
-      apiFetch("/api/modul/analyze", {
+      fetch("/api/modul/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: textInput }),
+        body: JSON.stringify({
+          content: textInput,
+          extractedText: textInput,
+          userFocus: userFocusPayload,
+          userLearningGoal: userFocusPayload,
+        }),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -1010,10 +1690,22 @@ Silabus & Fokus Pembahasan:
         [stepNumber]: !prev[stepNumber],
       };
       if (analysisResult) {
-        const total = analysisResult.roadmap.length;
+        const total = activeLearningStages.length || analysisResult.roadmap.length;
         const understoodCount = Object.values(next).filter(Boolean).length;
         if (understoodCount === total) {
           triggerConfetti();
+        }
+        const currentSession = getActiveModuleSession();
+        if (currentSession && Array.isArray(currentSession.learningStages)) {
+          saveActiveModuleSession({
+            ...currentSession,
+            learningStages: currentSession.learningStages.map((s) => ({
+              ...s,
+              understood:
+                s.stageNumber === stepNumber ? Boolean(next[stepNumber]) : Boolean(s.understood),
+            })),
+            updatedAt: new Date().toISOString(),
+          });
         }
       }
       return next;
@@ -1101,7 +1793,7 @@ Silabus & Fokus Pembahasan:
   }, [chatMessages, isAiReplying, activeResultTab, hubCurrentStage]);
 
   const roadmapCompletedCount = Object.values(roadmapStatus).filter(Boolean).length;
-  const roadmapTotal = analysisResult?.roadmap.length || 3;
+  const roadmapTotal = activeLearningStages.length || analysisResult?.roadmap.length || 4;
   const roadmapPercent = Math.round((roadmapCompletedCount / roadmapTotal) * 100);
 
   // Coursera Progress calculations for Hub
@@ -1241,8 +1933,12 @@ Silabus & Fokus Pembahasan:
             onClick={() => {
               try {
                 localStorage.removeItem("nexed_active_analyzed_module");
+                clearActiveModuleSession();
               } catch {}
               setAnalyzedResult(null);
+              setLearningStagesState(null);
+              setValidatedVideosState(null);
+              setWebReferencesState(null);
               setSelectedFile(null);
               setUploadedDocMeta(null);
               setUploadDocError(null);
@@ -1619,17 +2315,21 @@ Silabus & Fokus Pembahasan:
           <div className="p-6 rounded-3xl bg-[#FAFAFA] border border-black/8 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-0.5 rounded-full inline-flex items-center gap-1">
                     <Check className="w-3 h-3 text-emerald-700" />
                     <span>Berhasil Dianalisis AI</span>
+                  </span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-800 bg-indigo-50 border border-indigo-200/80 px-3 py-0.5 rounded-full inline-flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-3 h-3 text-indigo-600" />
+                    <span>Topik Aktif: {analysisResult.detectedTopic || analysisResult.title}</span>
                   </span>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-black bg-[#F4F4F6] border border-black/10 px-3 py-0.5 rounded-full">
                     Tingkat: {analysisResult.difficulty}
                   </span>
                 </div>
                 <h3 className="text-base sm:text-lg font-light text-black tracking-tight">
-                  {analysisResult.title}
+                  {analysisResult.detectedTopic || analysisResult.title}
                 </h3>
                 <p className="text-xs text-neutral-500">
                   Estimasi Waktu Belajar: <strong className="text-black">{analysisResult.estimatedTime}</strong> • Potensi
@@ -2080,14 +2780,17 @@ Silabus & Fokus Pembahasan:
             <div className="space-y-6 animate-in fade-in">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-[#FAFAFA] rounded-3xl border border-black/8 gap-4">
                 <div>
-                  <h4 className="text-xs font-bold text-black flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-black flex items-center gap-2 flex-wrap">
                     <span>Progres Pemahaman Materi Anda</span>
                     <span className="text-[10px] font-mono font-normal text-neutral-600 bg-white border border-black/10 px-2.5 py-0.5 rounded-full">
-                      {analysisResult.roadmap.length} Simpul Belajar
+                      {activeLearningStages.length} Simpul Belajar
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/70 px-2.5 py-0.5 rounded-full">
+                      {analysisResult.detectedTopic || analysisResult.title}
                     </span>
                   </h4>
                   <p className="text-[11px] text-neutral-500 mt-0.5">
-                    Tandai setiap tahapan yang sudah Anda pahami untuk memperbarui grafik capaian dan sinkronisasi ke Peta Belajar.
+                    Tahapan belajar di bawah ini disusun 100% dinamis dari isi teks dokumen yang Anda unggah dan fokus belajar Anda.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 flex-wrap">
@@ -2099,7 +2802,7 @@ Silabus & Fokus Pembahasan:
                     onClick={() => {
                       const modId = selectedFile
                         ? selectedFile.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
-                        : (analysisResult.title || "").toLowerCase().replace(/[^a-z0-9-_]/g, "-");
+                        : (analysisResult.detectedTopic || analysisResult.title || "").toLowerCase().replace(/[^a-z0-9-_]/g, "-");
                       router.push(`/peta-belajar?course=dok-${modId}`);
                     }}
                     className="min-h-[44px] px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
@@ -2111,173 +2814,211 @@ Silabus & Fokus Pembahasan:
                 </div>
               </div>
 
-              {/* Roadmap Step Cards */}
-              <div className="space-y-4">
-                {analysisResult.roadmap.map((stepItem) => {
-                  const isUnderstood = !!roadmapStatus[stepItem.step];
-                  const isExpanded = expandedRoadmapStep === stepItem.step;
+              {/* Learning Stages Cards (Strictly Grounded in Document & User Focus) */}
+              {isValidatingVideos && (!learningStagesState || learningStagesState.length === 0) ? (
+                <div className="p-8 rounded-3xl border border-black/10 bg-[#FAFAFA] text-center space-y-3 animate-pulse">
+                  <RefreshCw className="w-6 h-6 text-black animate-spin mx-auto" />
+                  <div className="text-xs font-semibold text-black">
+                    Menyusun Ulang Tahapan Belajar Sesuai Fokus & Isi Dokumen...
+                  </div>
+                  <p className="text-[11px] text-neutral-500 max-w-md mx-auto">
+                    Harap tunggu sebentar, AI sedang menyesuaikan setiap simpul pembelajaran dengan dokumen dan permintaan Anda.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeLearningStages.map((stageItem) => {
+                    const stepNum = stageItem.stageNumber;
+                    const isUnderstood = !!roadmapStatus[stepNum];
+                    const isExpanded = expandedRoadmapStep === stepNum;
 
-                  return (
-                    <div
-                      key={`roadmap-${stepItem.step}`}
-                      className={`rounded-3xl border transition-all overflow-hidden ${
-                        isUnderstood
-                          ? "bg-emerald-50/20 border-emerald-300 shadow-2xs"
-                          : "bg-white border-black/8 hover:border-black/20 shadow-2xs"
-                      }`}
-                    >
-                      {/* Step Header Summary Row */}
-                      <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${
-                                isUnderstood
-                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                  : "bg-[#F4F4F6] text-neutral-800 border-black/10"
+                    return (
+                      <div
+                        key={`stage-${stepNum}-${stageItem.title}`}
+                        className={`rounded-3xl border transition-all overflow-hidden ${
+                          isUnderstood
+                            ? "bg-emerald-50/20 border-emerald-300 shadow-2xs"
+                            : "bg-white border-black/8 hover:border-black/20 shadow-2xs"
+                        }`}
+                      >
+                        {/* Step Header Summary Row */}
+                        <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${
+                                  isUnderstood
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                    : "bg-[#F4F4F6] text-neutral-800 border-black/10"
+                                }`}
+                              >
+                                {stageItem.phaseLabel}
+                              </span>
+                              {isUnderstood && (
+                                <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>Dikuasai</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <h5 className="text-sm sm:text-base font-bold text-black tracking-tight">
+                              {stageItem.title}
+                            </h5>
+                            <p className="text-xs text-neutral-600 leading-relaxed">
+                              {stageItem.shortSummary}
+                            </p>
+
+                            <div className="text-[10px] font-mono text-neutral-800 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full w-fit flex items-center gap-1.5">
+                              <Target className="w-3.5 h-3.5 text-neutral-600" />
+                              <span>Aksi Mandiri: {stageItem.selfAction}</span>
+                            </div>
+                          </div>
+
+                          {/* Controls: Expand / Collapse & Mark Understood */}
+                          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-black/8">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandRoadmapStep(stepNum)}
+                              className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                                isExpanded
+                                  ? "bg-black text-white"
+                                  : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border border-black/10"
                               }`}
                             >
-                              {stepItem.stage}
-                            </span>
-                            {isUnderstood && (
-                              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                                <Check className="w-3 h-3 text-emerald-600" />
-                                <span>Dikuasai</span>
-                              </span>
-                            )}
-                          </div>
-
-                          <h5 className="text-sm sm:text-base font-bold text-black tracking-tight">
-                            {stepItem.title}
-                          </h5>
-                          <p className="text-xs text-neutral-600 leading-relaxed">
-                            {stepItem.description}
-                          </p>
-
-                          <div className="text-[10px] font-mono text-neutral-800 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full w-fit flex items-center gap-1.5">
-                            <Target className="w-3.5 h-3.5 text-neutral-600" />
-                            <span>Aksi Mandiri: {stepItem.actionItem}</span>
-                          </div>
-                        </div>
-
-                        {/* Controls: Expand / Collapse & Mark Understood */}
-                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-black/8">
-                          <button
-                            type="button"
-                            onClick={() => toggleExpandRoadmapStep(stepItem.step)}
-                            className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                              isExpanded
-                                ? "bg-black text-white"
-                                : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border border-black/10"
-                            }`}
-                          >
-                            {isExpanded ? (
-                              <span className="inline-flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /><span>Tutup Materi</span></span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /><span>Buka Materi</span></span>
-                            )}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => toggleRoadmapStep(stepItem.step)}
-                            className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                              isUnderstood
-                                ? "bg-white hover:bg-neutral-100 text-black border border-black/15 shadow-2xs"
-                                : "bg-black hover:bg-neutral-800 text-white shadow-xs"
-                            }`}
-                          >
-                            {isUnderstood ? (
-                              "Batal Tandai"
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /><span>Tandai Paham</span></span>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Expandable Learning Material Drawer */}
-                      {isExpanded && (
-                        <div className="border-t border-black/8 bg-[#FAFAFA] p-5 sm:p-6 space-y-4 animate-in fade-in">
-                          {/* 1. Panduan & Uraian Materi Tahap Ini */}
-                          <div className="bg-white rounded-2xl p-5 border border-black/8 shadow-2xs space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-xs font-black">
-                                <BookOpen className="w-3.5 h-3.5" />
-                              </span>
-                              <h6 className="text-xs font-mono font-bold text-black uppercase tracking-wider">
-                                Uraian Materi & Panduan Belajar Tahap Ini
-                              </h6>
-                            </div>
-                            <div className="text-xs text-neutral-700 leading-relaxed pl-8">
-                              <ChatMessageContent
-                                text={stepItem.detailedGuide || stepItem.description}
-                                isUser={false}
-                              />
-                            </div>
-                          </div>
-
-                          {/* 2. Konsep Kunci yang Dipelajari */}
-                          {stepItem.keyConcepts && stepItem.keyConcepts.length > 0 && (
-                            <div className="space-y-1.5">
-                              <span className="text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1.5">
-                                <Key className="w-3.5 h-3.5 text-amber-500" />
-                                <span>Konsep Kunci yang Dipelajari:</span>
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {stepItem.keyConcepts.map((concept, cIdx) => (
-                                  <span
-                                    key={cIdx}
-                                    className="px-3 py-1 bg-white border border-black/10 rounded-full text-[11px] font-medium text-neutral-800 shadow-2xs"
-                                  >
-                                    {concept}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 3. Skenario Praktik Mandiri */}
-                          {stepItem.practiceScenario && (
-                            <div className="bg-[#F4F4F6] rounded-2xl p-4 border border-black/8 text-xs space-y-1">
-                              <div className="font-bold text-black flex items-center gap-1.5">
-                                <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Skenario Praktik Mandiri:</span>
-                              </div>
-                              <p className="text-neutral-700 leading-relaxed pl-5">
-                                {stepItem.practiceScenario}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* 4. Evaluasi & Tanya Tutor AI */}
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-black/8">
-                            {stepItem.checkQuestion ? (
-                              <div className="text-[11px] text-neutral-600 flex items-start gap-1.5 flex-1">
-                                <HelpCircle className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
-                                <span>
-                                  <strong>Uji Pemahaman:</strong> {stepItem.checkQuestion}
-                                </span>
-                              </div>
-                            ) : (
-                              <div />
-                            )}
+                              {isExpanded ? (
+                                <span className="inline-flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /><span>Tutup Materi</span></span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /><span>Buka Materi</span></span>
+                              )}
+                            </button>
 
                             <button
                               type="button"
-                              onClick={() => handleAskAboutStep(stepItem)}
-                              className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                              onClick={() => toggleRoadmapStep(stepNum)}
+                              className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                                isUnderstood
+                                  ? "bg-white hover:bg-neutral-100 text-black border border-black/15 shadow-2xs"
+                                  : "bg-black hover:bg-neutral-800 text-white shadow-xs"
+                              }`}
                             >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              <span>Tanya AI Tutor tentang Tahap Ini</span>
+                              {isUnderstood ? (
+                                "Batal Tandai"
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /><span>Tandai Paham</span></span>
+                              )}
                             </button>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+
+                        {/* Expandable Learning Material Drawer */}
+                        {isExpanded && (
+                          <div className="border-t border-black/8 bg-[#FAFAFA] p-5 sm:p-6 space-y-4 animate-in fade-in">
+                            {/* 1. Panduan & Uraian Materi Tahap Ini */}
+                            <div className="bg-white rounded-2xl p-5 border border-black/8 shadow-2xs space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-xs font-black">
+                                  <BookOpen className="w-3.5 h-3.5" />
+                                </span>
+                                <h6 className="text-xs font-mono font-bold text-black uppercase tracking-wider">
+                                  Uraian Materi & Panduan Belajar Tahap Ini
+                                </h6>
+                              </div>
+                              <div className="text-xs text-neutral-700 leading-relaxed pl-8">
+                                <ChatMessageContent
+                                  text={stageItem.detailedMaterial || stageItem.shortSummary}
+                                  isUser={false}
+                                />
+                              </div>
+                            </div>
+
+                            {/* 2. Konsep Kunci yang Dipelajari */}
+                            {stageItem.keyConcepts && stageItem.keyConcepts.length > 0 && (
+                              <div className="space-y-1.5">
+                                <span className="text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1.5">
+                                  <Key className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>Konsep Kunci yang Dipelajari:</span>
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {stageItem.keyConcepts.map((concept, cIdx) => (
+                                    <span
+                                      key={cIdx}
+                                      className="px-3 py-1 bg-white border border-black/10 rounded-full text-[11px] font-medium text-neutral-800 shadow-2xs"
+                                    >
+                                      {concept}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 3. Skenario Praktik Mandiri */}
+                            {stageItem.practiceScenario && (
+                              <div className="bg-[#F4F4F6] rounded-2xl p-4 border border-black/8 text-xs space-y-1">
+                                <div className="font-bold text-black flex items-center gap-1.5">
+                                  <Terminal className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Skenario Praktik Mandiri:</span>
+                                </div>
+                                <p className="text-neutral-700 leading-relaxed pl-5">
+                                  {stageItem.practiceScenario}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* 4. Evaluasi, Kueri Video & Tanya Tutor AI */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-black/8">
+                              {stageItem.comprehensionQuestion ? (
+                                <div className="text-[11px] text-neutral-600 flex items-start gap-1.5 flex-1">
+                                  <HelpCircle className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
+                                  <span>
+                                    <strong>Uji Pemahaman:</strong> {stageItem.comprehensionQuestion}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div />
+                              )}
+
+                              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                {stageItem.searchQuery && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCustomLearningGoal(stageItem.searchQuery);
+                                      setHubCurrentStage(3);
+                                      fetchValidatedTopicVideos(stageItem.searchQuery, true);
+                                    }}
+                                    className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                  >
+                                    <PlayCircle className="w-3.5 h-3.5" />
+                                    <span>Cari Video Tahap Ini</span>
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleAskAboutStep({
+                                      step: stepNum,
+                                      stage: stageItem.phaseLabel,
+                                      title: stageItem.title,
+                                      description: stageItem.shortSummary,
+                                      actionItem: stageItem.selfAction,
+                                      understood: isUnderstood,
+                                    })
+                                  }
+                                  className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  <span>Tanya AI Tutor tentang Tahap Ini</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* STAGE 2 BOTTOM ACTION */}
               <div className="flex items-center justify-between pt-2">
@@ -2340,107 +3081,281 @@ Silabus & Fokus Pembahasan:
                   </div>
                 </div>
 
-                {/* SUBSECTION 1: VIDEO YOUTUBE SPESIFIK */}
-                <div className="space-y-3.5">
-                  <div className="flex items-center justify-between gap-2">
+                {/* SUBSECTION 1: VIDEO YOUTUBE SPESIFIK + ANALISIS KEBUTUHAN USER & VALIDASI YT-DLP */}
+                <div className="space-y-4">
+                  {/* Panel Analisis Kebutuhan Belajar AI & Prisma Cache */}
+                  <div className="p-4 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <span className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+                          Analisis Kebutuhan Belajar AI & Validasi Video (yt-dlp)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-white border border-black/10 text-neutral-700">
+                          {videoCacheHitState
+                            ? "⚡ Prisma Cache Hit (Hemat Token)"
+                            : activeRecommendedVideos.length > 0
+                              ? "✓ Tervalidasi via FastAPI yt-dlp + oEmbed"
+                              : "Menunggu Validasi FastAPI"}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isValidatingVideos}
+                          onClick={() => fetchValidatedTopicVideos(customLearningGoal, true)}
+                          className="text-[10px] font-mono font-semibold px-3 py-1 rounded-full bg-black hover:bg-neutral-800 disabled:opacity-50 text-white inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                          title="Validasi ulang video dari server FastAPI (yt-dlp + YouTube oEmbed)"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isValidatingVideos ? "animate-spin" : ""}`} />
+                          <span>Validasi Ulang Video</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-neutral-700 leading-relaxed">
+                      {userNeedsSummaryState ||
+                        `Mahasiswa membutuhkan visualisasi terstruktur, demonstrasi kode langkah demi langkah, serta studi kasus praktis untuk menguasai ${analysisResult?.detectedTopic || analysisResult?.title || "materi modul ini"}.`}
+                    </p>
+
+                    {(analysisResult?.coreKeywords && analysisResult.coreKeywords.length > 0) && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-mono text-neutral-500">Kata Kunci Teknis Dokumen:</span>
+                        {analysisResult.coreKeywords.map((kw, kIdx) => (
+                          <span
+                            key={`core-kw-${kIdx}`}
+                            className="text-[10px] font-mono bg-indigo-50 text-indigo-800 px-2.5 py-0.5 rounded-full border border-indigo-200/70 font-medium"
+                          >
+                            #{kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {recommendedQueriesState.length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-mono text-neutral-500">Kueri Rekomendasi AI:</span>
+                        {recommendedQueriesState.map((q, qIdx) => (
+                          <button
+                            key={`rec-query-${qIdx}`}
+                            type="button"
+                            onClick={() => {
+                              setCustomLearningGoal(q);
+                              fetchValidatedTopicVideos(q, true);
+                            }}
+                            className="text-[10px] font-mono bg-white hover:bg-neutral-100 text-neutral-800 px-2.5 py-1 rounded-full border border-black/10 transition-colors cursor-pointer"
+                          >
+                            🔍 {q}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Input Kustomisasi Kebutuhan Belajar User */}
+                    <div className="pt-2 border-t border-black/6 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <input
+                        type="text"
+                        value={customLearningGoal}
+                        onChange={(e) => setCustomLearningGoal(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            fetchValidatedTopicVideos(customLearningGoal, true);
+                          }
+                        }}
+                        placeholder="Ketik fokus kebutuhan belajarmu (misal: Saya ingin fokus belajar bagian script C# untuk multi-target AR)..."
+                        className="flex-1 text-xs bg-white border border-black/12 rounded-xl px-3.5 py-2 text-black placeholder:text-neutral-400 focus:outline-none focus:border-black"
+                      />
+                      <button
+                        type="button"
+                        disabled={isValidatingVideos}
+                        onClick={() => fetchValidatedTopicVideos(customLearningGoal, true)}
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-semibold transition-all cursor-pointer shrink-0"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isValidatingVideos ? "animate-spin" : ""}`} />
+                        <span>{isValidatingVideos ? "Memvalidasi Video..." : "Sesuaikan Rekomendasi"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
                       <PlayCircle className="w-4 h-4 text-rose-600 shrink-0" />
                       <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-black">
                         Video Tutorial & Panduan Praktik Terverifikasi
                       </h5>
                     </div>
-                    <span className="text-[10px] font-mono text-neutral-500">
-                      Putar Langsung di Web atau Buka YouTube
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-neutral-500">
+                        Putar Langsung di Web atau Buka YouTube
+                      </span>
+                      <button
+                        type="button"
+                        disabled={isValidatingVideos}
+                        onClick={() => fetchValidatedTopicVideos(customLearningGoal, true)}
+                        className="text-[10px] font-mono font-medium px-2.5 py-1 rounded-lg bg-[#F4F4F6] hover:bg-neutral-200 disabled:opacity-50 text-neutral-800 border border-black/10 inline-flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isValidatingVideos ? "animate-spin" : ""}`} />
+                        <span>Validasi Ulang Video</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {activeRecommendedVideos.map((video, vIdx) => (
-                      <div
-                        key={`rec-video-${vIdx}-${video.embedId}`}
-                        className="group rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between"
-                      >
-                        {/* Video Thumbnail with overlay */}
+                  {activeRecommendedVideos.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {activeRecommendedVideos.map((video, vIdx) => (
                         <div
-                          onClick={() => setActiveVideoModal(video)}
-                          className="relative aspect-video w-full bg-slate-900 overflow-hidden cursor-pointer"
-                          title={`Klik untuk putar langsung: ${video.title}`}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setActiveVideoModal(video);
-                            }
-                          }}
+                          key={`rec-video-${vIdx}-${video.embedId}`}
+                          className="group rounded-2xl border border-black/8 bg-[#FAFAFA] hover:bg-white hover:border-black/20 hover:shadow-xs transition-all overflow-hidden flex flex-col justify-between"
                         >
-                          <img
-                            src={`https://img.youtube.com/vi/${video.embedId}/hqdefault.jpg`}
-                            alt={video.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                          {/* Hover Play Button Overlay */}
-                          <div className="absolute inset-0 bg-black/35 group-hover:bg-black/15 transition-colors flex items-center justify-center">
-                            <div className="w-11 h-11 rounded-full bg-black/80 group-hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-md group-hover:scale-110">
-                              <PlayCircle className="w-5 h-5 ml-0.5" />
+                          {/* Video Thumbnail with overlay */}
+                          <div
+                            onClick={() => setActiveVideoModal(video)}
+                            className="relative aspect-video w-full bg-slate-900 overflow-hidden cursor-pointer"
+                            title={`Klik untuk putar langsung: ${video.title}`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setActiveVideoModal(video);
+                              }
+                            }}
+                          >
+                            <img
+                              src={`https://img.youtube.com/vi/${video.embedId}/hqdefault.jpg`}
+                              alt={video.title}
+                              loading="lazy"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            {/* Hover Play Button Overlay */}
+                            <div className="absolute inset-0 bg-black/35 group-hover:bg-black/15 transition-colors flex items-center justify-center">
+                              <div className="w-11 h-11 rounded-full bg-black/80 group-hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-md group-hover:scale-110">
+                                <PlayCircle className="w-5 h-5 ml-0.5" />
+                              </div>
                             </div>
-                          </div>
-                          {/* Badges */}
-                          <div className="absolute top-2.5 left-2.5">
-                            <span className="text-[10px] font-mono font-bold bg-black/85 text-white px-2 py-0.5 rounded-md backdrop-blur-xs">
-                              ⏱ {video.duration}
-                            </span>
-                          </div>
-                          <div className="absolute top-2.5 right-2.5">
-                            <span className="text-[10px] font-semibold bg-rose-600 text-white px-2 py-0.5 rounded-md shadow-xs">
-                              YouTube
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Video Details */}
-                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-neutral-500">
-                              <span className="truncate">{video.channel}</span>
-                              <span title="Kreator Terverifikasi" className="inline-flex items-center">
-                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                            {/* Badges */}
+                            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                              <span className="text-[10px] font-mono font-bold bg-black/85 text-white px-2 py-0.5 rounded-md backdrop-blur-xs">
+                                ⏱ {video.duration}
+                              </span>
+                              {typeof video.qualityScore === "number" && (
+                                <span className="text-[10px] font-mono font-bold bg-emerald-600/95 text-white px-2 py-0.5 rounded-md shadow-xs">
+                                  ★ {video.qualityScore}%
+                                </span>
+                              )}
+                            </div>
+                            <div className="absolute top-2.5 right-2.5">
+                              <span className="text-[10px] font-semibold bg-rose-600 text-white px-2 py-0.5 rounded-md shadow-xs">
+                                YouTube Aktif
                               </span>
                             </div>
-                            <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
-                              {video.title}
-                            </h5>
-                            <p className="text-[11px] text-neutral-600 leading-relaxed line-clamp-2">
-                              {video.summaryTopic}
-                            </p>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="pt-3 border-t border-black/8 flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setActiveVideoModal(video)}
-                              className="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
-                            >
-                              <PlayCircle className="w-3.5 h-3.5" />
-                              <span>Tonton di Sini</span>
-                            </button>
-                            <a
-                              href={video.videoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="min-h-[44px] inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 text-xs font-medium transition-colors border border-black/10 shrink-0"
-                              title="Buka video di tab baru YouTube"
-                            >
-                              <span>Buka</span>
-                              <span className="text-[10px]">↗</span>
-                            </a>
+                          {/* Video Details */}
+                          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between gap-1.5 text-[11px] font-mono font-medium text-neutral-500">
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <span className="truncate">{video.channelName || video.channel}</span>
+                                  <span title="Kreator Terverifikasi" className="inline-flex items-center">
+                                    <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  </span>
+                                </div>
+                                {(typeof video.viewCount === "number" || typeof video.likeCount === "number") && (
+                                  <span className="text-[10px] text-neutral-500 shrink-0">
+                                    {typeof video.viewCount === "number"
+                                      ? `${(video.viewCount / 1000).toFixed(1)}K views`
+                                      : ""}
+                                    {typeof video.likeCount === "number"
+                                      ? ` • ${(video.likeCount / 1000).toFixed(1)}K 👍`
+                                      : ""}
+                                  </span>
+                                )}
+                              </div>
+                              <h5 className="text-xs sm:text-sm font-bold text-black leading-snug line-clamp-2">
+                                {video.title}
+                              </h5>
+                              <p className="text-[11px] text-neutral-600 leading-relaxed line-clamp-2">
+                                {video.summaryTopic}
+                              </p>
+
+                              {/* Top Comments Preview dari yt-dlp */}
+                              {Array.isArray(video.topComments) && video.topComments.length > 0 && (
+                                <div className="pt-2 mt-1 border-t border-black/6 space-y-1.5">
+                                  <div className="text-[10px] font-mono font-semibold text-neutral-500 uppercase tracking-wider">
+                                    Ulasan Penonton Teratas:
+                                  </div>
+                                  {video.topComments.slice(0, 2).map((comment, cIdx) => (
+                                    <div
+                                      key={`vid-comment-${vIdx}-${cIdx}`}
+                                      className="bg-white border border-black/6 rounded-xl px-2.5 py-1.5 text-[10.5px] text-neutral-700"
+                                    >
+                                      <span className="font-semibold text-black">{comment.author}: </span>
+                                      <span className="line-clamp-2">{comment.text}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="pt-3 border-t border-black/8 flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setActiveVideoModal(video)}
+                                className="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
+                              >
+                                <PlayCircle className="w-3.5 h-3.5" />
+                                <span>Tonton di Sini</span>
+                              </button>
+                              <a
+                                href={video.videoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="min-h-[44px] inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 text-xs font-medium transition-colors border border-black/10 shrink-0"
+                                title="Buka video di tab baru YouTube"
+                              >
+                                <span>Buka</span>
+                                <span className="text-[10px]">↗</span>
+                              </a>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  ) : isValidatingVideos ? (
+                    <div className="p-8 rounded-2xl border border-black/10 bg-[#FAFAFA] text-center space-y-3">
+                      <RefreshCw className="w-6 h-6 text-black animate-spin mx-auto" />
+                      <div className="text-xs font-semibold text-black">
+                        Sedang Mencari & Memverifikasi Video YouTube Aktif (yt-dlp + YouTube oEmbed)...
                       </div>
-                    ))}
-                  </div>
+                      <p className="text-[11px] text-neutral-500 max-w-md mx-auto">
+                        Sistem sedang memverifikasi ketersediaan video secara real-time, mengambil judul asli, jumlah likes, dan komentar teratas agar tidak ada video rusak yang tampil.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-6 sm:p-8 rounded-2xl border border-amber-200/80 bg-amber-50/40 text-center space-y-3">
+                      <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />
+                      <div className="text-xs sm:text-sm font-semibold text-neutral-900">
+                        Server validator video (FastAPI) sedang tidak aktif atau tidak ditemukan video yang lolos filter kualitas
+                      </div>
+                      <p className="text-[11px] text-neutral-600 max-w-lg mx-auto">
+                        Demi menjaga akurasi pembelajaran, NexedAI tidak menampilkan ID video statis atau tebakan AI yang belum terverifikasi. Pastikan server FastAPI berjalan di port 8000 lalu klik tombol di bawah untuk memvalidasi ulang.
+                      </p>
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          disabled={isValidatingVideos}
+                          onClick={() => fetchValidatedTopicVideos(customLearningGoal, true)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-semibold transition-all cursor-pointer"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${isValidatingVideos ? "animate-spin" : ""}`} />
+                          <span>Validasi Ulang Video</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* SUBSECTION 2: DOKUMENTASI RESMI SPESIFIK */}
@@ -2979,8 +3894,14 @@ Silabus & Fokus Pembahasan:
       {/* MODAL PEMUTAR VIDEO EMBED YOUTUBE RESPONSIF (DIRECT PRIVACY-ENHANCED & FAIL-SAFE) */}
       {activeVideoModal && (() => {
         const cleanEmbedId =
-          extractYoutubeId(activeVideoModal.embedId || activeVideoModal.videoUrl) ||
-          (activeVideoModal.embedId && activeVideoModal.embedId.length === 11 ? activeVideoModal.embedId : "1NigbK3Jk7Q");
+          extractYoutubeId(activeVideoModal.videoId || activeVideoModal.embedId || activeVideoModal.videoUrl) ||
+          (activeVideoModal.embedId && /^[A-Za-z0-9_-]{11}$/.test(activeVideoModal.embedId)
+            ? activeVideoModal.embedId
+            : null);
+
+        if (!cleanEmbedId || BANNED_LEGACY_VIDEO_IDS.has(cleanEmbedId)) {
+          return null;
+        }
 
         const handleCopyVideoUrl = async (url: string) => {
           try {

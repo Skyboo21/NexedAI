@@ -1,16 +1,81 @@
-from fastapi import APIRouter, UploadFile, File, Form
-from typing import List, Optional
+import io
+import re
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+from fastapi import APIRouter, File, Form, UploadFile
 from app.models.schemas import (
-    ModulItem,
-    ChatPromptRequest,
-    AiChatResponse,
     AdaptiveLearningResponse,
     AdaptiveRecommendationRequest,
+    AiChatResponse,
+    ChatPromptRequest,
+    ModulItem,
+    YouTubeValidateSearchRequest,
+    YouTubeValidateSearchResponse,
 )
 from app.services.recommender_service import generate_adaptive_recommendations
+from app.services.youtube_validator_service import (
+    validate_and_search_youtube_videos_async,
+)
+
+try:
+    from pypdf import PdfReader  # type: ignore
+except ImportError:
+    PdfReader = None  # type: ignore
+
 
 router = APIRouter()
+
+
+def _extract_clean_document_text(filename: str, content: bytes) -> Tuple[str, int]:
+    """
+    Mengekstrak teks asli dari dokumen PDF (via pypdf.PdfReader), TXT/MD, atau Office XML.
+    Mengembalikan tuple (clean_extracted_text, page_count).
+    """
+    lower_name = (filename or "dokumen.pdf").lower()
+    raw_text = ""
+    page_count = 1
+
+    if lower_name.endswith(".pdf"):
+        if PdfReader is not None:
+            try:
+                reader = PdfReader(io.BytesIO(content))
+                page_count = len(reader.pages)
+                pages_text: List[str] = []
+                for idx, page in enumerate(reader.pages):
+                    try:
+                        page_str = page.extract_text() or ""
+                    except Exception:
+                        page_str = ""
+                    if page_str.strip():
+                        pages_text.append(f"[Halaman {idx + 1}]\n{page_str.strip()}")
+                raw_text = "\n\n".join(pages_text)
+            except Exception as exc:
+                print(f"[extract-text] pypdf extraction error on {filename}: {exc}")
+
+        # Fallback stream ekstraksi teks terbaca jika PDF memiliki encoding khusus
+        if len(raw_text.strip()) < 30:
+            decoded_latin = content.decode("latin-1", errors="ignore")
+            matches = re.findall(r"\(([^()]{3,200})\)", decoded_latin)
+            if matches:
+                filtered = [
+                    m for m in matches if re.search(r"[A-Za-z]{3,}", m) and not m.startswith("/")
+                ]
+                raw_text = " ".join(filtered)
+    elif lower_name.endswith((".docx", ".pptx", ".odt")):
+        decoded_latin = content.decode("latin-1", errors="ignore")
+        xml_matches = re.findall(r"<(?:w|a):t[^>]*>([^<]+)</(?:w|a):t>", decoded_latin)
+        if xml_matches:
+            raw_text = " ".join(xml_matches)
+        else:
+            raw_text = content.decode("utf-8", errors="ignore")
+    else:
+        raw_text = content.decode("utf-8", errors="replace")
+
+    # Bersihkan spasi dan newline berlebih tanpa merusak struktur paragraf
+    cleaned = re.sub(r"[ \t]+", " ", raw_text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned[:15000], max(1, page_count)
+
 
 @router.get("/modul", response_model=List[ModulItem])
 def get_modul_list():
@@ -41,18 +106,48 @@ def get_modul_list():
         },
     ]
 
-@router.post("/modul/upload")
-async def upload_modul(moduleId: str = Form(...), file: UploadFile = File(...)):
+
+@router.post("/modul/extract-text")
+async def extract_module_text_endpoint(file: UploadFile = File(...)) -> Dict[str, Any]:
     content = await file.read()
+    fname = file.filename or "dokumen.pdf"
+    extracted_text, page_count = _extract_clean_document_text(fname, content)
+    preview_snippet = extracted_text[:300].replace("\n", " ").strip()
+
     return {
         "success": True,
-        "filename": file.filename,
-        "moduleId": moduleId,
-        "bytesRead": len(content),
-        "chunkCount": 6,
-        "totalWords": 1250,
-        "message": f"Modul '{file.filename}' berhasil diindeks ke vector store.",
+        "filename": fname,
+        "pageCount": page_count,
+        "extractedText": extracted_text,
+        "previewSnippet": preview_snippet,
     }
+
+
+@router.post("/modul/upload")
+async def upload_modul(
+    moduleId: str = Form("modul-upload"),
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    content = await file.read()
+    fname = file.filename or "dokumen.pdf"
+    extracted_text, page_count = _extract_clean_document_text(fname, content)
+    total_words = len(extracted_text.split()) if extracted_text else 0
+    chunk_count = max(1, (total_words + 449) // 450)
+
+    return {
+        "success": True,
+        "filename": fname,
+        "moduleId": moduleId,
+        "pageCount": page_count,
+        "bytesRead": len(content),
+        "chunkCount": chunk_count,
+        "totalWords": total_words,
+        "extractedText": extracted_text,
+        "rawText": extracted_text,
+        "previewSnippet": extracted_text[:300].replace("\n", " ").strip(),
+        "message": f"Modul '{fname}' ({page_count} halaman) berhasil diekstrak.",
+    }
+
 
 @router.post("/modul/chat", response_model=AiChatResponse)
 def chat_modul(payload: ChatPromptRequest):
@@ -74,6 +169,7 @@ def chat_modul(payload: ChatPromptRequest):
         "timestamp": datetime.now().isoformat(),
     }
 
+
 @router.post("/modul/{id}/adaptive-recommendations", response_model=AdaptiveLearningResponse)
 def get_module_adaptive_recommendations_post(
     id: str,
@@ -83,8 +179,24 @@ def get_module_adaptive_recommendations_post(
     summary = payload.summary if payload else None
     return generate_adaptive_recommendations(topic=topic, summary=summary)
 
+
 @router.get("/modul/{id}/adaptive-recommendations", response_model=AdaptiveLearningResponse)
 def get_module_adaptive_recommendations_get(id: str):
     topic = id.replace("-", " ").title()
     return generate_adaptive_recommendations(topic=topic)
 
+
+@router.post("/youtube/validate", response_model=YouTubeValidateSearchResponse)
+@router.post("/youtube/validate-search", response_model=YouTubeValidateSearchResponse)
+async def validate_and_search_youtube_endpoint(payload: YouTubeValidateSearchRequest):
+    effective_keywords = (
+        payload.core_keywords if payload.core_keywords else payload.coreKeywords
+    )
+    return await validate_and_search_youtube_videos_async(
+        topic=payload.topic,
+        user_needs_summary=payload.userNeedsSummary,
+        queries=payload.queries,
+        core_keywords=effective_keywords,
+        candidate_urls=payload.candidateUrls,
+        max_results=payload.maxResults,
+    )

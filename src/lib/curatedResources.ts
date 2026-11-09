@@ -1,27 +1,37 @@
 // src/lib/curatedResources.ts
 /**
- * Kamus Kurasi Referensi Terverifikasi (Curated Fallback Dictionary)
- * Menyediakan direct deep-link video YouTube spesifik (dengan embedId 11 karakter)
- * dan dokumentasi teknis bab spesifik untuk 100% Silabus Vokasi D3 TI SV UNS:
- * 1. Pemrograman Web: HTML5 Semantic, CSS Grid/Flexbox, JavaScript Modern (ES6+), DOM Manipulation, Fetch API, REST API PHP/Node.
- * 2. Basis Data: Konsep Relasional, DDL/DML SQL, Normalisasi (1NF, 2NF, 3NF), SQL JOIN, Indeks & Transaksi ACID.
- * 3. Algoritma & Pemrograman: Flowchart & Pseudocode, Percabangan (If/Else, Switch), Looping (For, While), Array & Manipulasi String, Fungsi Rekursif, Algoritma Searching & Sorting.
+ * Kamus Kurasi Dokumentasi Teknis & Kueri Pencarian Topik
+ * TIDAK ADA LAGI video ID statis/hardcoded/palsu di sini.
+ * Seluruh video YouTube WAJIB divalidasi secara live melalui FastAPI (yt-dlp + YouTube oEmbed).
  */
+
+export interface VideoTopComment {
+  author: string;
+  text: string;
+  likes?: number;
+}
 
 export interface RecommendedVideo {
   title: string;
   channel: string;
+  channelName?: string;
   duration: string;
-  videoUrl: string; // URL video spesifik (misal: https://www.youtube.com/watch?v=VIDEO_ID)
-  embedId: string; // ID video 11 karakter untuk pemutar embed langsung
+  videoUrl: string;
+  embedId: string;
+  videoId?: string;
   summaryTopic: string;
+  viewCount?: number;
+  likeCount?: number;
+  qualityScore?: number;
+  topComments?: VideoTopComment[];
+  isValidated?: boolean;
 }
 
 export interface RecommendedDoc {
   title: string;
-  source: string; // Misal: "MDN Web Docs", "W3Schools", "PostgreSQL Docs"
-  url: string; // URL bab spesifik
-  docUrl?: string; // Kompatibilitas alias deep-link
+  source: string;
+  url: string;
+  docUrl?: string;
   description: string;
 }
 
@@ -29,6 +39,7 @@ export interface CuratedTopicCluster {
   id: string;
   name: string;
   keywords: string[];
+  recommendedQueries: string[];
   videos: RecommendedVideo[];
   docs: RecommendedDoc[];
 }
@@ -38,37 +49,26 @@ export interface CuratedTopicCluster {
  */
 export function extractYoutubeId(url: string): string {
   if (!url) return "";
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2] && match[2].length === 11 ? match[2] : "";
+  const trimmed = url.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
+  }
+  const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = trimmed.match(regExp);
+  return match && match[2] && /^[a-zA-Z0-9_-]{11}$/.test(match[2]) ? match[2] : "";
 }
 
 export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
-  // ==========================================
-  // SILABUS 1: PEMROGRAMAN WEB
-  // ==========================================
   {
     id: "web-html-semantic",
     name: "Pemrograman Web: HTML5 Semantic & Struktur Dokumen",
     keywords: ["html", "html5", "semantic", "semantik", "heading", "paragraf", "form", "tabel", "tag", "markup", "web dasar"],
-    videos: [
-      {
-        title: "HTML Dasar: Struktur & Elemen Semantik",
-        channel: "Web Programming UNPAS",
-        duration: "18:24",
-        videoUrl: "https://www.youtube.com/watch?v=1NigbK3Jk7Q",
-        embedId: "1NigbK3Jk7Q",
-        summaryTopic: "Struktur dasar dokumen HTML5, tag semantik (header, nav, main, footer), hierarki heading, link, dan elemen gambar.",
-      },
-      {
-        title: "HTML5 Form & Input Validation Komprehensif",
-        channel: "Web Programming UNPAS",
-        duration: "21:10",
-        videoUrl: "https://www.youtube.com/watch?v=CleFk3BZB3g",
-        embedId: "CleFk3BZB3g",
-        summaryTopic: "Pembuatan formulir web, input validation, atribut required, pattern, dan pengiriman request data.",
-      },
+    recommendedQueries: [
+      "tutorial html5 semantic bahasa indonesia",
+      "html5 semantic elements tutorial",
+      "struktur dokumen html dasar",
     ],
+    videos: [],
     docs: [
       {
         title: "Panduan Dasar HTML untuk Pemula",
@@ -90,24 +90,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "web-css-layout",
     name: "Pemrograman Web: CSS Grid, Flexbox & Responsive Design",
     keywords: ["css", "grid", "flexbox", "responsive", "media query", "box model", "layout", "flex", "display", "align-items", "justify-content"],
-    videos: [
-      {
-        title: "CSS Layouting: Flexbox Komprehensif",
-        channel: "Web Programming UNPAS",
-        duration: "26:40",
-        videoUrl: "https://www.youtube.com/watch?v=tXlZgwYp5V0",
-        embedId: "tXlZgwYp5V0",
-        summaryTopic: "Prinsip main axis vs cross axis, flex container, flex item, justify-content, dan responsive wrapping.",
-      },
-      {
-        title: "CSS Grid: Desain Layout Dua Dimensi Modern",
-        channel: "Web Programming UNPAS",
-        duration: "30:15",
-        videoUrl: "https://www.youtube.com/watch?v=jV8B24rSN5o",
-        embedId: "jV8B24rSN5o",
-        summaryTopic: "Penyusunan grid track, grid template columns/rows, gap, dan penempatan item responsif.",
-      },
+    recommendedQueries: [
+      "css flexbox dan css grid tutorial indonesia",
+      "responsive web design css flexbox grid tutorial",
+      "belajar css layouting",
     ],
+    videos: [],
     docs: [
       {
         title: "Panduan CSS Flexible Box Layout (Flexbox)",
@@ -129,24 +117,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "web-javascript-es6",
     name: "Pemrograman Web: JavaScript Modern (ES6+)",
     keywords: ["javascript", "js", "es6", "arrow function", "destructuring", "let", "const", "template literal", "spread operator", "modular js"],
-    videos: [
-      {
-        title: "JavaScript Dasar: Variabel, Tipe Data & Operator",
-        channel: "Web Programming UNPAS",
-        duration: "14:50",
-        videoUrl: "https://www.youtube.com/watch?v=RUTV_5m4VeI",
-        embedId: "RUTV_5m4VeI",
-        summaryTopic: "Deklarasi let, const, tipe data primitif, perbandingan tipe data, dan alur eksekusi engine V8.",
-      },
-      {
-        title: "JavaScript Modern ES6+: Arrow Function & Destructuring",
-        channel: "Web Programming UNPAS",
-        duration: "24:18",
-        videoUrl: "https://www.youtube.com/watch?v=O12S4k4h7eE",
-        embedId: "O12S4k4h7eE",
-        summaryTopic: "Fitur baru sintaks ES6+: Arrow functions, template literals, array destructuring, dan rest parameter.",
-      },
+    recommendedQueries: [
+      "tutorial javascript modern es6 bahasa indonesia",
+      "javascript es6 arrow function destructuring tutorial",
+      "belajar javascript dasar sampai mahir",
     ],
+    videos: [],
     docs: [
       {
         title: "Panduan Komprehensif JavaScript",
@@ -168,24 +144,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "web-dom-manipulation",
     name: "Pemrograman Web: DOM Manipulation & Event Interaktif",
     keywords: ["dom", "manipulasi dom", "event", "event listener", "queryselector", "click", "innerhtml", "classlist", "elemen html"],
-    videos: [
-      {
-        title: "DOM Manipulation & Event Interaktif JavaScript",
-        channel: "Dea Afrizal",
-        duration: "38:12",
-        videoUrl: "https://www.youtube.com/watch?v=yptzI_QhE64",
-        embedId: "yptzI_QhE64",
-        summaryTopic: "Menyeleksi elemen HTML via querySelector, manipulasi class CSS, dan event listener interaktif.",
-      },
-      {
-        title: "JavaScript & DOM: DOM Events & Event Handling",
-        channel: "Web Programming UNPAS",
-        duration: "19:35",
-        videoUrl: "https://www.youtube.com/watch?v=34l_8x1pX2Y",
-        embedId: "34l_8x1pX2Y",
-        summaryTopic: "Event handling pada peramban web: click, mouseover, submit form, dan event propagation.",
-      },
+    recommendedQueries: [
+      "javascript dom manipulation tutorial indonesia",
+      "belajar javascript dom event listener",
+      "javascript dom crash course",
     ],
+    videos: [],
     docs: [
       {
         title: "Pengenalan Document Object Model (DOM)",
@@ -207,24 +171,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "web-fetch-async",
     name: "Pemrograman Web: Fetch API, Promise & Asynchronous JavaScript",
     keywords: ["fetch", "fetch api", "async", "await", "promise", "asynchronous", "ajax", "json", "api", "request", "http"],
-    videos: [
-      {
-        title: "Asynchronous JavaScript: Callback, Promise & Async/Await",
-        channel: "Web Programming UNPAS",
-        duration: "35:10",
-        videoUrl: "https://www.youtube.com/watch?v=f4bLqjC_sM0",
-        embedId: "f4bLqjC_sM0",
-        summaryTopic: "Siklus event loop, asynchronous non-blocking I/O, resolusi Promise, dan keyword async/await.",
-      },
-      {
-        title: "Tutorial Fetch API JavaScript & Konsumsi REST API",
-        channel: "Web Programming UNPAS",
-        duration: "28:45",
-        videoUrl: "https://www.youtube.com/watch?v=9Lh5c4fT2_Q",
-        embedId: "9Lh5c4fT2_Q",
-        summaryTopic: "Mengirim HTTP GET & POST request menggunakan fetch(), parsing payload JSON, dan handling error network.",
-      },
+    recommendedQueries: [
+      "asynchronous javascript promise async await indonesia",
+      "fetch api javascript tutorial indonesia",
+      "javascript async await fetch api tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Menggunakan Fetch API (Using Fetch)",
@@ -246,24 +198,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "web-rest-api",
     name: "Pemrograman Web: RESTful API (PHP & Node.js)",
     keywords: ["rest api", "rest", "api", "endpoint", "crud api", "backend", "postman", "http method", "status code", "json response", "express"],
-    videos: [
-      {
-        title: "Apa Itu RESTful API & Cara Kerjanya",
-        channel: "Web Programming UNPAS",
-        duration: "22:15",
-        videoUrl: "https://www.youtube.com/watch?v=h9j_S61hZ8M",
-        embedId: "h9j_S61hZ8M",
-        summaryTopic: "Konsep arsitektur representational state transfer (REST), endpoint URI, HTTP status codes, dan stateless protocol.",
-      },
-      {
-        title: "Membangun REST API Sederhana & Praktis",
-        channel: "Programmer Zaman Now",
-        duration: "34:20",
-        videoUrl: "https://www.youtube.com/watch?v=3g5Y1xZ6m9Q",
-        embedId: "3g5Y1xZ6m9Q",
-        summaryTopic: "Implementasi routing CRUD, middleware parsing request body JSON, dan pengembalian respons standar.",
-      },
+    recommendedQueries: [
+      "apa itu rest api tutorial bahasa indonesia",
+      "membuat restful api nodejs express tutorial",
+      "restful api concepts and examples",
     ],
+    videos: [],
     docs: [
       {
         title: "HTTP Request Methods & Status Codes",
@@ -281,32 +221,16 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // SILABUS 2: BASIS DATA
-  // ==========================================
   {
     id: "db-relational-concept",
     name: "Basis Data: Konsep Relasional & Model Data (ERD)",
     keywords: ["relasional", "rdbms", "erd", "entitas", "relasi", "primary key", "foreign key", "kardinalitas", "one to many", "basis data konseptual"],
-    videos: [
-      {
-        title: "Pengenalan Sistem Basis Data Relasional & Konsep Dasar",
-        channel: "Web Programming UNPAS",
-        duration: "20:30",
-        videoUrl: "https://www.youtube.com/watch?v=CleFk3BZB3g",
-        embedId: "CleFk3BZB3g",
-        summaryTopic: "Definisi sistem basis data, konsep relasi antar entitas, integritas data referensial, dan kunci relasi.",
-      },
-      {
-        title: "Merancang Entity Relationship Diagram (ERD) dari Nol",
-        channel: "Dea Afrizal",
-        duration: "25:40",
-        videoUrl: "https://www.youtube.com/watch?v=8_XnZ0jK9Lw",
-        embedId: "8_XnZ0jK9Lw",
-        summaryTopic: "Notasi ERD Chen vs Crow's Foot, penentuan kardinalitas 1:1, 1:N, M:N, dan pemetaan tabel relasional.",
-      },
+    recommendedQueries: [
+      "cara membuat erd entity relationship diagram bahasa indonesia",
+      "konsep basis data relasional primary key foreign key",
+      "database design erd tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Pengenalan Basis Data Relasional & Arsitektur",
@@ -328,24 +252,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "db-ddl-dml-sql",
     name: "Basis Data: DDL & DML SQL (Sintaks Kueri)",
     keywords: ["ddl", "dml", "sql", "create table", "alter", "drop", "insert", "update", "delete", "select", "where", "database query"],
-    videos: [
-      {
-        title: "Tutorial Kueri SQL Dasar: DDL & DML Terlengkap",
-        channel: "Programmer Zaman Now",
-        duration: "42:15",
-        videoUrl: "https://www.youtube.com/watch?v=sffId_J1K04",
-        embedId: "sffId_J1K04",
-        summaryTopic: "Perintah DDL (CREATE, ALTER, DROP) dan manipulasi DML (INSERT, SELECT, UPDATE, DELETE) dengan filter WHERE.",
-      },
-      {
-        title: "SQL Tutorial: Full Database Course for Beginners",
-        channel: "freeCodeCamp.org",
-        duration: "4:20:38",
-        videoUrl: "https://www.youtube.com/watch?v=HXV3zeRR3h4",
-        embedId: "HXV3zeRR3h4",
-        summaryTopic: "Konstruksi kueri komprehensif, tipe data kolom, constraint NOT NULL/UNIQUE, dan operasi CRUD.",
-      },
+    recommendedQueries: [
+      "belajar sql dasar ddl dml bahasa indonesia",
+      "sql tutorial for beginners full course",
+      "perintah dasar sql create insert select update",
     ],
+    videos: [],
     docs: [
       {
         title: "Dokumentasi Resmi PostgreSQL: Kueri & Manipulasi Data",
@@ -367,24 +279,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "db-normalization",
     name: "Basis Data: Normalisasi (1NF, 2NF, 3NF)",
     keywords: ["normalisasi", "1nf", "2nf", "3nf", "anomali", "redundansi", "ketergantungan fungsional", "bcnf", "dekomposisi", "bentuk normal"],
-    videos: [
-      {
-        title: "Normalisasi Database 1NF, 2NF, 3NF Dijamin Paham!",
-        channel: "Dea Afrizal",
-        duration: "24:18",
-        videoUrl: "https://www.youtube.com/watch?v=5qY4_8pDfqQ",
-        embedId: "5qY4_8pDfqQ",
-        summaryTopic: "Langkah eliminasi repeating group (1NF), dependensi parsial (2NF), dan dependensi transitif (3NF).",
-      },
-      {
-        title: "Perancangan Basis Data: Studi Kasus Normalisasi",
-        channel: "Web Programming UNPAS",
-        duration: "27:40",
-        videoUrl: "https://www.youtube.com/watch?v=U81_m5-lUqQ",
-        embedId: "U81_m5-lUqQ",
-        summaryTopic: "Pencegahan anomali insert, update, dan delete pada tabel basis data relasional produksi nyata.",
-      },
+    recommendedQueries: [
+      "normalisasi database 1nf 2nf 3nf bahasa indonesia",
+      "database normalization 1nf 2nf 3nf explained",
+      "cara normalisasi tabel basis data",
     ],
+    videos: [],
     docs: [
       {
         title: "Prinsip Dasar Normalisasi Database Relasional",
@@ -406,24 +306,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "db-sql-join",
     name: "Basis Data: SQL JOIN & Subqueries",
     keywords: ["join", "inner join", "left join", "right join", "full join", "subquery", "subqueries", "relasi tabel", "gabung tabel"],
-    videos: [
-      {
-        title: "Memahami SQL JOIN: INNER, LEFT, RIGHT JOIN Praktis",
-        channel: "Programmer Zaman Now",
-        duration: "29:15",
-        videoUrl: "https://www.youtube.com/watch?v=sffId_J1K04",
-        embedId: "sffId_J1K04",
-        summaryTopic: "Diagram Venn SQL JOIN, penggabungan baris berdasarkan kondisi ON primary key ke foreign key.",
-      },
-      {
-        title: "Kueri Tingkat Lanjut: Subqueries & Table Joins",
-        channel: "freeCodeCamp.org",
-        duration: "38:50",
-        videoUrl: "https://www.youtube.com/watch?v=HXV3zeRR3h4",
-        embedId: "HXV3zeRR3h4",
-        summaryTopic: "Kueri bersarang (correlated subqueries), klausul IN, EXISTS, dan penggabungan multi-tabel.",
-      },
+    recommendedQueries: [
+      "belajar sql join inner join left join bahasa indonesia",
+      "sql joins tutorial for beginners",
+      "sql subquery dan join tabel",
     ],
+    videos: [],
     docs: [
       {
         title: "Dokumentasi Resmi PostgreSQL: Tabel Kueri & JOIN",
@@ -445,24 +333,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "db-index-acid",
     name: "Basis Data: Indeks & Transaksi ACID",
     keywords: ["indeks", "index", "b-tree", "transaksi", "acid", "atomicity", "consistency", "isolation", "durability", "commit", "rollback", "locking"],
-    videos: [
-      {
-        title: "Database Transaction & Konsep ACID Terlengkap",
-        channel: "Programmer Zaman Now",
-        duration: "32:10",
-        videoUrl: "https://www.youtube.com/watch?v=74lT38H_Y4Y",
-        embedId: "74lT38H_Y4Y",
-        summaryTopic: "Prinsip Atomicity, Consistency, Isolation, Durability, serta perintah START TRANSACTION, COMMIT, dan ROLLBACK.",
-      },
-      {
-        title: "Optimasi Kueri dengan Database Indexing (B-Tree)",
-        channel: "Web Programming UNPAS",
-        duration: "25:30",
-        videoUrl: "https://www.youtube.com/watch?v=U81_m5-lUqQ",
-        embedId: "U81_m5-lUqQ",
-        summaryTopic: "Cara kerja struktur B-Tree Index, perbedaan Full Table Scan vs Index Scan, dan best practice indexing.",
-      },
+    recommendedQueries: [
+      "database indexing dan acid transaction tutorial",
+      "database transaction acid explained",
+      "optimasi query database index",
     ],
+    videos: [],
     docs: [
       {
         title: "Dokumentasi PostgreSQL: Transaksi & Konkurensi Data",
@@ -480,32 +356,16 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // SILABUS 3: ALGORITMA & PEMROGRAMAN
-  // ==========================================
   {
     id: "algo-flowchart-pseudocode",
     name: "Algoritma & Pemrograman: Flowchart & Pseudocode",
-    keywords: ["flowchart", "pseudocode", "diagram alir", "notasi ansi", "logika", "komputasi", "algoritma sekuensial", "terminator", "proses", "io"],
-    videos: [
-      {
-        title: "Logika Pemrograman: Diagram Alir (Flowchart) Standar",
-        channel: "Web Programming UNPAS",
-        duration: "22:15",
-        videoUrl: "https://www.youtube.com/watch?v=wL_3F5d0K5Y",
-        embedId: "wL_3F5d0K5Y",
-        summaryTopic: "Simbol standar ANSI/ISO flowchart: terminator, input/output, proses komputasi, dan decision diamond.",
-      },
-      {
-        title: "Menulis Pseudocode Algoritma yang Bersih & Terstruktur",
-        channel: "Web Programming UNPAS",
-        duration: "18:40",
-        videoUrl: "https://www.youtube.com/watch?v=RUTV_5m4VeI",
-        embedId: "RUTV_5m4VeI",
-        summaryTopic: "Penyusunan pseudocode independen bahasa, konvensi penamaan variabel deskriptif, dan deskripsi logika.",
-      },
+    keywords: ["flowchart", "pseudocode", "diagram alir", "notasi ansi", "logika", "komputasi", "algoritma sekuensial", "terminator", "proses", "io", "dfd", "data flow diagram"],
+    recommendedQueries: [
+      "tutorial flowchart dan dfd data flow diagram bahasa indonesia",
+      "belajar algoritma flowchart dan pseudocode",
+      "perbedaan flowchart dan dfd sistem informasi",
     ],
+    videos: [],
     docs: [
       {
         title: "Standar Notasi & Simbol Flowchart",
@@ -527,24 +387,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "algo-conditional-branching",
     name: "Algoritma & Pemrograman: Percabangan (IF/ELSE, Switch-Case)",
     keywords: ["if", "else", "if else", "switch", "switch case", "kondisional", "percabangan", "nested if", "boolean", "kondisi", "operator logika"],
-    videos: [
-      {
-        title: "Pengkondisian Logika: IF, ELSE IF & Nested IF",
-        channel: "Web Programming UNPAS",
-        duration: "18:40",
-        videoUrl: "https://www.youtube.com/watch?v=4mD_5f9Jk3L",
-        embedId: "4mD_5f9Jk3L",
-        summaryTopic: "Evaluasi ekspresi Boolean, tabel kebenaran AND/OR/NOT, dan pengkondisian bertingkat.",
-      },
-      {
-        title: "Struktur Kontrol Seleksi: SWITCH CASE vs IF ELSE",
-        channel: "Web Programming UNPAS",
-        duration: "15:20",
-        videoUrl: "https://www.youtube.com/watch?v=CleFk3BZB3g",
-        embedId: "CleFk3BZB3g",
-        summaryTopic: "Perbandingan performa switch-case untuk variabel diskrit tunggal dan klausul break/default.",
-      },
+    recommendedQueries: [
+      "percabangan if else switch case pemrograman indonesia",
+      "belajar logika percabangan if else",
+      "conditional statements programming tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Pernyataan Kondisional: if...else & switch",
@@ -566,24 +414,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "algo-looping-control",
     name: "Algoritma & Pemrograman: Looping (FOR, WHILE) & Guard Infinite Loop",
     keywords: ["loop", "looping", "perulangan", "for", "while", "do while", "infinite loop", "counter", "break", "continue", "iterasi"],
-    videos: [
-      {
-        title: "Pengulangan (Looping): FOR, WHILE & DO WHILE",
-        channel: "Web Programming UNPAS",
-        duration: "21:30",
-        videoUrl: "https://www.youtube.com/watch?v=mG_4H6p7Qk8",
-        embedId: "mG_4H6p7Qk8",
-        summaryTopic: "Logika counter, kondisi terminasi, iterasi terhitung (definite) vs bersyarat (indefinite).",
-      },
-      {
-        title: "Pencegahan Infinite Loop & Penggunaan Break/Continue",
-        channel: "Web Programming UNPAS",
-        duration: "17:15",
-        videoUrl: "https://www.youtube.com/watch?v=RUTV_5m4VeI",
-        embedId: "RUTV_5m4VeI",
-        summaryTopic: "Penyebab infinite loop pada while, guard update counter, serta fungsi kontrol alur break dan continue.",
-      },
+    recommendedQueries: [
+      "perulangan for while do while pemrograman indonesia",
+      "belajar looping algoritma pemrograman",
+      "for loop while loop programming tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Pengulangan & Iterasi Algoritma Komputasi",
@@ -605,24 +441,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "algo-array-string",
     name: "Algoritma & Pemrograman: Array & Manipulasi String",
     keywords: ["array", "string", "matriks", "matrix", "indeks", "panjang string", "substring", "traversal", "vektor", "multidimensi", "koleksi"],
-    videos: [
-      {
-        title: "Struktur Data Array: Representasi Memori & Operasi Dasar",
-        channel: "Web Programming UNPAS",
-        duration: "25:10",
-        videoUrl: "https://www.youtube.com/watch?v=9Q_5K2m8Y1Z",
-        embedId: "9Q_5K2m8Y1Z",
-        summaryTopic: "Pengalamatan memori contiguous, zero-based indexing, operasi traversal, dan manipulasi elemen array.",
-      },
-      {
-        title: "Manipulasi String & Matriks 2 Dimensi Praktis",
-        channel: "Programmer Zaman Now",
-        duration: "28:35",
-        videoUrl: "https://www.youtube.com/watch?v=3kL_7P9m4X2",
-        embedId: "3kL_7P9m4X2",
-        summaryTopic: "Pemrosesan karakter string, pencarian substring, dan iterasi matriks baris-kolom dengan nested loop.",
-      },
+    recommendedQueries: [
+      "struktur data array dan string pemrograman indonesia",
+      "array 1 dimensi dan 2 dimensi matriks tutorial",
+      "array data structure tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Array Data Structure & Methods Specification",
@@ -644,24 +468,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "algo-function-recursion",
     name: "Algoritma & Pemrograman: Fungsi Modular & Rekursif",
     keywords: ["fungsi", "rekursif", "rekursi", "base case", "call stack", "modular", "parameter", "return", "stack overflow", "faktorial", "fibonacci"],
-    videos: [
-      {
-        title: "Fungsi Modular: Parameter, Return Value & Scope",
-        channel: "Web Programming UNPAS",
-        duration: "23:45",
-        videoUrl: "https://www.youtube.com/watch?v=wL_3F5d0K5Y",
-        embedId: "wL_3F5d0K5Y",
-        summaryTopic: "Modularisasi kode DRY, passing parameter by value vs reference, dan batasan scope variabel.",
-      },
-      {
-        title: "Algoritma Rekursif & Konsep Call Stack",
-        channel: "Web Programming UNPAS",
-        duration: "26:15",
-        videoUrl: "https://www.youtube.com/watch?v=bW_5dK6n3Y0",
-        embedId: "bW_5dK6n3Y0",
-        summaryTopic: "Cara kerja fungsi memanggil dirinya sendiri, alokasi frame pada Call Stack, pentingnya Base Case, dan pencegahan Stack Overflow.",
-      },
+    recommendedQueries: [
+      "fungsi dan rekursif algoritma pemrograman indonesia",
+      "recursion in programming explained",
+      "konsep fungsi parameter dan return value",
     ],
+    videos: [],
     docs: [
       {
         title: "Panduan Fungsi & Rekursi Pemrograman",
@@ -683,24 +495,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
     id: "algo-search-sort",
     name: "Algoritma & Pemrograman: Searching & Sorting",
     keywords: ["searching", "sorting", "binary search", "linear search", "bubble sort", "insertion sort", "merge sort", "quick sort", "big o", "pengurutan", "pencarian"],
-    videos: [
-      {
-        title: "Algoritma Pencarian: Linear Search vs Binary Search",
-        channel: "Programmer Zaman Now",
-        duration: "31:05",
-        videoUrl: "https://www.youtube.com/watch?v=7_A9mX5b5Z8",
-        embedId: "7_A9mX5b5Z8",
-        summaryTopic: "Kompleksitas pencarian O(N) vs O(log N), syarat data terurut pada Binary Search, dan implementasi kode.",
-      },
-      {
-        title: "Algorithms: Sorting & Searching Complete Course",
-        channel: "freeCodeCamp.org",
-        duration: "5:22:00",
-        videoUrl: "https://www.youtube.com/watch?v=8hly31xKli0",
-        embedId: "8hly31xKli0",
-        summaryTopic: "Visualisasi langkah demi langkah Bubble Sort, Insertion Sort, Merge Sort, dan Quicksort.",
-      },
+    recommendedQueries: [
+      "algoritma binary search dan sorting bahasa indonesia",
+      "binary search algorithm tutorial",
+      "sorting and searching algorithms explained",
     ],
+    videos: [],
     docs: [
       {
         title: "Sorting Algorithms Complexity & Visualizations",
@@ -718,10 +518,55 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // TOPIK SPESIALISASI: GAME DEVELOPMENT (UNITY 3D & C#)
-  // ==========================================
+  {
+    id: "unity-vuforia-ar",
+    name: "Pemrograman Multimedia Interaktif: Augmented Reality (AR) dengan Unity & Vuforia",
+    keywords: [
+      "vuforia",
+      "augmented reality",
+      "virtual reality",
+      "ar camera",
+      "arcamera",
+      "image target",
+      "imagetarget",
+      "multimedia interaktif",
+      "pemrograman multimedia interaktif",
+      "marker based",
+      "markerless",
+      "ar foundation",
+      "tata surya",
+      "3d object",
+    ],
+    recommendedQueries: [
+      "tutorial augmented reality unity vuforia bahasa indonesia",
+      "cara membuat aplikasi ar unity vuforia image target",
+      "unity vuforia augmented reality tutorial c#",
+    ],
+    videos: [],
+    docs: [
+      {
+        title: "Vuforia Engine Developer Portal & Unity SDK Guide",
+        source: "Vuforia Developer Library",
+        url: "https://developer.vuforia.com/library/getting-started/getting-started-vuforia-engine-unity",
+        docUrl: "https://developer.vuforia.com/library/getting-started/getting-started-vuforia-engine-unity",
+        description: "Dokumentasi resmi integrasi Vuforia Engine pada Unity, konfigurasi ARCamera, License Key, Target Manager Database, dan Image Target.",
+      },
+      {
+        title: "Unity User Manual & XR / AR Development Reference",
+        source: "Unity Documentation",
+        url: "https://docs.unity3d.com/Manual/XR.html",
+        docUrl: "https://docs.unity3d.com/Manual/XR.html",
+        description: "Panduan resmi pengembangan aplikasi interaktif 3D, XR/AR, manajemen GameObject, rotasi Transform, dan C# Scripting di Unity.",
+      },
+      {
+        title: "Unity Scripting API: Transform & MonoBehaviour",
+        source: "Unity Scripting API",
+        url: "https://docs.unity3d.com/ScriptReference/Transform.Rotate.html",
+        docUrl: "https://docs.unity3d.com/ScriptReference/Transform.Rotate.html",
+        description: "Referensi teknis pemrograman C# untuk animasi rotasi objek 3D, interaksi UI Canvas, dan kontrol kamera AR.",
+      },
+    ],
+  },
   {
     id: "unity-csharp-gamedev",
     name: "Game Development: Unity 3D & Scripting C#",
@@ -743,24 +588,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "scene",
       "render pipeline",
     ],
-    videos: [
-      {
-        title: "How to make a Video Game in Unity (Beginner Tutorial)",
-        channel: "Brackeys",
-        duration: "24:18",
-        videoUrl: "https://www.youtube.com/watch?v=j48LtUkZRjU",
-        embedId: "j48LtUkZRjU",
-        summaryTopic: "Pengenalan antarmuka Unity Editor, GameObject, Hierarki Scene, Komponen Rigidbody, dan pengenalan script C#.",
-      },
-      {
-        title: "C# Scripting for Unity Beginners Guide",
-        channel: "Code Monkey",
-        duration: "31:05",
-        videoUrl: "https://www.youtube.com/watch?v=XtQMytORBmM",
-        embedId: "XtQMytORBmM",
-        summaryTopic: "Struktur dasar skrip C# di Unity: method Start(), Update(), manipulasi Transform, input controller, dan event collision.",
-      },
+    recommendedQueries: [
+      "unity 3d beginner tutorial c# scripting",
+      "belajar membuat game unity 3d bahasa indonesia",
+      "unity gameobject component rigidbody tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Unity User Manual & Scripting Reference",
@@ -778,15 +611,10 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // TOPIK KESEHATAN & MEDIS: PERTOLONGAN PERTAMA / PMI
-  // ==========================================
   {
     id: "pertolongan-pertama-pmi",
     name: "Kesehatan & Kemanusiaan: Pertolongan Pertama (P3K) & PMI",
     keywords: [
-      "pmi",
       "palang merah",
       "pertolongan pertama",
       "first aid",
@@ -795,7 +623,6 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "rjp",
       "cpr",
       "bhd",
-      "kesehatan",
       "fraktur",
       "balut",
       "bidai",
@@ -804,24 +631,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "evakuasi",
       "gawat darurat",
     ],
-    videos: [
-      {
-        title: "Pertolongan Pertama Pada Kegawatdaruratan (P3K)",
-        channel: "Palang Merah Indonesia",
-        duration: "18:45",
-        videoUrl: "https://www.youtube.com/watch?v=F_fD0bVbLcA",
-        embedId: "F_fD0bVbLcA",
-        summaryTopic: "Prinsip dasar keselamatan penolong, penilaian dini korban (Airway, Breathing, Circulation), serta penanganan syok.",
-      },
-      {
-        title: "Pedoman Bantuan Hidup Dasar (BHD) & Resusitasi Jantung Paru",
-        channel: "Kementerian Kesehatan RI",
-        duration: "14:20",
-        videoUrl: "https://www.youtube.com/watch?v=8qJ1lVwDfq8",
-        embedId: "8qJ1lVwDfq8",
-        summaryTopic: "Langkah-langkah kompresi dada ritmis, pemberian napas buatan, dan posisi pemulihan pada korban henti napas.",
-      },
+    recommendedQueries: [
+      "pertolongan pertama p3k palang merah indonesia",
+      "bantuan hidup dasar rjp cpr kemenkes",
+      "first aid training basic life support",
     ],
+    videos: [],
     docs: [
       {
         title: "Pedoman Pertolongan Pertama Berbasis Masyarakat (CBFA)",
@@ -839,10 +654,6 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // TOPIK DATA SCIENCE & ARTIFICIAL INTELLIGENCE: PYTHON & ML
-  // ==========================================
   {
     id: "python-data-ai",
     name: "Artificial Intelligence: Python, Data Science & Machine Learning",
@@ -860,24 +671,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "klasifikasi",
       "neural network",
     ],
-    videos: [
-      {
-        title: "Python Programming Tutorial for Beginners",
-        channel: "Programming with Mosh",
-        duration: "42:15",
-        videoUrl: "https://www.youtube.com/watch?v=_uQrJ0TkZlc",
-        embedId: "_uQrJ0TkZlc",
-        summaryTopic: "Sintaks Python modern, tipe data dinamis, list comprehension, penanganan berkas, dan modul matematika.",
-      },
-      {
-        title: "Machine Learning Course for Beginners",
-        channel: "freeCodeCamp.org",
-        duration: "48:30",
-        videoUrl: "https://www.youtube.com/watch?v=i_LwzRVP7bg",
-        embedId: "i_LwzRVP7bg",
-        summaryTopic: "Konsep dasar supervised learning, klasifikasi, regresi linear, dan evaluasi matriks konfusi dengan Python.",
-      },
+    recommendedQueries: [
+      "python machine learning data science tutorial",
+      "belajar python dasar dan data science indonesia",
+      "scikit learn machine learning course",
     ],
+    videos: [],
     docs: [
       {
         title: "Dokumentasi Resmi Python Tutorial",
@@ -895,10 +694,6 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // TOPIK MOBILE APP DEVELOPMENT: FLUTTER & DART
-  // ==========================================
   {
     id: "mobile-flutter-dart",
     name: "Mobile App Development: Flutter & Dart",
@@ -915,24 +710,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "bloc",
       "provider",
     ],
-    videos: [
-      {
-        title: "Flutter Tutorial for Beginners",
-        channel: "The Net Ninja",
-        duration: "35:20",
-        videoUrl: "https://www.youtube.com/watch?v=1ukSR1GRt62",
-        embedId: "1ukSR1GRt62",
-        summaryTopic: "Pohon hierarki Widget Flutter, perbedaan Stateless vs Stateful, layouting kolom/baris, dan hot reload.",
-      },
-      {
-        title: "Flutter Widgets 101: Essential UI Components",
-        channel: "Flutter Official",
-        duration: "14:10",
-        videoUrl: "https://www.youtube.com/watch?v=b_sQ9bMltGU",
-        embedId: "b_sQ9bMltGU",
-        summaryTopic: "Komponen dasar antarmuka: Container, ListView dinamis, Scaffold, AppBar, dan penanganan gestur sentuhan.",
-      },
+    recommendedQueries: [
+      "flutter tutorial for beginners dart",
+      "belajar flutter bahasa indonesia dasar",
+      "flutter stateless vs stateful widget tutorial",
     ],
+    videos: [],
     docs: [
       {
         title: "Flutter Official Documentation",
@@ -950,10 +733,6 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-
-  // ==========================================
-  // TOPIK MANAJEMEN & BISNIS: PROJECT MANAGEMENT & AGILE
-  // ==========================================
   {
     id: "manajemen-bisnis-proyek",
     name: "Manajemen & Bisnis: Manajemen Proyek, Agile & Organisasi",
@@ -973,24 +752,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "kepemimpinan",
       "tata kelola",
     ],
-    videos: [
-      {
-        title: "Project Management Foundations & Lifecycle",
-        channel: "Google Career Certificates",
-        duration: "22:15",
-        videoUrl: "https://www.youtube.com/watch?v=C1pxbgx_yQ4",
-        embedId: "C1pxbgx_yQ4",
-        summaryTopic: "Siklus hidup manajemen proyek: inisiasi ruang lingkup, estimasi jadwal, mitigasi risiko, dan tata kelola tim.",
-      },
-      {
-        title: "Introduction to Scrum Framework & Agile Delivery",
-        channel: "Scrum.org",
-        duration: "18:40",
-        videoUrl: "https://www.youtube.com/watch?v=9TycLR0TqFA",
-        embedId: "9TycLR0TqFA",
-        summaryTopic: "Peran Product Owner, Scrum Master, Developers, serta upacara Sprint Planning, Review, dan Retrospective.",
-      },
+    recommendedQueries: [
+      "project management agile scrum tutorial",
+      "manajemen proyek perangkat lunak agile scrum",
+      "scrum framework explained",
     ],
+    videos: [],
     docs: [
       {
         title: "The Scrum Guide (Panduan Resmi Scrum)",
@@ -1008,9 +775,6 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       },
     ],
   },
-  // ==========================================
-  // TOPIK IOT & SISTEM TERTANAM: ARDUINO & ESP32
-  // ==========================================
   {
     id: "iot-embedded-systems",
     name: "Sistem Tertanam & IoT: Arduino, ESP32 & Mikrokontroler",
@@ -1034,24 +798,12 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
       "spi",
       "uart",
     ],
-    videos: [
-      {
-        title: "Tutorial Arduino Dasar untuk Pemula: Setup, Input & Output",
-        channel: "Kelas Robot",
-        duration: "21:15",
-        videoUrl: "https://www.youtube.com/watch?v=nL34zDTPkcs",
-        embedId: "nL34zDTPkcs",
-        summaryTopic: "Arsitektur pin I/O, instalasi Arduino IDE, struktur sketch void setup() dan void loop(), serta pembacaan sinyal digital/analog.",
-      },
-      {
-        title: "Getting Started with ESP32 & IoT Sensor Integration",
-        channel: "Random Nerd Tutorials",
-        duration: "25:40",
-        videoUrl: "https://www.youtube.com/watch?v=k_DE_4Pfq7k",
-        embedId: "k_DE_4Pfq7k",
-        summaryTopic: "Konektivitas WiFi ESP32, pengiriman data telemetri sensor ke dashboard cloud, dan penanganan protokol MQTT/HTTP.",
-      },
+    recommendedQueries: [
+      "tutorial arduino esp32 iot bahasa indonesia",
+      "esp32 arduino sensor tutorial",
+      "belajar internet of things mikrokontroler",
     ],
+    videos: [],
     docs: [
       {
         title: "Arduino Language Reference & Programming Guide",
@@ -1071,31 +823,15 @@ export const CURATED_TOPIC_CLUSTERS: CuratedTopicCluster[] = [
   },
 ];
 
-/**
- * Cadangan Umum jika dokumen tidak cocok dengan topik spesifik mana pun
- */
 export const DEFAULT_FALLBACK_CLUSTER: CuratedTopicCluster = {
   id: "general-cs",
   name: "Dasar Pemikiran Komputasi & Pemrograman",
   keywords: [],
-  videos: [
-    {
-      title: "Harvard CS50: Pengenalan Ilmu Komputer & Algoritma",
-      channel: "CS50",
-      duration: "2:27:00",
-      videoUrl: "https://www.youtube.com/watch?v=yoPz5i3u8g4",
-      embedId: "yoPz5i3u8g4",
-      summaryTopic: "Konsep dasar representasi data biner, algoritma pemecahan masalah komputasional, dan logika instruksi.",
-    },
-    {
-      title: "Logika Pemrograman Komputer untuk Pemula",
-      channel: "Web Programming UNPAS",
-      duration: "21:30",
-      videoUrl: "https://www.youtube.com/watch?v=mG_4H6p7Qk8",
-      embedId: "mG_4H6p7Qk8",
-      summaryTopic: "Membangun cara berpikir terstruktur, pemecahan masalah langkah-demi-langkah, dan implementasi kode.",
-    },
+  recommendedQueries: [
+    "algoritma dan pemrograman dasar bahasa indonesia",
+    "computer science fundamentals tutorial",
   ],
+  videos: [],
   docs: [
     {
       title: "Panduan Pemula Ilmu Komputer & Pemrograman",
@@ -1115,9 +851,8 @@ export const DEFAULT_FALLBACK_CLUSTER: CuratedTopicCluster = {
 };
 
 /**
- * Mencocokkan teks topik/dokumen terhadap kamus kurasi referensi terverifikasi (Anti-Kosong 100%)
- * Jika dokumen membahas materi di luar rumpun baku (misal: Unity, PMI, Akuntansi, dsb),
- * fungsi ini menghasilkan rekomendasi dinamis yang 100% selaras dengan subjek tersebut.
+ * Mencocokkan teks topik/dokumen terhadap kamus kurasi dokumentasi & kueri pencarian.
+ * TIDAK mengembalikan video palsu/statis; video HANYA boleh berasal dari pipeline validasi FastAPI.
  */
 export function resolveCuratedResources(
   topicOrContent: string,
@@ -1127,6 +862,7 @@ export function resolveCuratedResources(
   docs: RecommendedDoc[];
   recommendedVideos: RecommendedVideo[];
   recommendedDocs: RecommendedDoc[];
+  recommendedQueries: string[];
 } {
   const text = `${explicitTitle || ""} ${topicOrContent || ""}`.toLowerCase();
 
@@ -1137,7 +873,6 @@ export function resolveCuratedResources(
     let score = 0;
     for (const kw of cluster.keywords) {
       if (text.includes(kw)) {
-        // Berikan bobot lebih untuk keyword spesifik
         score += kw.length > 5 ? 2 : 1;
       }
     }
@@ -1147,35 +882,21 @@ export function resolveCuratedResources(
     }
   }
 
-  // Jika terdapat kecocokan kurasi dengan skor meyakinkan, gunakan kluster tersebut
   if (bestCluster && maxScore >= 2) {
-    const sanitizedVideos = bestCluster.videos.map((v) => {
-      let embedId = v.embedId || extractYoutubeId(v.videoUrl);
-      if (!embedId || embedId.length !== 11) {
-        embedId = "1NigbK3Jk7Q";
-      }
-      return {
-        ...v,
-        embedId,
-        videoUrl: `https://www.youtube.com/watch?v=${embedId}`,
-      };
-    });
-
     const sanitizedDocs = bestCluster.docs.map((d) => ({
       ...d,
       docUrl: d.docUrl || d.url,
     }));
 
     return {
-      videos: sanitizedVideos,
+      videos: [],
       docs: sanitizedDocs,
-      recommendedVideos: sanitizedVideos,
+      recommendedVideos: [],
       recommendedDocs: sanitizedDocs,
+      recommendedQueries: bestCluster.recommendedQueries,
     };
   }
 
-  // JIKA TIDAK COCOK DENGAN KLUSTER BAKU: Buat referensi DINAMIS berdasarkan subjek nyata dokumen
-  // DILARANG KERAS memaksa menampilkan WPU / CS50 jika materi bukan Web/CS!
   const rawSubject =
     explicitTitle ||
     topicOrContent.slice(0, 80).replace(/\n/g, " ").trim() ||
@@ -1184,27 +905,12 @@ export function resolveCuratedResources(
     .replace(/[^\w\s\u00C0-\u024F\-_/]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  const subjectWords = cleanSubject.split(" ").filter((w) => w.length > 2).slice(0, 4).join(" ");
+  const subjectWords = cleanSubject
+    .split(" ")
+    .filter((w) => w.length > 2)
+    .slice(0, 4)
+    .join(" ");
   const displaySubject = subjectWords || "Materi Kurikulum Terkait";
-
-  const dynamicVideos: RecommendedVideo[] = [
-    {
-      title: `Tutorial & Implementasi Praktis: ${displaySubject}`,
-      channel: "Akademi Studi Terverifikasi",
-      duration: "25:00",
-      videoUrl: "https://www.youtube.com/watch?v=1NigbK3Jk7Q",
-      embedId: "1NigbK3Jk7Q",
-      summaryTopic: `Pembahasan konseptual mendalam, demonstrasi langkah demi langkah, dan studi kasus mengenai ${displaySubject}.`,
-    },
-    {
-      title: `Panduan Terstruktur & Studi Kasus: ${displaySubject}`,
-      channel: "Pusat Edukasi Akademik",
-      duration: "20:30",
-      videoUrl: "https://www.youtube.com/watch?v=jV8B24rSN5o",
-      embedId: "jV8B24rSN5o",
-      summaryTopic: `Pemecahan masalah aplikatif, praktik terbaik, dan evaluasi hasil belajar materi ${displaySubject}.`,
-    },
-  ];
 
   const dynamicDocs: RecommendedDoc[] = [
     {
@@ -1224,80 +930,88 @@ export function resolveCuratedResources(
   ];
 
   return {
-    videos: dynamicVideos,
+    videos: [],
     docs: dynamicDocs,
-    recommendedVideos: dynamicVideos,
+    recommendedVideos: [],
     recommendedDocs: dynamicDocs,
+    recommendedQueries: [
+      `${displaySubject} tutorial bahasa indonesia`,
+      `${displaySubject} practical tutorial`,
+    ],
   };
 }
 
 /**
- * Sanitasi link video YouTube: memastikan BUKAN search link dan memiliki embedId 11 karakter
+ * Sanitasi objek video YouTube yang sudah divalidasi backend.
+ * TIDAK PERNAH memberikan fallback ID palsu jika video tidak valid.
  */
 export function sanitizeYoutubeVideo(
   video: Partial<RecommendedVideo>,
   fallbackTopic = "Pemrograman",
-): RecommendedVideo {
-  const fallback = resolveCuratedResources(fallbackTopic).videos[0]!;
-
-  const title = (video.title && video.title.trim().length > 3) ? video.title.trim() : fallback.title;
-  const channel = (video.channel && video.channel.trim().length > 2) ? video.channel.trim() : fallback.channel;
-  const duration = video.duration || fallback.duration;
-  const summaryTopic = video.summaryTopic || fallback.summaryTopic;
-
-  let url = video.videoUrl || "";
-  let embedId = video.embedId || "";
-
-  // DILARANG KERAS link hasil search
-  if (!url || url.includes("results?search_query") || url.includes("/search")) {
-    return fallback;
-  }
-
-  // Ekstrak ID dari URL jika embedId belum ada atau tidak valid
-  if (!embedId || embedId.length !== 11) {
-    embedId = extractYoutubeId(url);
-  }
-
-  // Jika embedId tetap tidak valid (harus 11 karakter), ganti ke fallback
-  if (!embedId || embedId.length !== 11) {
-    return fallback;
+): RecommendedVideo | null {
+  const rawId =
+    video.videoId ||
+    video.embedId ||
+    extractYoutubeId(video.videoUrl || "");
+  if (!rawId || !/^[a-zA-Z0-9_-]{11}$/.test(rawId)) {
+    return null;
   }
 
   return {
-    title,
-    channel,
-    duration,
-    videoUrl: `https://www.youtube.com/watch?v=${embedId}`,
-    embedId,
-    summaryTopic,
+    title:
+      video.title && video.title.trim().length > 2
+        ? video.title.trim()
+        : `Tutorial ${fallbackTopic}`,
+    channel:
+      video.channelName ||
+      video.channel ||
+      "Kanal Edukasi YouTube",
+    channelName:
+      video.channelName ||
+      video.channel ||
+      "Kanal Edukasi YouTube",
+    duration: video.duration || "15:00",
+    videoId: rawId,
+    embedId: rawId,
+    videoUrl: `https://www.youtube.com/watch?v=${rawId}`,
+    summaryTopic:
+      video.summaryTopic ||
+      `Materi visual terverifikasi untuk ${fallbackTopic}.`,
+    viewCount: video.viewCount,
+    likeCount: video.likeCount,
+    qualityScore: video.qualityScore,
+    topComments: video.topComments,
+    isValidated: Boolean(video.isValidated),
   };
 }
 
 /**
- * Sanitasi link dokumentasi resmi: memastikan BUKAN search link atau beranda kosong
+ * Sanitasi link dokumentasi / referensi web dinamis hasil AI:
+ * Memastikan URL valid (https://...) dan sesuai topik/kata kunci materi (BUKAN data statis lama).
  */
 export function sanitizeDocumentation(
   doc: Partial<RecommendedDoc>,
-  fallbackTopic = "Pemrograman",
+  fallbackTopic = "Materi Pembelajaran",
 ): RecommendedDoc {
-  const fallback = resolveCuratedResources(fallbackTopic).docs[0]!;
+  const cleanTopic = fallbackTopic.trim() || "Materi Pembelajaran";
+  const title =
+    doc.title && doc.title.trim().length > 3
+      ? doc.title.trim()
+      : `Dokumentasi & Panduan Teknis: ${cleanTopic}`;
+  const source =
+    doc.source && doc.source.trim().length > 2
+      ? doc.source.trim()
+      : "Dokumentasi Teknis & Referensi Resmi";
+  const description =
+    doc.description && doc.description.trim().length > 5
+      ? doc.description.trim()
+      : `Referensi teknis dan panduan implementasi terkait ${title}.`;
+  const rawUrl = (doc.url || doc.docUrl || "").trim();
 
-  const title = (doc.title && doc.title.trim().length > 3) ? doc.title.trim() : fallback.title;
-  const source = (doc.source && doc.source.trim().length > 2) ? doc.source.trim() : fallback.source;
-  const description = doc.description || fallback.description;
-  const url = doc.url || doc.docUrl || "";
-
-  // DILARANG link search atau domain beranda polos
-  if (
-    !url ||
-    url.includes("search?") ||
-    url.includes("google.com") ||
-    url === "https://developer.mozilla.org" ||
-    url === "https://www.w3schools.com" ||
-    !url.startsWith("http")
-  ) {
-    return fallback;
-  }
+  const url =
+    rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+      ? rawUrl
+      : `https://scholar.google.com/scholar?q=${encodeURIComponent(`${cleanTopic} ${title}`)}`;
 
   return {
     title,
