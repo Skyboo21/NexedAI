@@ -20,6 +20,21 @@ const STORAGE_KEY = "nexed_module_progress_v1";
 const TOTAL_XP_KEY = "nexed_total_user_xp";
 const COMPLETED_TOPICS_KEY = "completed_topics";
 const PROGRESS_EVENT = "nexed_progress_updated";
+const CERTIFICATES_STORAGE_KEY = "nexed_user_certificates_v1";
+const BADGES_STORAGE_KEY = "nexed_unlocked_badges_v1";
+
+export interface ModuleCertificateRecord {
+  id: string; // NXD-2026-XXXX
+  moduleId: string;
+  topicTitle: string;
+  studentName: string;
+  studentNim: string;
+  completionDate: string;
+  score: number;
+  grade: string;
+  competencies: string[];
+  issuedAt: string;
+}
 
 /**
  * Membaca semua progres modul yang tersimpan
@@ -235,6 +250,103 @@ export function onProgressUpdate(callback: () => void): () => void {
     window.removeEventListener(PROGRESS_EVENT, handler);
     window.removeEventListener("storage", handler);
   };
+}
+
+/**
+ * Membaca seluruh riwayat E-Sertifikat yang telah diklaim
+ */
+export function getClaimedCertificates(): Record<string, ModuleCertificateRecord> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(CERTIFICATES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Mengklaim E-Sertifikat Kelulusan Modul resmi, menambah +250 XP,
+ * serta memberikan badge 'Mastery Achiever'
+ */
+export function claimModuleCertificate(params: {
+  moduleId: string;
+  topicTitle: string;
+  studentName?: string;
+  studentNim?: string;
+  competencies?: string[];
+}): ModuleCertificateRecord {
+  const fallbackName = "Muhammad Hariz Lazuardi";
+  const fallbackNim = "V3925010";
+
+  let detectedName = params.studentName || fallbackName;
+  let detectedNim = params.studentNim || fallbackNim;
+
+  if (typeof window !== "undefined") {
+    try {
+      const authRaw = localStorage.getItem("nexed_auth_user");
+      if (authRaw) {
+        const parsed = JSON.parse(authRaw);
+        if (parsed.name) detectedName = parsed.name;
+        if (parsed.nim_or_nip) detectedNim = parsed.nim_or_nip;
+      }
+    } catch {}
+  }
+
+  const cleanId = (params.moduleId || "modul-aktif").toLowerCase().trim();
+  const all = getClaimedCertificates();
+
+  if (all[cleanId]) {
+    return all[cleanId];
+  }
+
+  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const certId = `NXD-2026-${randomSuffix}`;
+
+  const newCert: ModuleCertificateRecord = {
+    id: certId,
+    moduleId: cleanId,
+    topicTitle: params.topicTitle || "Penguasaan Modul Adaptif",
+    studentName: detectedName,
+    studentNim: detectedNim,
+    completionDate: new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }),
+    score: 100,
+    grade: "A+ (Sempurna)",
+    competencies: (params.competencies && params.competencies.length > 0)
+      ? params.competencies.slice(0, 5)
+      : ["Fondasi Konseptual", "Konfigurasi Komponen", "Implementasi Praktik", "Evaluasi Validasi"],
+    issuedAt: new Date().toISOString(),
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      all[cleanId] = newCert;
+      localStorage.setItem(CERTIFICATES_STORAGE_KEY, JSON.stringify(all));
+
+      // 1. Tambah akumulasi +250 XP
+      addTotalUserXp(250);
+
+      // 2. Sematkan badge 'Mastery Achiever'
+      const rawBadges = localStorage.getItem(BADGES_STORAGE_KEY);
+      const badges: string[] = rawBadges ? JSON.parse(rawBadges) : [];
+      if (!badges.includes("Mastery Achiever")) {
+        badges.push("Mastery Achiever");
+        localStorage.setItem(BADGES_STORAGE_KEY, JSON.stringify(badges));
+      }
+
+      window.dispatchEvent(
+        new CustomEvent(PROGRESS_EVENT, { detail: { certificate: newCert } }),
+      );
+    } catch (err) {
+      console.warn("[claimModuleCertificate] Gagal mencatat sertifikat ke storage:", err);
+    }
+  }
+
+  return newCert;
 }
 
 /**

@@ -7,6 +7,11 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { generateAiModuleAnalysis } from "@/lib/aiModuleServer";
+import {
+  computeModuleCacheKey,
+  getCachedLearningPlan,
+  saveCachedLearningPlan,
+} from "@/lib/moduleCacheService";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -97,6 +102,37 @@ export async function POST(request: NextRequest) {
           ? userLearningGoal.trim()
           : undefined;
 
+    // 1. Logika Cache-First Supabase Prisma (0 Token saat Cache Hit)
+    const cacheKey = computeModuleCacheKey(
+      effectiveTitle || "modul-pembelajaran",
+      effectiveFocus,
+      rawTextToAnalyze.slice(0, 3000),
+    );
+
+    if (!forceRefresh) {
+      const cachedPlan = await getCachedLearningPlan(cacheKey);
+      if (cachedPlan && cachedPlan.stages && cachedPlan.stages.length >= 3) {
+        return NextResponse.json(
+          {
+            success: true,
+            fromCache: true,
+            detectedTopic: cachedPlan.topic,
+            coreKeywords: cachedPlan.coreKeywords,
+            learningStages: cachedPlan.stages,
+            moduleChapters: [],
+            webReferences: cachedPlan.curatedDocs || [],
+            videos: cachedPlan.videos,
+            validatedVideos: cachedPlan.videos,
+            userNeedsSummary: cachedPlan.summary,
+            recommendedQueries: cachedPlan.recommendedQueries,
+            videoCacheHit: true,
+            videoValidationSource: "supabase-prisma-cache",
+          },
+          { status: 200 },
+        );
+      }
+    }
+
     const result = await generateAiModuleAnalysis(
       rawTextToAnalyze,
       typeof fileName === "string" ? fileName : undefined,
@@ -118,6 +154,19 @@ export async function POST(request: NextRequest) {
         { status: 422 },
       );
     }
+
+    // 2. Simpan ke Supabase Prisma Cache agar pemanggilan berikutnya 0 token
+    await saveCachedLearningPlan({
+      cacheKey,
+      topic: result.detectedTopic ?? result.title ?? "Materi Pembelajaran",
+      userGoal: effectiveFocus,
+      summary: result.userNeedsSummary ?? result.summary?.overview ?? "",
+      coreKeywords: result.coreKeywords ?? [],
+      recommendedQueries: result.recommendedQueries ?? [],
+      stages: result.learningStages ?? [],
+      videos: result.validatedVideos ?? result.videos ?? [],
+      curatedDocs: result.webReferences ?? result.recommendedDocs ?? [],
+    }).catch(() => {});
 
     return NextResponse.json(
       {

@@ -220,6 +220,16 @@ export function normalizeLearningStages(
       const searchQuery = String(
         r.searchQuery || `${fallbackTopic} ${title} tutorial`.trim(),
       ).trim();
+      const actionChecklist = Array.isArray(r.actionChecklist) && r.actionChecklist.length > 0
+        ? r.actionChecklist.map((c) => String(c || "").trim()).filter(Boolean)
+        : [
+            `Pahami konsep kunci: ${keyConcepts.slice(0, 2).join(" & ") || title}.`,
+            selfAction || `Pelajari dan terapkan langkah kerja ${title}.`,
+            practiceScenario || `Terapkan konsep pada skenario kasus dan verifikasi hasilnya.`,
+          ];
+      const stageVideo = r.stageVideo && typeof r.stageVideo === "object"
+        ? (r.stageVideo as unknown as LearningStageItem["stageVideo"])
+        : undefined;
 
       return {
         stageNumber,
@@ -232,6 +242,8 @@ export function normalizeLearningStages(
         practiceScenario,
         comprehensionQuestion,
         searchQuery,
+        actionChecklist,
+        stageVideo,
       };
     })
     .filter((s) => s.title.length > 2);
@@ -716,6 +728,29 @@ export async function resolveValidatedTopicVideos(params: {
       (b.qualityScore || 0) - (a.qualityScore || 0),
   );
 
+  // Ikat 1 video spesifik untuk setiap tahap dan checklist aksi "Harus Ngapain Aja"
+  const boundStages: LearningStageItem[] = learningStages.map((stage, idx) => {
+    const assignedVideo =
+      validatedVideos.length > 0
+        ? validatedVideos[idx % validatedVideos.length]
+        : stage.stageVideo;
+
+    const checklist =
+      Array.isArray(stage.actionChecklist) && stage.actionChecklist.length >= 2
+        ? stage.actionChecklist
+        : [
+            `Pahami konsep pokok: ${(stage.keyConcepts || []).slice(0, 2).join(" & ") || stage.title}.`,
+            stage.selfAction || `Pelajari dan terapkan langkah kerja ${stage.title}.`,
+            stage.practiceScenario || `Terapkan konsep pada studi kasus dan verifikasi hasil output.`,
+          ];
+
+    return {
+      ...stage,
+      stageVideo: assignedVideo,
+      actionChecklist: checklist,
+    };
+  });
+
   const finalResult: TopicVideoPipelineResult = {
     topicKey,
     detectedTopic,
@@ -723,7 +758,7 @@ export async function resolveValidatedTopicVideos(params: {
     userNeedsSummary,
     recommendedQueries,
     webReferences,
-    learningStages,
+    learningStages: boundStages,
     videos: validatedVideos,
     cacheHit: false,
     source: sourceUsed,

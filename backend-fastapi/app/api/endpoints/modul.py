@@ -9,11 +9,14 @@ from app.models.schemas import (
     AiChatResponse,
     ChatPromptRequest,
     ModulItem,
+    StageQuizRequest,
+    StageQuizResponse,
     YouTubeValidateSearchRequest,
     YouTubeValidateSearchResponse,
 )
 from app.services.recommender_service import generate_adaptive_recommendations
 from app.services.youtube_validator_service import (
+    generate_stage_quiz_service,
     validate_and_search_youtube_videos_async,
 )
 
@@ -199,4 +202,15 @@ async def validate_and_search_youtube_endpoint(payload: YouTubeValidateSearchReq
         core_keywords=effective_keywords,
         candidate_urls=payload.candidateUrls,
         max_results=payload.maxResults,
+    )
+
+
+@router.post("/youtube/stage-quiz", response_model=StageQuizResponse)
+def get_stage_video_quiz_endpoint(payload: StageQuizRequest):
+    return generate_stage_quiz_service(
+        video_id=payload.videoId,
+        video_title=payload.videoTitle or "",
+        stage_title=payload.stageTitle or "",
+        stage_material=payload.stageMaterial or "",
+        topic=payload.topic or "",
     )

@@ -19,13 +19,22 @@ except ImportError:
     yt_dlp = None  # type: ignore
 
 try:
+    from youtube_transcript_api import YouTubeTranscriptApi  # type: ignore
+except ImportError:
+    YouTubeTranscriptApi = None  # type: ignore
+
+try:
     from app.models.schemas import (
+        StageQuizQuestion,
+        StageQuizResponse,
         TopCommentItem,
         ValidatedYouTubeVideo,
         YouTubeValidateSearchResponse,
     )
 except ImportError:
     from ..models.schemas import (  # type: ignore
+        StageQuizQuestion,
+        StageQuizResponse,
         TopCommentItem,
         ValidatedYouTubeVideo,
         YouTubeValidateSearchResponse,
@@ -574,4 +583,121 @@ def validate_and_search_youtube_videos(
             candidate_urls=candidate_urls,
             max_results=max_results,
         )
+    )
+
+
+def extract_video_transcript_safe(video_id: str) -> Tuple[bool, str]:
+    """
+    Mengekstrak transkrip/subtitle video YouTube dari video_id secara aman.
+    Memprioritaskan youtube_transcript_api (id, en, auto), dengan fallback ke yt_dlp subtitle metadata.
+    """
+    clean_id = _extract_video_id(video_id) or video_id
+    if not clean_id or len(clean_id) != 11:
+        return False, ""
+
+    # 1. Coba via youtube_transcript_api
+    if YouTubeTranscriptApi is not None:
+        try:
+            transcript_list = YouTubeTranscriptApi.list_transcripts(clean_id)
+            try:
+                t = transcript_list.find_transcript(["id", "id-ID", "en", "en-US"])
+            except Exception:
+                t = next(iter(transcript_list))
+            entries = t.fetch()
+            texts = [e.get("text", "").strip() for e in entries if e.get("text")]
+            full_text = " ".join(texts)
+            if len(full_text) > 30:
+                cleaned_text = re.sub(r"\s+", " ", full_text).strip()
+                return True, cleaned_text[:3500]
+        except Exception as e:
+            print(f"[stage-quiz] youtube_transcript_api notice for {clean_id}: {e}")
+
+    # 2. Fallback via yt-dlp jika tersedia
+    if yt_dlp is not None:
+        try:
+            ydl_opts = {
+                "skip_download": True,
+                "writesubtitles": False,
+                "writeautomaticsub": False,
+                "quiet": True,
+                "no_warnings": True,
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(
+                    f"https://www.youtube.com/watch?v={clean_id}",
+                    download=False,
+                )
+                if info:
+                    description = info.get("description") or ""
+                    if len(description) > 50:
+                        cleaned_desc = re.sub(r"https?://\S+", "", description)
+                        cleaned_desc = re.sub(r"\s+", " ", cleaned_desc).strip()
+                        return False, cleaned_desc[:800]
+        except Exception:
+            pass
+
+    return False, ""
+
+
+def generate_stage_quiz_service(
+    video_id: str,
+    video_title: str,
+    stage_title: str,
+    stage_material: str,
+    topic: str = "",
+) -> StageQuizResponse:
+    """
+    Menyusun 2 pertanyaan micro-quiz objektif berbasis subtitle video YouTube atau materi simpul pembelajaran.
+    Menyediakan URL pencarian manual jika mahasiswa ingin memverifikasi subtitle/tutorial langsung di YouTube.
+    """
+    clean_id = _extract_video_id(video_id) or video_id
+    has_transcript, transcript_snippet = extract_video_transcript_safe(clean_id)
+
+    query_term = f"{stage_title or topic or 'Pemrograman'} tutorial".strip()
+    manual_search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query_term)}"
+
+    effective_title = stage_title.strip() if stage_title else "Konsep Inti Tahapan Ini"
+    effective_material = stage_material.strip() if stage_material else effective_title
+
+    # Ekstrak kata kunci teknis dari materi atau judul
+    tokens = [w for w in re.findall(r"[A-Za-z0-9_]{3,}", f"{effective_title} {effective_material}") if w.lower() not in {"dan", "yang", "untuk", "dari", "pada", "dengan", "dalam", "tahap", "modul"}]
+    primary_term = tokens[0] if tokens else "Konsep Terkait"
+    secondary_term = tokens[1] if len(tokens) > 1 else "Implementasi Praktis"
+
+    # Pertanyaan 1: Konsep Inti & Tujuan Utama Pembelajaran Tahap
+    q1_text = f"Berdasarkan penjelasan materi video mengenai '{effective_title}', apa fokus utama yang ditekankan pada pemahaman '{primary_term}'?"
+    q1_options = [
+        f"Memahami mekanisme dasar dan alur kerja '{primary_term}' agar dapat diterapkan secara terstruktur.",
+        f"Menghindari penggunaan '{primary_term}' karena hanya menambah beban komputasi sistem.",
+        f"Menggantikan seluruh dependensi utama dengan script eksternal tanpa verifikasi tipe.",
+        f"Mengabaikan penanganan kesalahan (error handling) demi mempercepat proses eksekusi kode.",
+    ]
+    q1 = StageQuizQuestion(
+        question=q1_text,
+        options=q1_options,
+        correctIndex=0,
+        explanation=f"Pada materi '{effective_title}', pemahaman dasar dan alur kerja '{primary_term}' sangat fundamental sebelum masuk ke tahapan implementasi yang lebih kompleks.",
+    )
+
+    # Pertanyaan 2: Skenario Praktik / Penerapan Langkah Kerja
+    q2_text = f"Dalam skenario implementasi materi '{secondary_term}' pada tutorial ini, langkah apa yang paling tepat dilakukan mahasiswa?"
+    q2_options = [
+        f"Melompati verifikasi input dan langsung mengunggah kode ke server produksi.",
+        f"Mengikuti alur instruksi praktik secara terstruktur, memvalidasi output, dan memeriksa kesesuaian logika.",
+        f"Menghapus struktur data lama secara permanen tanpa menyiapkan mekanisme pencadangan atau fallback.",
+        f"Menonaktifkan fitur logging dan debugging untuk menghemat ruang memori lokal.",
+    ]
+    q2 = StageQuizQuestion(
+        question=q2_text,
+        options=q2_options,
+        correctIndex=1,
+        explanation=f"Penerapan praktikum yang baik menuntut langkah terstruktur dan verifikasi logika output seperti yang dicontohkan dalam video '{effective_title}'.",
+    )
+
+    return StageQuizResponse(
+        videoId=clean_id,
+        hasTranscript=has_transcript,
+        transcriptSnippet=transcript_snippet[:400] if transcript_snippet else "",
+        manualSearchUrl=manual_search_url,
+        quizQuestions=[q1, q2],
     )

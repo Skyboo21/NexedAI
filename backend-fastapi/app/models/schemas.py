@@ -107,3 +107,26 @@ class YouTubeValidateSearchResponse(BaseModel):
     source: str = "yt-dlp"
 
 
+class StageQuizQuestion(BaseModel):
+    question: str
+    options: List[str]
+    correctIndex: int = 0
+    explanation: str = ""
+
+
+class StageQuizRequest(BaseModel):
+    videoId: str
+    videoTitle: Optional[str] = ""
+    stageTitle: str = ""
+    stageMaterial: Optional[str] = ""
+    topic: Optional[str] = ""
+
+
+class StageQuizResponse(BaseModel):
+    videoId: str
+    hasTranscript: bool
+    transcriptSnippet: str
+    manualSearchUrl: str
+    quizQuestions: List[StageQuizQuestion]
+
+

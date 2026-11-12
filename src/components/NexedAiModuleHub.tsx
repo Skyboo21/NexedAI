@@ -5,6 +5,8 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ModuleRagChat from "./ModuleRagChat";
+import StageMindmapCanvas from "./StageMindmapCanvas";
+import StageSkillTreeTimeline from "./StageSkillTreeTimeline";
 
 import { smartApiFetch as apiFetch } from "../utils/apiConfig";
 
@@ -126,6 +128,14 @@ export interface LearningStageItem {
   practiceScenario: string;  // Skenario praktik mandiri yang relevan dengan isi dokumen
   comprehensionQuestion: string; // Pertanyaan uji pemahaman spesifik sesuai materi tahap ini
   searchQuery: string;       // Kueri YouTube spesifik untuk tahap ini
+  stageVideo?: RecommendedVideo; // Video YouTube tervalidasi khusus tahap ini
+  actionChecklist?: string[];    // 3 poin konkret "Harus Ngapain Aja" pada tahap ini
+  quiz?: Array<{
+    question: string;
+    options: string[];
+    correctIndex: number;
+    explanation: string;
+  }>;
 }
 
 export type AnalyzeModuleResponse = AnalyzedModuleResult;
@@ -510,11 +520,11 @@ export default function NexedAiModuleHub() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [analysisResult, setAnalyzedResult] = useState<AnalyzedModuleResult | null>(null);
 
-  // Result Tabs & Coursera Stages (1..4)
+  // Result Tabs & Coursera Stages (1..4) - Default ke Tab 2 (Peta Belajar Mindmap)
   const [activeResultTab, setActiveResultTab] = useState<"summary" | "roadmap" | "quiz" | "chat">(
     "summary",
   );
-  const [hubCurrentStage, setHubCurrentStage] = useState<number>(1);
+  const [hubCurrentStage, setHubCurrentStage] = useState<number>(2);
   const [hubStageProgress, setHubStageProgress] = useState<Record<number, boolean>>({
     1: false,
     2: false,
@@ -1529,6 +1539,10 @@ export default function NexedAiModuleHub() {
             } else if (textInput.trim()) {
               derivedTitle =
                 textInput.split("\n")[0]?.substring(0, 60) || "Modul Pembelajaran Mandiri";
+            } else if (customLearningGoal.trim()) {
+              derivedTitle = customLearningGoal.trim().split("\n")[0]?.substring(0, 70) || "Modul Pembelajaran Mandiri";
+            } else {
+              derivedTitle = "Modul Pembelajaran Mandiri";
             }
 
             const chosenData = sanitizeAnalyzedResultVideos(
@@ -1561,7 +1575,7 @@ export default function NexedAiModuleHub() {
                 : chosenData.recommendedDocs || null;
             setWebReferencesState(nextDocs);
             setVideoCacheHitState(Boolean(chosenData.videoCacheHit));
-            setHubCurrentStage(1);
+            setHubCurrentStage(2);
             setHubStageProgress({ 1: false, 2: false, 3: false, 4: false });
             const initialRoadmap: Record<number, boolean> = {};
             const totalSteps =
@@ -2027,50 +2041,102 @@ export default function NexedAiModuleHub() {
       {/* VIEW A: UPLOAD & INPUT AREA (When Not Analyzed & Not Analyzing) */}
       {!analysisResult && !isAnalyzing && (
         <div className="space-y-6 animate-in fade-in">
-          {/* Quick Preset Selector Chips */}
-          <div className="space-y-2">
-            <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>Atau Pilih Modul Silabus Cepat untuk Pengujian:</span>
-            </span>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => handleStartAnalysis("binary_search")}
-                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Search className="w-3.5 h-3.5 text-neutral-600" />
-                <span>Pencarian Biner (O(log N))</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleStartAnalysis("tree_traversal")}
-                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <GitBranch className="w-3.5 h-3.5 text-neutral-600" />
-                <span>Pohon Biner & Traversal Rekursif</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleStartAnalysis("database_sql")}
-                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Database className="w-3.5 h-3.5 text-neutral-600" />
-                <span>Basis Data & Kueri SQL</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleStartAnalysis("oop_clean")}
-                className="px-4 py-1.5 bg-[#F4F4F6] hover:bg-neutral-200 border border-black/10 text-neutral-800 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <Boxes className="w-3.5 h-3.5 text-neutral-600" />
-                <span>Pemrograman Berorientasi Objek (OOP)</span>
-              </button>
+          {/* LANGKAH 1 (GOAL-FIRST): FOKUS & TARGET BELAJAR HARI INI */}
+          <div className="p-6 bg-white rounded-3xl border border-black/8 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-black text-white text-xs font-black flex items-center justify-center shrink-0">
+                  1
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-black tracking-tight">
+                    Hari ini kamu mau belajar apa & target capaiannya apa?
+                  </h3>
+                  <p className="text-[11px] text-neutral-500">
+                    Tentukan sasaran belajar Anda agar AI dapat memfokuskan ekstraksi konsep dokumen, video tutorial, dan kuis checkpoint.
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase shrink-0">
+                Langkah 1: Wajib Diisi
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={customLearningGoal}
+                  onChange={(e) => setCustomLearningGoal(e.target.value)}
+                  placeholder="Ketik topik atau fokus belajar Anda (misal: Rekursi Pohon Biner & Analisis O(N), Augmented Reality Unity Vuforia, Kueri SQL...)"
+                  className="w-full px-4 py-3 bg-[#FAFAFA] border border-black/10 rounded-2xl text-xs sm:text-sm text-black placeholder:text-neutral-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                />
+              </div>
+
+              {/* Quick Goal Selector Chips */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-mono text-neutral-500 flex items-center gap-1">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Atau Pilih Cepat Sasaran Topik:</span>
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Pencarian Biner & Analisis Kompleksitas O(log N)",
+                    "Pohon Biner & Traversal Rekursif",
+                    "Perancangan Basis Data Relasional & Kueri SQL",
+                    "Pemrograman Berorientasi Objek (OOP) & Clean Architecture",
+                    "Augmented Reality Unity & Vuforia Image Target",
+                  ].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => setCustomLearningGoal(chip)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                        customLearningGoal === chip
+                          ? "bg-black text-white border-black shadow-xs font-semibold"
+                          : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border-black/10 shadow-2xs"
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-500" />
+                      <span>{chip}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="flex gap-2 border-b border-black/8 overflow-x-auto">
+          {/* LANGKAH 2: UNGGAH DOKUMEN MODUL PENDAMPING */}
+          <div
+            className={`p-6 bg-white rounded-3xl border transition-all space-y-5 ${
+              customLearningGoal.trim()
+                ? "border-black/12 shadow-2xs"
+                : "border-black/6 opacity-70"
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-indigo-600 text-white text-xs font-black flex items-center justify-center shrink-0">
+                  2
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-black tracking-tight">
+                    Unggah Modul PDF Pendamping (Opsional / Direkomendasikan)
+                  </h3>
+                  <p className="text-[11px] text-neutral-500">
+                    {customLearningGoal.trim()
+                      ? `AI akan menyelaraskan sasaran "${customLearningGoal.trim().slice(0, 45)}..." dengan isi teks dokumen yang Anda lampirkan.`
+                      : "Tentukan sasaran belajar pada Langkah 1 di atas untuk mengaktifkan pemrosesan."}
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 bg-neutral-100 text-neutral-700 border border-black/10 rounded-full text-[10px] font-mono tracking-wider uppercase shrink-0">
+                Langkah 2: Pendamping
+              </span>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div className="flex gap-2 border-b border-black/8 overflow-x-auto">
             <button
               type="button"
               onClick={() => setInputMode("file")}
@@ -2327,14 +2393,14 @@ export default function NexedAiModuleHub() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!selectedFile && !textInput.trim()) {
+                  if (!selectedFile && !textInput.trim() && !customLearningGoal.trim()) {
                     fileInputRef.current?.click();
                     return;
                   }
                   handleStartAnalysis();
                 }}
-                disabled={isAnalyzing || isUploadingDoc}
-                className="px-6 py-2.5 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-medium text-xs rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                disabled={isAnalyzing || isUploadingDoc || !customLearningGoal.trim()}
+                className="px-7 py-3 bg-black hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 text-white font-bold text-xs sm:text-sm rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
               >
                 {isUploadingDoc ? (
                   <>
@@ -2343,13 +2409,15 @@ export default function NexedAiModuleHub() {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Analisis Modul dengan Nexed AI</span>
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Susun Mindmap Peta Belajar</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </div>
           )}
+          </div>
         </div>
       )}
 
@@ -2880,247 +2948,19 @@ export default function NexedAiModuleHub() {
           {/* ======================================================== */}
           {hubCurrentStage === 2 && (
             <div className="space-y-6 animate-in fade-in">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-[#FAFAFA] rounded-3xl border border-black/8 gap-4">
-                <div>
-                  <h4 className="text-xs font-bold text-black flex items-center gap-2 flex-wrap">
-                    <span>Progres Pemahaman Materi Anda</span>
-                    <span className="text-[10px] font-mono font-normal text-neutral-600 bg-white border border-black/10 px-2.5 py-0.5 rounded-full">
-                      {activeLearningStages.length} Simpul Belajar
-                    </span>
-                    <span className="text-[10px] font-mono font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/70 px-2.5 py-0.5 rounded-full">
-                      {analysisResult.detectedTopic || analysisResult.title}
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-neutral-500 mt-0.5">
-                    Tahapan belajar di bawah ini disusun 100% dinamis dari isi teks dokumen yang Anda unggah dan fokus belajar Anda.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                  <span className="text-xs font-mono font-bold text-black bg-white px-3 py-1.5 rounded-full border border-black/10">
-                    {roadmapPercent}% Selesai
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const modId = selectedFile
-                        ? selectedFile.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
-                        : (analysisResult.detectedTopic || analysisResult.title || "").toLowerCase().replace(/[^a-z0-9-_]/g, "-");
-                      router.push(`/peta-belajar?course=dok-${modId}`);
-                    }}
-                    className="min-h-[44px] px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Network className="w-3.5 h-3.5" />
-                    <span>Buka Visual Skill Tree</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Learning Stages Cards (Strictly Grounded in Document & User Focus) */}
-              {isValidatingVideos && (!learningStagesState || learningStagesState.length === 0) ? (
-                <div className="p-8 rounded-3xl border border-black/10 bg-[#FAFAFA] text-center space-y-3 animate-pulse">
-                  <RefreshCw className="w-6 h-6 text-black animate-spin mx-auto" />
-                  <div className="text-xs font-semibold text-black">
-                    Menyusun Ulang Tahapan Belajar Sesuai Fokus & Isi Dokumen...
-                  </div>
-                  <p className="text-[11px] text-neutral-500 max-w-md mx-auto">
-                    Harap tunggu sebentar, AI sedang menyesuaikan setiap simpul pembelajaran dengan dokumen dan permintaan Anda.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activeLearningStages.map((stageItem) => {
-                    const stepNum = stageItem.stageNumber;
-                    const isUnderstood = !!roadmapStatus[stepNum];
-                    const isExpanded = expandedRoadmapStep === stepNum;
-
-                    return (
-                      <div
-                        key={`stage-${stepNum}-${stageItem.title}`}
-                        className={`rounded-3xl border transition-all overflow-hidden ${
-                          isUnderstood
-                            ? "bg-emerald-50/20 border-emerald-300 shadow-2xs"
-                            : "bg-white border-black/8 hover:border-black/20 shadow-2xs"
-                        }`}
-                      >
-                        {/* Step Header Summary Row */}
-                        <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                          <div className="space-y-2 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${
-                                  isUnderstood
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                    : "bg-[#F4F4F6] text-neutral-800 border-black/10"
-                                }`}
-                              >
-                                {stageItem.phaseLabel}
-                              </span>
-                              {isUnderstood && (
-                                <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                                  <Check className="w-3 h-3 text-emerald-600" />
-                                  <span>Dikuasai</span>
-                                </span>
-                              )}
-                            </div>
-
-                            <h5 className="text-sm sm:text-base font-bold text-black tracking-tight">
-                              {stageItem.title}
-                            </h5>
-                            <p className="text-xs text-neutral-600 leading-relaxed">
-                              {stageItem.shortSummary}
-                            </p>
-
-                            <div className="text-[10px] font-mono text-neutral-800 bg-[#F4F4F6] border border-black/10 px-3 py-1 rounded-full w-fit flex items-center gap-1.5">
-                              <Target className="w-3.5 h-3.5 text-neutral-600" />
-                              <span>Aksi Mandiri: {stageItem.selfAction}</span>
-                            </div>
-                          </div>
-
-                          {/* Controls: Expand / Collapse & Mark Understood */}
-                          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-black/8">
-                            <button
-                              type="button"
-                              onClick={() => toggleExpandRoadmapStep(stepNum)}
-                              className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                                isExpanded
-                                  ? "bg-black text-white"
-                                  : "bg-[#F4F4F6] hover:bg-neutral-200 text-neutral-800 border border-black/10"
-                              }`}
-                            >
-                              {isExpanded ? (
-                                <span className="inline-flex items-center gap-1"><ChevronUp className="w-3.5 h-3.5" /><span>Tutup Materi</span></span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /><span>Buka Materi</span></span>
-                              )}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => toggleRoadmapStep(stepNum)}
-                              className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                                isUnderstood
-                                  ? "bg-white hover:bg-neutral-100 text-black border border-black/15 shadow-2xs"
-                                  : "bg-black hover:bg-neutral-800 text-white shadow-xs"
-                              }`}
-                            >
-                              {isUnderstood ? (
-                                "Batal Tandai"
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /><span>Tandai Paham</span></span>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Expandable Learning Material Drawer */}
-                        {isExpanded && (
-                          <div className="border-t border-black/8 bg-[#FAFAFA] p-5 sm:p-6 space-y-4 animate-in fade-in">
-                            {/* 1. Panduan & Uraian Materi Tahap Ini */}
-                            <div className="bg-white rounded-2xl p-5 border border-black/8 shadow-2xs space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-black text-white text-xs font-black">
-                                  <BookOpen className="w-3.5 h-3.5" />
-                                </span>
-                                <h6 className="text-xs font-mono font-bold text-black uppercase tracking-wider">
-                                  Uraian Materi & Panduan Belajar Tahap Ini
-                                </h6>
-                              </div>
-                              <div className="text-xs text-neutral-700 leading-relaxed pl-8">
-                                <ChatMessageContent
-                                  text={stageItem.detailedMaterial || stageItem.shortSummary}
-                                  isUser={false}
-                                />
-                              </div>
-                            </div>
-
-                            {/* 2. Konsep Kunci yang Dipelajari */}
-                            {stageItem.keyConcepts && stageItem.keyConcepts.length > 0 && (
-                              <div className="space-y-1.5">
-                                <span className="text-[11px] font-mono font-bold text-neutral-700 flex items-center gap-1.5">
-                                  <Key className="w-3.5 h-3.5 text-amber-500" />
-                                  <span>Konsep Kunci yang Dipelajari:</span>
-                                </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {stageItem.keyConcepts.map((concept, cIdx) => (
-                                    <span
-                                      key={cIdx}
-                                      className="px-3 py-1 bg-white border border-black/10 rounded-full text-[11px] font-medium text-neutral-800 shadow-2xs"
-                                    >
-                                      {concept}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 3. Skenario Praktik Mandiri */}
-                            {stageItem.practiceScenario && (
-                              <div className="bg-[#F4F4F6] rounded-2xl p-4 border border-black/8 text-xs space-y-1">
-                                <div className="font-bold text-black flex items-center gap-1.5">
-                                  <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>Skenario Praktik Mandiri:</span>
-                                </div>
-                                <p className="text-neutral-700 leading-relaxed pl-5">
-                                  {stageItem.practiceScenario}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* 4. Evaluasi, Kueri Video & Tanya Tutor AI */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-black/8">
-                              {stageItem.comprehensionQuestion ? (
-                                <div className="text-[11px] text-neutral-600 flex items-start gap-1.5 flex-1">
-                                  <HelpCircle className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
-                                  <span>
-                                    <strong>Uji Pemahaman:</strong> {stageItem.comprehensionQuestion}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div />
-                              )}
-
-                              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                                {stageItem.searchQuery && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setCustomLearningGoal(stageItem.searchQuery);
-                                      setHubCurrentStage(3);
-                                      fetchValidatedTopicVideos(stageItem.searchQuery, true);
-                                    }}
-                                    className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                                  >
-                                    <PlayCircle className="w-3.5 h-3.5" />
-                                    <span>Cari Video Tahap Ini</span>
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleAskAboutStep({
-                                      step: stepNum,
-                                      stage: stageItem.phaseLabel,
-                                      title: stageItem.title,
-                                      description: stageItem.shortSummary,
-                                      actionItem: stageItem.selfAction,
-                                      understood: isUnderstood,
-                                    })
-                                  }
-                                  className="min-h-[44px] px-4 py-2 rounded-full text-xs font-medium text-black bg-white hover:bg-neutral-100 border border-black/15 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                  <span>Tanya AI Tutor tentang Tahap Ini</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Vertical Skill-Tree Timeline (Colorway Resmi NEXED AI: Obsidian, White, Emerald, Amber) */}
+              <StageSkillTreeTimeline
+                stages={activeLearningStages}
+                moduleTitle={analysisResult.detectedTopic || analysisResult.title}
+                moduleId={
+                  selectedFile
+                    ? selectedFile.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
+                    : (analysisResult.detectedTopic || analysisResult.title || "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
+                }
+                roadmapStatus={roadmapStatus}
+                setRoadmapStatus={setRoadmapStatus}
+                onOpenVideoModal={(video) => setActiveVideoModal(video)}
+              />
 
               {/* STAGE 2 BOTTOM ACTION */}
               <div className="flex items-center justify-between pt-2">
