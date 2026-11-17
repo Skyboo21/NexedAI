@@ -25,19 +25,23 @@ import {
 import type { LearningStageItem, RecommendedVideo } from "./NexedAiModuleHub";
 import ModuleCertificateModal from "./ModuleCertificateModal";
 import {
-  claimModuleCertificate,
-  getClaimedCertificates,
   addTotalUserXp,
-  type ModuleCertificateRecord,
+  getModuleDetailedProgress,
+  saveModuleDetailedProgress,
+  logLocalLearningActivity,
+  unlockBadgeLocal,
+  normalizeModuleKey,
 } from "../lib/progressStorage";
 
 interface StageSkillTreeTimelineProps {
   stages: LearningStageItem[];
   moduleTitle: string;
   moduleId?: string;
+  fromCache?: boolean;
   roadmapStatus: Record<number, boolean>;
   setRoadmapStatus: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
   onOpenVideoModal?: (video: RecommendedVideo) => void;
+  onAdvanceToStage3?: () => void;
 }
 
 interface QuizQuestion {
@@ -51,9 +55,11 @@ export default function StageSkillTreeTimeline({
   stages,
   moduleTitle,
   moduleId = "modul-aktif",
+  fromCache = false,
   roadmapStatus,
   setRoadmapStatus,
   onOpenVideoModal,
+  onAdvanceToStage3,
 }: StageSkillTreeTimelineProps) {
   // Expanded stage accordion: null or stageNumber
   const [expandedStageNumber, setExpandedStageNumber] = useState<number | null>(1);
@@ -68,10 +74,6 @@ export default function StageSkillTreeTimeline({
   const [quizSubmitted, setQuizSubmitted] = useState<Record<number, boolean>>({});
   const [quizPassed, setQuizPassed] = useState<Record<number, boolean>>({});
 
-  // E-Certificate modal state
-  const [isCertModalOpen, setIsCertModalOpen] = useState<boolean>(false);
-  const [activeCert, setActiveCert] = useState<ModuleCertificateRecord | null>(null);
-
   const safeStages = Array.isArray(stages) && stages.length > 0 ? stages : [];
   const totalStages = safeStages.length;
 
@@ -83,14 +85,28 @@ export default function StageSkillTreeTimeline({
     totalStages > 0 ? Math.round((completedStagesCount / totalStages) * 100) : 0;
   const isAllCompleted = totalStages > 0 && completedStagesCount === totalStages;
 
-  // Restore previously claimed certificate if any
+  // Pulihkan progres checklist & jawaban kuis tersimpan agar tidak ter-reset saat reload
   useEffect(() => {
-    const certs = getClaimedCertificates();
-    const cleanId = moduleId.toLowerCase().trim();
-    if (certs[cleanId]) {
-      setActiveCert(certs[cleanId]);
+    const cleanKey = normalizeModuleKey(moduleId || moduleTitle);
+    const saved = getModuleDetailedProgress(cleanKey);
+    if (saved) {
+      if (saved.checkedActions && Object.keys(saved.checkedActions).length > 0) {
+        setChecklistState(saved.checkedActions);
+      }
+      if (saved.quizAnswers && Object.keys(saved.quizAnswers).length > 0) {
+        setQuizAnswers(saved.quizAnswers);
+      }
+      if (saved.completedStageIds && saved.completedStageIds.length > 0) {
+        setRoadmapStatus((prev) => {
+          const next = { ...prev };
+          for (const id of saved.completedStageIds) {
+            next[id] = true;
+          }
+          return next;
+        });
+      }
     }
-  }, [moduleId, isAllCompleted]);
+  }, [moduleId, moduleTitle, setRoadmapStatus]);
 
   // Is stage unlocked helper (Coursera-Style Sequential Lock)
   const isStageUnlocked = (index: number): boolean => {
@@ -123,13 +139,20 @@ export default function StageSkillTreeTimeline({
   const handleToggleChecklist = (stageNum: number, itemIdx: number) => {
     setChecklistState((prev) => {
       const stageItems = prev[stageNum] || {};
-      return {
+      const next = {
         ...prev,
         [stageNum]: {
           ...stageItems,
           [itemIdx]: !stageItems[itemIdx],
         },
       };
+      const cleanKey = normalizeModuleKey(moduleId || moduleTitle);
+      saveModuleDetailedProgress({
+        moduleKey: cleanKey,
+        moduleTitle,
+        checkedActions: next,
+      });
+      return next;
     });
   };
 
@@ -207,24 +230,64 @@ export default function StageSkillTreeTimeline({
   };
 
   const handleCompleteStageAndAdvance = (index: number, stepNum: number) => {
-    setRoadmapStatus((prev) => ({ ...prev, [stepNum]: true }));
-    addTotalUserXp(150);
+    const nextStatus = { ...roadmapStatus, [stepNum]: true };
+    setRoadmapStatus(nextStatus);
 
-    // Buka tahap berikutnya secara otomatis
+    const completedIds = Object.entries(nextStatus)
+      .filter(([, val]) => Boolean(val))
+      .map(([k]) => Number(k))
+      .filter((n) => !Number.isNaN(n));
+    const pct = totalStages > 0 ? Math.round((completedIds.length / totalStages) * 100) : 0;
+    const cleanKey = normalizeModuleKey(moduleId || moduleTitle);
+
+    saveModuleDetailedProgress({
+      moduleKey: cleanKey,
+      moduleTitle,
+      completedStageIds: completedIds,
+      checkedActions: checklistState,
+      quizAnswers,
+      progressPercent: pct,
+    });
+
+    addTotalUserXp(150);
+    unlockBadgeLocal("Skill Tree Explorer");
+
+    const stageTitle = safeStages[index]?.title || `Tahap ${stepNum}`;
+    logLocalLearningActivity({
+      type: "module_step",
+      title: `Menuntaskan ${stageTitle}`,
+      description: `Lulus kuis video & menyelesaikan simpul pada modul "${moduleTitle}".`,
+      xpEarned: 150,
+    });
+
+    // Sinkronkan ke Supabase via /api/user/progress
+    fetch("/api/user/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        moduleKey: cleanKey,
+        moduleTitle,
+        completedStageIds: completedIds,
+        checkedActions: checklistState,
+        quizAnswers,
+        progressPercent: pct,
+        xpDelta: 150,
+        activity: {
+          type: "module_step",
+          title: `Menuntaskan ${stageTitle}`,
+          description: `Lulus kuis video & menyelesaikan simpul pada modul "${moduleTitle}".`,
+          xpEarned: 150,
+        },
+      }),
+    }).catch(() => {});
+
+    // Buka tahap berikutnya secara otomatis jika bukan simpul terakhir
     if (index < totalStages - 1) {
       const nextStepNum = safeStages[index + 1]?.stageNumber || index + 2;
       setExpandedStageNumber(nextStepNum);
+    } else {
+      setExpandedStageNumber(null);
     }
-  };
-
-  const handleClaimCertificate = () => {
-    const cert = claimModuleCertificate({
-      moduleId,
-      topicTitle: moduleTitle,
-      competencies: safeStages.map((s) => s.title),
-    });
-    setActiveCert(cert);
-    setIsCertModalOpen(true);
   };
 
   return (
@@ -242,9 +305,16 @@ export default function StageSkillTreeTimeline({
 
       {/* 1. HEADER TERPUSAT (COLORWAY RESMI NEXED AI: MONOCHROME & ZINC) */}
       <div className="text-center space-y-3 max-w-3xl mx-auto pt-2">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 text-[11px] font-mono uppercase tracking-wider shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-zinc-900" />
-          <span>Peta Belajar Adaptif Hasil Ekstraksi AI Dokumen</span>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700 text-[11px] font-mono uppercase tracking-wider shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-900" />
+            <span>Peta Belajar Adaptif Hasil Ekstraksi AI Dokumen</span>
+          </div>
+          {fromCache && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800 text-[11px] font-mono font-bold shadow-2xs">
+              <span>⚡ Dimuat dari Cache Database</span>
+            </div>
+          )}
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
@@ -273,7 +343,7 @@ export default function StageSkillTreeTimeline({
           </div>
         </div>
 
-        {/* Banner 100% Selesai + Tombol Klaim E-Sertifikat */}
+        {/* Banner 100% Simpul Peta Belajar Selesai -> Lanjut ke Tahap 3 */}
         {isAllCompleted && (
           <div className="mt-4 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-300 flex flex-col sm:flex-row items-center justify-between gap-3 text-left animate-in fade-in">
             <div className="flex items-center gap-3">
@@ -282,21 +352,22 @@ export default function StageSkillTreeTimeline({
               </div>
               <div>
                 <div className="text-xs font-bold text-emerald-950">
-                  Selamat! Seluruh Tahap Peta Belajar Berhasil Anda Tuntaskan
+                  🎉 Semua Simpul Peta Belajar Tuntas!
                 </div>
                 <div className="text-[11px] text-emerald-800">
-                  Klaim E-Sertifikat resmi kelulusan Anda dan dapatkan penghargaan kompetensi.
+                  Lanjutkan ke Tahap 3 &amp; Tahap 4 untuk menyelesaikan evaluasi akhir dan mendapatkan E-Sertifikat.
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleClaimCertificate}
-              className="px-5 py-2.5 bg-zinc-950 hover:bg-zinc-800 text-amber-300 text-xs font-extrabold rounded-full shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-            >
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>🎓 Klaim E-Sertifikat Kelulusan</span>
-            </button>
+            {onAdvanceToStage3 && (
+              <button
+                type="button"
+                onClick={onAdvanceToStage3}
+                className="px-5 py-2.5 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-extrabold rounded-full shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>Lanjut ke Tahap 3: Praktik &amp; AI &rarr;</span>
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -326,8 +397,13 @@ export default function StageSkillTreeTimeline({
             (_, cIdx) => !!checklistState[stepNum]?.[cIdx],
           ).length;
 
-          // Video spesifik tahap
-          const video = stage.stageVideo;
+          // Top 2 Video spesifik tahap (tanpa kotak hitam placeholder)
+          const stageVideos: RecommendedVideo[] =
+            Array.isArray(stage.videos) && stage.videos.length > 0
+              ? stage.videos.slice(0, 2)
+              : stage.stageVideo
+                ? [stage.stageVideo]
+                : [];
           const videoQuery = stage.searchQuery || `${stage.title} tutorial`;
           const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
             videoQuery,
@@ -477,55 +553,123 @@ export default function StageSkillTreeTimeline({
                         </a>
                       </div>
 
-                      {/* YouTube Player Embed */}
-                      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-zinc-200 shadow-sm">
-                        {video?.embedId ? (
-                          <iframe
-                            src={`https://www.youtube.com/embed/${video.embedId}?rel=0&modestbranding=1`}
-                            title={video.title || stage.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full border-0"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-zinc-900 text-zinc-300 text-center space-y-2">
-                            <Video className="w-10 h-10 text-zinc-500" />
-                            <div className="text-xs font-bold text-white">
-                              Tutorial Terverifikasi: {stage.title}
-                            </div>
-                            <p className="text-[11px] text-zinc-400 max-w-sm">
-                              Tonton materi video untuk menjawab kuis pemahaman dan membuka simpul berikutnya.
-                            </p>
-                            <a
-                              href={youtubeSearchUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-zinc-100 hover:bg-white text-zinc-950 rounded-full text-xs font-bold transition-all inline-flex items-center gap-1.5"
-                            >
-                              <span>Buka Tutorial di YouTube</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
+                      {/* Grid 2 Video Tutorial YouTube Tervalidasi (Top 2) */}
+                      {stageVideos.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {stageVideos.map((vid, vIdx) => {
+                            const vidId = vid.videoId || vid.embedId;
+                            const matchScore =
+                              vid.relevanceScore ||
+                              vid.qualityScore ||
+                              (vIdx === 0 ? 96 : 91);
+                            const watchUrl =
+                              vid.videoUrl ||
+                              `https://www.youtube.com/watch?v=${vidId}`;
 
-                      {video && (
-                        <div className="p-3 bg-white rounded-xl border border-zinc-200 flex items-center justify-between text-xs gap-3">
-                          <div className="space-y-0.5">
-                            <div className="font-bold text-zinc-900 line-clamp-1">{video.title}</div>
-                            <div className="text-[11px] text-zinc-500">
-                              Channel: {video.channel || video.channelName || "Official Tutorial"}
+                            return (
+                              <div
+                                key={`stage-vid-${stepNum}-${vidId}-${vIdx}`}
+                                className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-2xs flex flex-col justify-between"
+                              >
+                                <div>
+                                  {/* Badge Peringkat & Relevansi */}
+                                  <div className="px-3.5 py-2 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between gap-2">
+                                    <span
+                                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                        vIdx === 0
+                                          ? "bg-zinc-950 text-white"
+                                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                      }`}
+                                    >
+                                      Rekomendasi #{vIdx + 1} • {Math.round(matchScore)}% Cocok
+                                    </span>
+                                    {vid.duration && (
+                                      <span className="text-[10px] font-mono text-zinc-500">
+                                        {vid.duration}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Pemutar YouTube Embed Asli */}
+                                  <div className="p-2.5">
+                                    <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200">
+                                      <iframe
+                                        src={`https://www.youtube.com/embed/${vidId}?rel=0`}
+                                        title={vid.title || stage.title}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        className="w-full h-full border-0"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Info Judul Asli & Channel */}
+                                  <div className="px-3.5 pb-2 space-y-1">
+                                    <h4 className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-snug">
+                                      {vid.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 flex-wrap">
+                                      <span className="font-medium text-zinc-700">
+                                        {vid.channelName || vid.channel || "Tutorial Channel"}
+                                      </span>
+                                      {typeof vid.viewCount === "number" && vid.viewCount > 0 && (
+                                        <>
+                                          <span>•</span>
+                                          <span>
+                                            {vid.viewCount >= 1000
+                                              ? `${(vid.viewCount / 1000).toFixed(1)}K views`
+                                              : `${vid.viewCount} views`}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Footer Card */}
+                                <div className="px-3.5 py-2.5 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-between gap-2">
+                                  <a
+                                    href={watchUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] font-semibold text-zinc-700 hover:text-zinc-950 inline-flex items-center gap-1 transition-colors"
+                                  >
+                                    <span>Buka di YouTube</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                  {onOpenVideoModal && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenVideoModal(vid)}
+                                      className="px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 rounded-full font-semibold text-[11px] cursor-pointer transition-colors"
+                                    >
+                                      Mode Fokus
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-5 bg-white rounded-2xl border border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                          <div className="space-y-0.5 text-center sm:text-left">
+                            <div className="font-bold text-zinc-900">
+                              Cari Tutorial untuk: {stage.title}
                             </div>
+                            <p className="text-[11px] text-zinc-500">
+                              Kueri pencarian terkurasi: &ldquo;{videoQuery}&rdquo;
+                            </p>
                           </div>
-                          {onOpenVideoModal && (
-                            <button
-                              type="button"
-                              onClick={() => onOpenVideoModal(video)}
-                              className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 rounded-full font-semibold text-xs shrink-0 cursor-pointer"
-                            >
-                              Fokus
-                            </button>
-                          )}
+                          <a
+                            href={youtubeSearchUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0"
+                          >
+                            <span>Buka di YouTube</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
                         </div>
                       )}
                     </div>
@@ -722,7 +866,7 @@ export default function StageSkillTreeTimeline({
                                 <span>
                                   {index < totalStages - 1
                                     ? `✓ Selesaikan Tahap & Buka Tahap Berikutnya`
-                                    : `Tuntaskan Seluruh Modul & Buka Sertifikat 🎓`}
+                                    : `✓ Tuntaskan Simpul Terakhir (+150 XP)`}
                                 </span>
                               </button>
                             ) : null}
@@ -737,14 +881,6 @@ export default function StageSkillTreeTimeline({
           );
         })}
       </div>
-
-      {/* Modal E-Sertifikat Kelulusan */}
-      <ModuleCertificateModal
-        isOpen={isCertModalOpen}
-        onClose={() => setIsCertModalOpen(false)}
-        certificate={activeCert}
-        moduleTitle={moduleTitle}
-      />
     </div>
   );
 }

@@ -34,6 +34,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
+import ModuleCertificateModal from "../components/ModuleCertificateModal";
+import {
+  getAllModuleDetailedProgress,
+  getClaimedCertificates,
+  getLocalLearningActivities,
+  type ModuleCertificateRecord,
+  type ModuleDetailedProgress,
+} from "../lib/progressStorage";
 
 interface BadgeItem {
   id: string;
@@ -119,6 +127,12 @@ export default function UserProfile() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Module Progress & Certificates State
+  const [savedModules, setSavedModules] = useState<ModuleDetailedProgress[]>([]);
+  const [claimedCertificates, setClaimedCertificates] = useState<ModuleCertificateRecord[]>([]);
+  const [selectedCertForModal, setSelectedCertForModal] = useState<ModuleCertificateRecord | null>(null);
+  const [isCertModalOpen, setIsCertModalOpen] = useState<boolean>(false);
+
   // Security Form State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -186,13 +200,40 @@ export default function UserProfile() {
           headers["x-user-email"] = activeUser.email;
         }
 
-        const [statsRes, badgesRes, actsRes] = await Promise.all([
+        const [statsRes, badgesRes, actsRes, userProgRes] = await Promise.all([
           fetch("/api/activities/stats", { headers }),
           fetch("/api/gamification/badges", { headers }),
           fetch("/api/activities?limit=5", { headers }),
+          fetch("/api/user/progress", { headers }),
         ]);
 
         if (!isMounted) return;
+
+        // Muat progres modul & sertifikat lokal
+        const localMods = Object.values(getAllModuleDetailedProgress());
+        const localCerts = Object.values(getClaimedCertificates());
+        const localActs = getLocalLearningActivities();
+
+        if (userProgRes.ok) {
+          const progJson = await userProgRes.json();
+          if (Array.isArray(progJson.modules) && progJson.modules.length > 0) {
+            setSavedModules(progJson.modules);
+          } else {
+            setSavedModules(localMods);
+          }
+          if (Array.isArray(progJson.certificates) && progJson.certificates.length > 0) {
+            setClaimedCertificates(progJson.certificates);
+          } else {
+            setClaimedCertificates(localCerts);
+          }
+        } else {
+          setSavedModules(localMods);
+          setClaimedCertificates(localCerts);
+        }
+
+        if (localActs.length > 0 && recentActivities.length === 0) {
+          setRecentActivities(localActs);
+        }
 
         if (statsRes.ok) {
           const statsJson = await statsRes.json();
@@ -1318,6 +1359,103 @@ export default function UserProfile() {
           )}
         </AnimatePresence>
 
+        {/* RINGKASAN PROGRES MODUL & KOLEKSI E-SERTIFIKAT */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Progres Modul */}
+          <div className="bg-white p-6 rounded-3xl border border-black/8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-zinc-900" />
+                <h3 className="text-sm font-bold text-black">Progres Modul Belajar</h3>
+              </div>
+              <span className="text-[11px] font-mono text-zinc-500">
+                {savedModules.length} Modul Aktif
+              </span>
+            </div>
+
+            {savedModules.length === 0 ? (
+              <p className="text-xs text-neutral-500 py-4 text-center">
+                Belum ada progres modul tersimpan. Mulai pelajari modul di halaman{" "}
+                <Link href="/modul" className="underline font-semibold text-black">
+                  Modul Pembelajaran
+                </Link>
+                .
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {savedModules.slice(0, 5).map((mod) => (
+                  <div
+                    key={mod.moduleKey}
+                    className="p-3.5 rounded-2xl bg-[#FAFAFA] border border-black/8 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between text-xs gap-2">
+                      <span className="font-bold text-black line-clamp-1">{mod.moduleTitle}</span>
+                      <span className="font-mono font-bold text-emerald-700 shrink-0">
+                        {mod.progressPercent}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-zinc-200 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          mod.progressPercent === 100 ? "bg-emerald-600" : "bg-zinc-950"
+                        }`}
+                        style={{ width: `${mod.progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Koleksi E-Sertifikat */}
+          <div className="bg-white p-6 rounded-3xl border border-black/8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-600" />
+                <h3 className="text-sm font-bold text-black">Koleksi E-Sertifikat Kelulusan</h3>
+              </div>
+              <span className="text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold">
+                {claimedCertificates.length} Sertifikat
+              </span>
+            </div>
+
+            {claimedCertificates.length === 0 ? (
+              <p className="text-xs text-neutral-500 py-4 text-center">
+                Selesaikan seluruh tahap hingga Evaluasi Tahap 4 untuk mengklaim E-Sertifikat kelulusan resmi.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {claimedCertificates.map((cert) => (
+                  <div
+                    key={cert.id}
+                    className="p-4 rounded-2xl bg-amber-50/40 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-zinc-950 line-clamp-1">
+                        {cert.topicTitle}
+                      </div>
+                      <div className="text-[11px] font-mono text-zinc-600">
+                        Kode: <strong>{cert.id}</strong> • {cert.completionDate}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCertForModal(cert);
+                        setIsCertModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-amber-300 text-xs font-bold rounded-full transition-colors cursor-pointer shrink-0"
+                    >
+                      Lihat &amp; Unduh Sertifikat
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* LOGOUT DANGER ZONE */}
         <div className="bg-white p-6 rounded-3xl border border-black/8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -1336,6 +1474,14 @@ export default function UserProfile() {
           </button>
         </div>
       </main>
+
+      {/* Modal Pratinjau & Cetak E-Sertifikat */}
+      <ModuleCertificateModal
+        isOpen={isCertModalOpen}
+        onClose={() => setIsCertModalOpen(false)}
+        certificate={selectedCertForModal}
+        moduleTitle={selectedCertForModal?.topicTitle || "Modul Pembelajaran"}
+      />
     </div>
   );
 }

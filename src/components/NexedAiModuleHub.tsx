@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import ModuleRagChat from "./ModuleRagChat";
 import StageMindmapCanvas from "./StageMindmapCanvas";
 import StageSkillTreeTimeline from "./StageSkillTreeTimeline";
+import ModuleCertificateModal from "./ModuleCertificateModal";
 
 import { smartApiFetch as apiFetch } from "../utils/apiConfig";
 
@@ -67,6 +68,13 @@ import {
   getActiveModuleSession,
   clearActiveModuleSession,
   onActiveModuleSessionUpdate,
+  claimModuleCertificate,
+  addTotalUserXp,
+  saveModuleDetailedProgress,
+  logLocalLearningActivity,
+  unlockBadgeLocal,
+  normalizeModuleKey,
+  type ModuleCertificateRecord,
 } from "../lib/progressStorage";
 import { useAuthStore } from "../store/authStore";
 
@@ -88,6 +96,7 @@ export interface RecommendedVideo {
   viewCount?: number;
   likeCount?: number;
   qualityScore?: number;
+  relevanceScore?: number;
   topComments?: VideoTopComment[];
   isValidated?: boolean;
 }
@@ -128,9 +137,16 @@ export interface LearningStageItem {
   practiceScenario: string;  // Skenario praktik mandiri yang relevan dengan isi dokumen
   comprehensionQuestion: string; // Pertanyaan uji pemahaman spesifik sesuai materi tahap ini
   searchQuery: string;       // Kueri YouTube spesifik untuk tahap ini
-  stageVideo?: RecommendedVideo; // Video YouTube tervalidasi khusus tahap ini
+  stageVideo?: RecommendedVideo; // Video YouTube utama tervalidasi khusus tahap ini
+  videos?: RecommendedVideo[];     // Top 2 Video YouTube tervalidasi khusus tahap ini
   actionChecklist?: string[];    // 3 poin konkret "Harus Ngapain Aja" pada tahap ini
   quiz?: Array<{
+    question: string;
+    options: string[];
+    correctIndex: number;
+    explanation: string;
+  }>;
+  videoQuiz?: Array<{
     question: string;
     options: string[];
     correctIndex: number;
@@ -194,6 +210,7 @@ export interface AnalyzedModuleResult {
   userNeedsSummary?: string;
   recommendedQueries?: string[];
   videoCacheHit?: boolean;
+  fromCache?: boolean;
   videoValidationSource?: string;
 }
 
@@ -534,8 +551,10 @@ export default function NexedAiModuleHub() {
   const [hubMobileSyllabusOpen, setHubMobileSyllabusOpen] = useState<boolean>(false);
   const hubStageContainerRef = useRef<HTMLDivElement>(null);
 
-  // Completion Modal & Persistence State
+  // Completion Modal & Certificate State
   const [showCompletionModal, setShowCompletionModal] = useState<boolean>(false);
+  const [isCertModalOpen, setIsCertModalOpen] = useState<boolean>(false);
+  const [activeCert, setActiveCert] = useState<ModuleCertificateRecord | null>(null);
   const [completionData, setCompletionData] = useState<{
     score: number;
     total: number;
@@ -2957,9 +2976,11 @@ export default function NexedAiModuleHub() {
                     ? selectedFile.name.replace(/\.[^/.]+$/, "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
                     : (analysisResult.detectedTopic || analysisResult.title || "").toLowerCase().replace(/[^a-z0-9-_]/g, "-")
                 }
+                fromCache={Boolean(analysisResult.fromCache || videoCacheHitState)}
                 roadmapStatus={roadmapStatus}
                 setRoadmapStatus={setRoadmapStatus}
                 onOpenVideoModal={(video) => setActiveVideoModal(video)}
+                onAdvanceToStage3={() => handleHubMarkStageAndAdvance(2)}
               />
 
               {/* STAGE 2 BOTTOM ACTION */}
@@ -3510,19 +3531,53 @@ export default function NexedAiModuleHub() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleHubMarkStageAndAdvance(3)}
+                  onClick={() => {
+                    const cleanKey = normalizeModuleKey(
+                      analysisResult.detectedTopic || analysisResult.title,
+                    );
+                    saveModuleDetailedProgress({
+                      moduleKey: cleanKey,
+                      moduleTitle: analysisResult.detectedTopic || analysisResult.title,
+                      stage3Completed: true,
+                    });
+                    if (!hubStageProgress[3]) {
+                      addTotalUserXp(100);
+                      logLocalLearningActivity({
+                        type: "module_step",
+                        title: `Tahap 3 Selesai: ${analysisResult.detectedTopic || analysisResult.title}`,
+                        description: "Menuntaskan praktik & konsultasi AI Tutor.",
+                        xpEarned: 100,
+                      });
+                      fetch("/api/user/progress", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          moduleKey: cleanKey,
+                          moduleTitle: analysisResult.detectedTopic || analysisResult.title,
+                          stage3Completed: true,
+                          xpDelta: 100,
+                          activity: {
+                            type: "module_step",
+                            title: `Tahap 3 Selesai: ${analysisResult.detectedTopic || analysisResult.title}`,
+                            description: "Menuntaskan praktik & konsultasi AI Tutor.",
+                            xpEarned: 100,
+                          },
+                        }),
+                      }).catch(() => {});
+                    }
+                    handleHubMarkStageAndAdvance(3);
+                  }}
                   className="min-h-[44px] px-7 py-3 bg-black hover:bg-neutral-800 text-white font-medium text-xs sm:text-sm rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
                   {hubStageProgress[3] ? (
                     <>
-                      <span>Lanjut ke Tahap 4: Kuis Evaluasi</span>
+                      <span>Lanjut ke Tahap 4: Evaluasi</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   ) : (
                     <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Tandai Paham & Lanjut</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>✓ Tandai Praktik &amp; Konsultasi AI Selesai (+100 XP) &rarr; Lanjut ke Tahap 4: Evaluasi</span>
                     </>
                   )}
                 </button>
@@ -3698,11 +3753,63 @@ export default function NexedAiModuleHub() {
                     </span>
                     <button
                       type="button"
-                      onClick={handleCompleteModule}
-                      className="min-h-[44px] px-6 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                      onClick={() => {
+                        const topicTitle =
+                          analysisResult.detectedTopic || analysisResult.title || "Modul Pembelajaran";
+                        const cleanKey = normalizeModuleKey(topicTitle);
+                        const competencies = activeLearningStages.map((s) => s.title);
+
+                        const cert = claimModuleCertificate({
+                          moduleId: cleanKey,
+                          topicTitle,
+                          competencies,
+                        });
+
+                        saveModuleDetailedProgress({
+                          moduleKey: cleanKey,
+                          moduleTitle: topicTitle,
+                          stage3Completed: true,
+                          stage4Completed: true,
+                          progressPercent: 100,
+                        });
+
+                        unlockBadgeLocal("Mastery Achiever");
+                        logLocalLearningActivity({
+                          type: "quiz_completed",
+                          title: `Lulus Modul 100%: ${topicTitle}`,
+                          description: `Menyelesaikan Tahap 4 Evaluasi & mengklaim E-Sertifikat (${cert.id}).`,
+                          xpEarned: 250,
+                        });
+
+                        fetch("/api/user/progress", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            moduleKey: cleanKey,
+                            moduleTitle: topicTitle,
+                            stage3Completed: true,
+                            stage4Completed: true,
+                            progressPercent: 100,
+                            xpDelta: 250,
+                            certificate: cert,
+                            activity: {
+                              type: "quiz_completed",
+                              title: `Lulus Modul 100%: ${topicTitle}`,
+                              description: `Menyelesaikan Tahap 4 Evaluasi & mengklaim E-Sertifikat (${cert.id}).`,
+                              xpEarned: 250,
+                              score: 100,
+                            },
+                          }),
+                        }).catch(() => {});
+
+                        setActiveCert(cert);
+                        setIsCertModalOpen(true);
+                        setHubStageProgress((prev) => ({ ...prev, 4: true }));
+                      }}
+                      className="min-h-[44px] px-6 py-2.5 bg-zinc-950 hover:bg-zinc-800 text-amber-300 text-xs sm:text-sm font-extrabold rounded-full shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                     >
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span>Selesaikan Modul & Simpan</span>
+                      <Award className="w-4 h-4 text-amber-400" />
+                      <span>🎓 Selesaikan Evaluasi &amp; Klaim E-Sertifikat Kelulusan</span>
                     </button>
                   </div>
                 )}
@@ -4053,6 +4160,14 @@ export default function NexedAiModuleHub() {
           </div>
         );
       })()}
+
+      {/* Modal E-Sertifikat Kelulusan Resmi (Hanya terbuka setelah Tahap 4 Evaluasi) */}
+      <ModuleCertificateModal
+        isOpen={isCertModalOpen}
+        onClose={() => setIsCertModalOpen(false)}
+        certificate={activeCert}
+        moduleTitle={analysisResult?.detectedTopic || analysisResult?.title || "Modul Pembelajaran"}
+      />
     </section>
   );
 }

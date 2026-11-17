@@ -13,6 +13,10 @@ import {
   type VideoTopComment,
 } from "./curatedResources";
 import { isDatabaseConfigured, prisma } from "./server/db";
+import {
+  buildCleanStageQuery,
+  curateTopTwoVideosForAllStages,
+} from "./youtubeStageCurator";
 
 export interface ValidatedTopicVideoItem {
   videoId: string;
@@ -217,9 +221,11 @@ export function normalizeLearningStages(
           r.checkQuestion ||
           `Bagaimana konsep "${title}" diterapkan dalam konteks materi ${fallbackTopic}?`,
       ).trim();
-      const searchQuery = String(
-        r.searchQuery || `${fallbackTopic} ${title} tutorial`.trim(),
-      ).trim();
+      const searchQuery = buildCleanStageQuery(
+        String(r.searchQuery || title),
+        keyConcepts,
+        fallbackTopic,
+      );
       const actionChecklist = Array.isArray(r.actionChecklist) && r.actionChecklist.length > 0
         ? r.actionChecklist.map((c) => String(c || "").trim()).filter(Boolean)
         : [
@@ -230,6 +236,16 @@ export function normalizeLearningStages(
       const stageVideo = r.stageVideo && typeof r.stageVideo === "object"
         ? (r.stageVideo as unknown as LearningStageItem["stageVideo"])
         : undefined;
+      const videos = Array.isArray(r.videos)
+        ? (r.videos as unknown as LearningStageItem["videos"])
+        : stageVideo
+          ? [stageVideo]
+          : undefined;
+      const videoQuiz = Array.isArray(r.videoQuiz)
+        ? (r.videoQuiz as unknown as LearningStageItem["videoQuiz"])
+        : Array.isArray(r.quiz)
+          ? (r.quiz as unknown as LearningStageItem["quiz"])
+          : undefined;
 
       return {
         stageNumber,
@@ -244,6 +260,9 @@ export function normalizeLearningStages(
         searchQuery,
         actionChecklist,
         stageVideo,
+        videos,
+        videoQuiz,
+        quiz: videoQuiz,
       };
     })
     .filter((s) => s.title.length > 2);
@@ -728,13 +747,15 @@ export async function resolveValidatedTopicVideos(params: {
       (b.qualityScore || 0) - (a.qualityScore || 0),
   );
 
-  // Ikat 1 video spesifik untuk setiap tahap dan checklist aksi "Harus Ngapain Aja"
-  const boundStages: LearningStageItem[] = learningStages.map((stage, idx) => {
-    const assignedVideo =
-      validatedVideos.length > 0
-        ? validatedVideos[idx % validatedVideos.length]
-        : stage.stageVideo;
+  // Kurasi & Ikat Top 2 Video Tervalidasi oEmbed untuk SETIAP tahap + checklist aksi "Harus Ngapain Aja"
+  const curatedStages = await curateTopTwoVideosForAllStages(
+    learningStages,
+    detectedTopic,
+    coreKeywords,
+    validatedVideos,
+  );
 
+  const boundStages: LearningStageItem[] = curatedStages.map((stage) => {
     const checklist =
       Array.isArray(stage.actionChecklist) && stage.actionChecklist.length >= 2
         ? stage.actionChecklist
@@ -744,9 +765,17 @@ export async function resolveValidatedTopicVideos(params: {
             stage.practiceScenario || `Terapkan konsep pada studi kasus dan verifikasi hasil output.`,
           ];
 
+    const stageVideos =
+      Array.isArray(stage.videos) && stage.videos.length > 0
+        ? stage.videos
+        : stage.stageVideo
+          ? [stage.stageVideo]
+          : [];
+
     return {
       ...stage,
-      stageVideo: assignedVideo,
+      videos: stageVideos,
+      stageVideo: stageVideos[0] || stage.stageVideo,
       actionChecklist: checklist,
     };
   });

@@ -112,10 +112,59 @@ export async function POST(request: NextRequest) {
     if (!forceRefresh) {
       const cachedPlan = await getCachedLearningPlan(cacheKey);
       if (cachedPlan && cachedPlan.stages && cachedPlan.stages.length >= 3) {
+        const cachedAnalyzedResult = {
+          title: cachedPlan.topic,
+          detectedTopic: cachedPlan.topic,
+          coreKeywords: cachedPlan.coreKeywords,
+          sourceType: "file" as const,
+          fileName: typeof fileName === "string" ? fileName : undefined,
+          estimatedTime: "45 Menit",
+          difficulty: "Menengah" as const,
+          xpReward: 150,
+          summary: {
+            overview: cachedPlan.summary,
+            keyPoints: cachedPlan.coreKeywords.slice(0, 5).map((kw) => ({
+              term: kw,
+              definition: `Konsep kunci dalam materi ${cachedPlan.topic}.`,
+            })),
+            proTips: "Pelajari setiap simpul secara berurutan dan selesaikan kuis video.",
+            breakdownTime: {
+              concept: "15 Menit",
+              practice: "20 Menit",
+              quiz: "10 Menit",
+            },
+          },
+          learningStages: cachedPlan.stages,
+          roadmap: cachedPlan.stages.map((s, idx) => ({
+            step: s.stageNumber || idx + 1,
+            stage: s.phaseLabel,
+            title: s.title,
+            description: s.shortSummary,
+            actionItem: s.selfAction,
+            understood: false,
+            keyConcepts: s.keyConcepts,
+            detailedGuide: s.detailedMaterial,
+            practiceScenario: s.practiceScenario,
+            checkQuestion: s.comprehensionQuestion,
+          })),
+          quiz: [],
+          videos: cachedPlan.videos,
+          validatedVideos: cachedPlan.videos,
+          recommendedVideos: cachedPlan.videos,
+          recommendedDocs: cachedPlan.curatedDocs || [],
+          webReferences: cachedPlan.curatedDocs || [],
+          userNeedsSummary: cachedPlan.summary,
+          recommendedQueries: cachedPlan.recommendedQueries,
+          videoCacheHit: true,
+          fromCache: true,
+          videoValidationSource: "supabase-prisma-cache",
+        };
+
         return NextResponse.json(
           {
             success: true,
             fromCache: true,
+            analyzedResult: cachedAnalyzedResult,
             detectedTopic: cachedPlan.topic,
             coreKeywords: cachedPlan.coreKeywords,
             learningStages: cachedPlan.stages,
@@ -182,6 +231,7 @@ export async function POST(request: NextRequest) {
         userNeedsSummary: result.userNeedsSummary ?? "",
         recommendedQueries: result.recommendedQueries ?? [],
         videoCacheHit: Boolean(result.videoCacheHit),
+        fromCache: Boolean(result.videoCacheHit),
         videoValidationSource: result.videoValidationSource ?? "empty",
       },
       { status: 200 },

@@ -633,3 +633,160 @@ export function onActiveModuleSessionUpdate(
   };
 }
 
+// ============================================================================
+// ANTI-RESET GRANULAR PROGRESS & ACTIVITY PERSISTENCE (LocalStorage + Supabase)
+// ============================================================================
+
+export interface ModuleDetailedProgress {
+  moduleKey: string;
+  moduleTitle: string;
+  completedStageIds: number[];
+  checkedActions: Record<number, Record<number, boolean>>;
+  quizAnswers: Record<number, Record<number, number>>;
+  stage3Completed: boolean;
+  stage4Completed: boolean;
+  progressPercent: number;
+  updatedAt: string;
+}
+
+export interface LocalLearningActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  xpEarned: number;
+  createdAt: string;
+}
+
+const DETAILED_PROGRESS_KEY = "nexed_detailed_module_progress_v1";
+const LOCAL_ACTIVITIES_KEY = "nexed_local_activities_v1";
+
+export function normalizeModuleKey(rawKey: string): string {
+  return (rawKey || "modul-aktif")
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 64) || "modul-aktif";
+}
+
+export function getAllModuleDetailedProgress(): Record<string, ModuleDetailedProgress> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(DETAILED_PROGRESS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, ModuleDetailedProgress>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getModuleDetailedProgress(moduleKey: string): ModuleDetailedProgress | null {
+  const cleanKey = normalizeModuleKey(moduleKey);
+  const all = getAllModuleDetailedProgress();
+  return all[cleanKey] ?? null;
+}
+
+export function saveModuleDetailedProgress(
+  data: Partial<ModuleDetailedProgress> & { moduleKey: string; moduleTitle: string },
+): ModuleDetailedProgress {
+  const cleanKey = normalizeModuleKey(data.moduleKey);
+  const existing = getModuleDetailedProgress(cleanKey);
+
+  const mergedCompletedIds = Array.from(
+    new Set([
+      ...(existing?.completedStageIds || []),
+      ...(data.completedStageIds || []),
+    ]),
+  ).sort((a, b) => a - b);
+
+  const updated: ModuleDetailedProgress = {
+    moduleKey: cleanKey,
+    moduleTitle: data.moduleTitle || existing?.moduleTitle || "Modul Pembelajaran",
+    completedStageIds: mergedCompletedIds,
+    checkedActions: {
+      ...(existing?.checkedActions || {}),
+      ...(data.checkedActions || {}),
+    },
+    quizAnswers: {
+      ...(existing?.quizAnswers || {}),
+      ...(data.quizAnswers || {}),
+    },
+    stage3Completed: Boolean(existing?.stage3Completed || data.stage3Completed),
+    stage4Completed: Boolean(existing?.stage4Completed || data.stage4Completed),
+    progressPercent: Math.max(
+      existing?.progressPercent || 0,
+      data.progressPercent ?? 0,
+    ),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      const all = getAllModuleDetailedProgress();
+      all[cleanKey] = updated;
+      localStorage.setItem(DETAILED_PROGRESS_KEY, JSON.stringify(all));
+      window.dispatchEvent(new CustomEvent(PROGRESS_EVENT, { detail: updated }));
+    } catch {}
+  }
+
+  return updated;
+}
+
+export function getLocalLearningActivities(): LocalLearningActivityItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_ACTIVITIES_KEY);
+    return raw ? (JSON.parse(raw) as LocalLearningActivityItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function logLocalLearningActivity(params: {
+  type: string;
+  title: string;
+  description: string;
+  xpEarned: number;
+}): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getLocalLearningActivities();
+    const entry: LocalLearningActivityItem = {
+      id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type: params.type,
+      title: params.title,
+      description: params.description,
+      xpEarned: params.xpEarned,
+      createdAt: new Date().toISOString(),
+    };
+    const next = [entry, ...existing].slice(0, 40);
+    localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent(PROGRESS_EVENT, { detail: { activity: entry } }));
+  } catch {}
+}
+
+export function getUnlockedBadgesLocal(): string[] {
+  if (typeof window === "undefined") return ["First Step"];
+  try {
+    const raw = localStorage.getItem(BADGES_STORAGE_KEY);
+    const parsed: string[] = raw ? JSON.parse(raw) : [];
+    const base = new Set<string>(["First Step", ...parsed]);
+    return Array.from(base);
+  } catch {
+    return ["First Step"];
+  }
+}
+
+export function unlockBadgeLocal(badgeTitle: string): void {
+  if (typeof window === "undefined" || !badgeTitle) return;
+  try {
+    const current = getUnlockedBadgesLocal();
+    if (!current.includes(badgeTitle)) {
+      current.push(badgeTitle);
+      localStorage.setItem(BADGES_STORAGE_KEY, JSON.stringify(current));
+      window.dispatchEvent(new CustomEvent(PROGRESS_EVENT, { detail: { badge: badgeTitle } }));
+    }
+  } catch {}
+}
+
+

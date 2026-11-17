@@ -99,3 +99,23 @@ model TopicVideoCache {
   @@index([topicKey])
 }
 
+model UserLearningProgress {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  moduleKey         String   @map("module_key")
+  moduleTitle       String   @map("module_title")
+  completedStageIds Json     @default("[]") @map("completed_stage_ids")
+  checkedActions    Json     @default("{}") @map("checked_actions")
+  quizAnswers       Json     @default("{}") @map("quiz_answers")
+  stage3Completed   Boolean  @default(false) @map("stage3_completed")
+  stage4Completed   Boolean  @default(false) @map("stage4_completed")
+  progressPercent   Int      @default(0) @map("progress_percent")
+  certificate       Json?
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, moduleKey])
+  @@index([userId])
+  @@map("user_learning_progress")
+}
+

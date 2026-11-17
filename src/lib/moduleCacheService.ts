@@ -8,6 +8,10 @@ import { createHash } from "crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma, isDatabaseConfigured } from "./server/db";
 import type { LearningStageItem, RecommendedDoc, RecommendedVideo } from "../components/NexedAiModuleHub";
+import {
+  extractPrimaryDomainAnchor,
+  hasConflictingTechInTitle,
+} from "./youtubeStageCurator";
 
 export interface CachedModuleLearningPlan {
   cacheKey: string;
@@ -84,18 +88,52 @@ export async function getCachedLearningPlan(
           rawStages.length < 3;
 
         if (!isPoisoned) {
-          // Garansi setiap tahap memiliki video tutorial aktif
+          // Garansi setiap tahap memiliki 2 video tutorial aktif
           const verifiedStages = rawStages.map((stage, idx) => {
-            const fallbackVideo =
-              rawVideos.length > 0
-                ? rawVideos[idx % rawVideos.length]
-                : stage.stageVideo;
+            const existingStageVideos =
+              Array.isArray(stage.videos) && stage.videos.length > 0
+                ? stage.videos.filter((v) => Boolean(v?.videoId || v?.embedId))
+                : [];
+
+            const fallbackVideo1 =
+              existingStageVideos[0] ||
+              stage.stageVideo ||
+              (rawVideos.length > 0 ? rawVideos[idx % rawVideos.length] : undefined);
+            const fallbackVideo2 =
+              existingStageVideos[1] ||
+              (rawVideos.length > 1 ? rawVideos[(idx + 1) % rawVideos.length] : undefined);
+
+            const stageVideos = [fallbackVideo1, fallbackVideo2].filter(
+              (v): v is RecommendedVideo => Boolean(v && (v.videoId || v.embedId)),
+            );
 
             return {
               ...stage,
-              stageVideo: stage.stageVideo || fallbackVideo,
+              videos: stageVideos,
+              stageVideo: stageVideos[0] || stage.stageVideo,
             };
           });
+
+          const allStagesHaveTwoVideos = verifiedStages.every(
+            (s) => Array.isArray(s.videos) && s.videos.length >= 2,
+          );
+
+          const topicFromKey = cacheKey.split("_")[2] || "";
+          const hasConflictingCachedVideos = verifiedStages.some((s) => {
+            const anchor = extractPrimaryDomainAnchor(
+              topicFromKey,
+              s.title,
+              s.keyConcepts || [],
+            );
+            if (!anchor) return false;
+            return (s.videos || []).some((v) =>
+              hasConflictingTechInTitle(v.title || "", anchor),
+            );
+          });
+
+          if (!allStagesHaveTwoVideos || hasConflictingCachedVideos) {
+            return null;
+          }
 
           const plan: CachedModuleLearningPlan = {
             cacheKey,
@@ -155,11 +193,24 @@ export async function saveCachedLearningPlan(params: {
     curatedDocs,
   } = params;
 
-  // Pastikan setiap tahap memiliki video tutorial
+  // Pastikan setiap tahap memiliki 2 video tutorial
   const stagesWithGuaranteedVideos = stages.map((s, idx) => {
-    const video =
+    const existingStageVideos =
+      Array.isArray(s.videos) && s.videos.length > 0
+        ? s.videos.filter((v) => Boolean(v?.videoId || v?.embedId))
+        : [];
+
+    const v1 =
+      existingStageVideos[0] ||
       s.stageVideo ||
       (videos.length > 0 ? videos[idx % videos.length] : undefined);
+    const v2 =
+      existingStageVideos[1] ||
+      (videos.length > 1 ? videos[(idx + 1) % videos.length] : undefined);
+
+    const stageVideos = [v1, v2].filter(
+      (v): v is RecommendedVideo => Boolean(v && (v.videoId || v.embedId)),
+    );
 
     const checklist =
       Array.isArray(s.actionChecklist) && s.actionChecklist.length >= 2
@@ -172,7 +223,8 @@ export async function saveCachedLearningPlan(params: {
 
     return {
       ...s,
-      stageVideo: video,
+      videos: stageVideos,
+      stageVideo: stageVideos[0] || s.stageVideo,
       actionChecklist: checklist,
     };
   });
